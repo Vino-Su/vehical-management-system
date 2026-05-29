@@ -1,0 +1,526 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车辆资产管理 - 列表页</title>
+    <link rel="stylesheet" href="../components/common.css">
+    <link rel="stylesheet" href="../components/form.css">
+    <style>
+        /* ========== 查询筛选区 ========== */
+        .search-bar {
+            background: var(--bg-container);
+            border-radius: var(--radius);
+            padding: 20px 24px 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        .search-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 16px;
+        }
+        .search-item {
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-item.visible { display: flex; }
+        .search-item label {
+            font-size: 14px; color: var(--text-secondary); white-space: nowrap;
+        }
+        .search-item input,
+        .search-item select {
+            height: 32px; border: 1px solid var(--border-input);
+            border-radius: var(--radius); padding: 0 12px;
+            font-size: 14px; color: var(--text-primary); outline: none;
+            transition: border-color .2s; min-width: 160px;
+        }
+        .search-item input:focus,
+        .search-item select:focus { border-color: var(--primary); }
+        .search-item input::placeholder { color: var(--text-disabled); }
+        .search-item .date-sep { color: var(--text-disabled); margin: 0 4px; }
+        .search-actions {
+            display: flex; align-items: center; gap: 8px; margin-left: auto;
+        }
+        .toggle-expand {
+            color: var(--primary); font-size: 14px; cursor: pointer;
+            user-select: none; display: flex; align-items: center; gap: 4px;
+        }
+        .toggle-expand:hover { color: var(--primary-hover); }
+        .toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
+        .toggle-expand.expanded .arrow { transform: rotate(180deg); }
+
+        /* ========== 操作栏 ========== */
+        .action-bar {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+        }
+        .btn-export { margin-left: auto; }
+
+        /* ========== 状态标签 ========== */
+        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; line-height: 20px; white-space: nowrap; }
+        .status-tag.green { background: #f6ffed; color: #52c41a; }
+        .status-tag.blue { background: #e6f4ff; color: #1677ff; }
+        .status-tag.orange { background: #fff7e6; color: #fa8c16; }
+        .status-tag.red { background: #fff2f0; color: #ff4d4f; }
+        .status-tag.yellow { background: #fffbe6; color: #d4b106; }
+        .status-tag.gray { background: #f2f3f5; color: #86909c; }
+        .status-tag.purple { background: #f5e8ff; color: #722ed1; }
+
+        /* ========== 操作链接 ========== */
+        .action-link { color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: none; }
+        .action-link:hover { color: var(--primary-hover); }
+        .action-link + .action-link { margin-left: 12px; }
+        .action-link.danger { color: var(--error); }
+        .action-link.danger:hover { color: #ff7875; }
+
+        /* ========== 分配弹窗 ========== */
+        .assign-batch {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+        }
+        .assign-batch label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
+        .assign-batch select {
+            height: 30px; border: 1px solid var(--border-input);
+            border-radius: var(--radius); padding: 0 8px; font-size: 13px; outline: none; min-width: 160px;
+        }
+        .assign-table { width: 100%; border-collapse: collapse; }
+        .assign-table thead th {
+            background: #fafafa; color: var(--text-secondary); font-weight: 600;
+            font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color);
+        }
+        .assign-table tbody td {
+            color: var(--text-primary); font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--border-color);
+        }
+        .assign-table select {
+            height: 30px; border: 1px solid var(--border-input);
+            border-radius: var(--radius); padding: 0 8px; font-size: 13px; outline: none; min-width: 140px;
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+        <div id="header"></div>
+        <div class="content">
+            <div class="page-container">
+                <!-- 查询筛选区 -->
+                <div class="search-bar">
+                    <div class="search-row" id="searchRow">
+                        <div class="search-item visible" data-idx="0">
+                            <label>车架号</label>
+                            <input type="text" id="s_vin" placeholder="请输入车架号">
+                        </div>
+                        <div class="search-item visible" data-idx="1">
+                            <label>国标车架号</label>
+                            <input type="text" id="s_gbt_vin" placeholder="请输入国标车架号">
+                        </div>
+                        <div class="search-item visible" data-idx="2">
+                            <label>车型名称（中）</label>
+                            <input type="text" id="s_model_name" placeholder="请输入车型名称">
+                        </div>
+                        <div class="search-item visible" data-idx="3">
+                            <label>车型版本</label>
+                            <select id="s_model_version">
+                                <option value="">请选择</option>
+                                <option>V1.0</option><option>V2.0</option><option>V3.0</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="4">
+                            <label>网联编号</label>
+                            <input type="text" id="s_iot_code" placeholder="请输入网联编号">
+                        </div>
+                        <div class="search-item" data-idx="5">
+                            <label>车型编码</label>
+                            <input type="text" id="s_model_code" placeholder="请输入车型编码">
+                        </div>
+                        <div class="search-item" data-idx="6">
+                            <label>车牌号</label>
+                            <input type="text" id="s_plate_no" placeholder="请输入车牌号">
+                        </div>
+                        <div class="search-item" data-idx="7">
+                            <label>历史车型编码</label>
+                            <input type="text" id="s_old_model_code" placeholder="请输入历史车型编码">
+                        </div>
+                        <div class="search-item" data-idx="8">
+                            <label>车辆型号</label>
+                            <input type="text" id="s_vehicle_model" placeholder="请输入车辆型号">
+                        </div>
+                        <div class="search-item" data-idx="9">
+                            <label>车辆来源</label>
+                            <select id="s_asset_source">
+                                <option value="">请选择</option>
+                                <option>外购</option><option>租赁</option><option>融资租赁</option><option>借用</option><option>自研</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="10">
+                            <label>车辆状态</label>
+                            <select id="s_vehicle_status">
+                                <option value="">请选择</option>
+                                <option>在库-正常使用</option><option>在库-闲置留用</option><option>在库-闲置可调出</option>
+                                <option>在库-维修</option><option>在库-保养中</option><option>在库-待报废</option>
+                                <option>待分配</option><option>已报废</option><option>已处置</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="11">
+                            <label>归属项目</label>
+                            <select id="s_project">
+                                <option value="">请选择</option>
+                                <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="12">
+                            <label>注册时间</label>
+                            <input type="date" id="s_reg_start">
+                            <span class="date-sep">~</span>
+                            <input type="date" id="s_reg_end">
+                        </div>
+                        <div class="search-actions">
+                            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+                            <button class="btn" onclick="doReset()">重置</button>
+                            <span class="toggle-expand" id="toggleExpand" onclick="toggleSearchExpand()">
+                                展开 <span class="arrow">▼</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作栏 -->
+                <div class="action-bar">
+                    <button class="btn btn-primary" onclick="goEdit()">编辑</button>
+                    <button class="btn" id="btnAssign" onclick="openAssignModal()" disabled>车辆分配</button>
+                    <button class="btn btn-export" onclick="doExport()">导出</button>
+                </div>
+
+                <!-- 数据列表 -->
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:50px;text-align:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
+                                <th>车架号</th>
+                                <th>国标车架号</th>
+                                <th>车型名称（中）</th>
+                                <th>车型版本</th>
+                                <th>网联编号</th>
+                                <th>车型编码</th>
+                                <th>车牌号</th>
+                                <th>历史车型编码</th>
+                                <th>车辆型号</th>
+                                <th>车辆来源</th>
+                                <th>车辆状态</th>
+                                <th>归属项目</th>
+                                <th>注册时间</th>
+                                <th style="width:140px;text-align:center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="pagination-area">
+                    <div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <div class="pagination" id="paginationEl"></div>
+                        <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
+                            <option value="10" selected>10条/页</option>
+                            <option value="20">20条/页</option>
+                            <option value="50">50条/页</option>
+                            <option value="100">100条/页</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 车辆分配弹窗 -->
+<div class="modal-overlay" id="assignModal">
+    <div class="modal-box" style="width:700px">
+        <div class="modal-header"><h3>车辆分配</h3><span class="modal-close" onclick="closeAssignModal()">×</span></div>
+        <div class="modal-body">
+            <div class="assign-batch">
+                <label>统一分配至：</label>
+                <select id="batchProject" onchange="batchAssignProject(this.value)">
+                    <option value="">请选择项目</option>
+                    <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                </select>
+            </div>
+            <table class="assign-table">
+                <thead><tr><th>车架号</th><th>网联编号</th><th>别名</th><th>当前所属项目</th><th>分配至项目</th></tr></thead>
+                <tbody id="assignTableBody"></tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeAssignModal()">取消</button>
+            <button class="btn btn-primary" onclick="doAssign()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-box confirm-box">
+        <div class="modal-header"><h3>提示</h3><span class="modal-close" onclick="closeDeleteModal()">×</span></div>
+        <div class="confirm-body">
+            <span class="confirm-icon">⚠</span>
+            <span class="confirm-text">确定要删除该车辆档案信息吗？删除后不可恢复。</span>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeDeleteModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmDelete()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 导出确认弹窗 -->
+<div class="modal-overlay" id="exportModal">
+    <div class="modal-box confirm-box">
+        <div class="modal-header"><h3>提示</h3><span class="modal-close" onclick="closeExportModal()">×</span></div>
+        <div class="confirm-body">
+            <span class="confirm-icon">⚠</span>
+            <span class="confirm-text">是否导出所有数据？</span>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeExportModal()">否</button>
+            <button class="btn btn-primary" onclick="confirmExport()">是</button>
+        </div>
+    </div>
+</div>
+
+<script src="../components/common.js"></script>
+<script>
+// ===== 初始化布局 =====
+Common.initLayout({
+    basePath: '../',
+    sidebarId: 'sidebar',
+    activeMenuId: 'asset-manage',
+    headerId: 'header',
+    breadcrumbs: [
+        { label: '车辆管理' },
+        { label: '车辆资产管理' },
+    ],
+    headerOptions: { showProject: false }
+});
+
+// ===== 模拟数据（参考01-需求文档/示例数据参考.md） =====
+const mockData = [
+    { id:1, vin:'LSVAU2A39EN000001', gbt_vin:'GB0000000001', model_name:'麒麟清扫车', model_version:'V1.0', iot_code:'14156', model_code:'QL-QJ01', plate_no:'京ADG090', old_model_code:'', vehicle_model:'BQ5160TXSBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'鸠江项目', register_time:'2025-03-15 10:30:00', alias:'01号车' },
+    { id:2, vin:'LSVAU2A39EN000002', gbt_vin:'GB0000000002', model_name:'爱瑞特纯电动高压冲洗车', model_version:'V2.0', iot_code:'11527', model_code:'ART-GY01', plate_no:'京ADG091', old_model_code:'', vehicle_model:'BQ5080GQX', asset_source:'外购', vehicle_status:'在库-正常使用', project:'椒北街道', register_time:'2025-03-15 10:35:00', alias:'02号车' },
+    { id:3, vin:'LSVAU2A39EN000003', gbt_vin:'GB0000000003', model_name:'中联清洗车', model_version:'V1.0', iot_code:'14158', model_code:'ZL-QX01', plate_no:'浙JAR6538', old_model_code:'', vehicle_model:'BQ5080GQXBEV', asset_source:'外购', vehicle_status:'在库-闲置留用', project:'镜湖区项目', register_time:'2025-04-20 14:00:00', alias:'03号车' },
+    { id:4, vin:'LSVAU2A39EN000004', gbt_vin:'GB0000000004', model_name:'泰坦智能驾驶洒水车', model_version:'V1.0', iot_code:'11530', model_code:'TT-SS01', plate_no:'京ADH066', old_model_code:'', vehicle_model:'BQ5160GSSEBEV', asset_source:'自研', vehicle_status:'待分配', project:'', register_time:'2025-05-10 09:20:00', alias:'04号车' },
+    { id:5, vin:'LSVAU2A39EN000005', gbt_vin:'GB0000000005', model_name:'三力洒水车', model_version:'V2.0', iot_code:'14159', model_code:'SL-SS01', plate_no:'浙JDB1062', old_model_code:'', vehicle_model:'BQ5160GSSEBEV', asset_source:'外购', vehicle_status:'在库-维修', project:'鸠江江北项目', register_time:'2025-06-01 16:45:00', alias:'05号车' },
+    { id:6, vin:'LSVAU2A39EN000006', gbt_vin:'GB0000000006', model_name:'独角兽', model_version:'V1.0', iot_code:'11532', model_code:'DJS-ZN01', plate_no:'沪AAB124', old_model_code:'', vehicle_model:'BQ5070TSLBEV', asset_source:'自研', vehicle_status:'在库-正常使用', project:'嘉定研发', register_time:'2025-06-01 16:50:00', alias:'06号车' },
+    { id:7, vin:'LSVAU2A39EN000007', gbt_vin:'GB0000000007', model_name:'麒麟无人化扫地车', model_version:'V2.0', iot_code:'14160', model_code:'QL-WR01', plate_no:'京ADJ055', old_model_code:'', vehicle_model:'BQ5070TSLBEV', asset_source:'自研', vehicle_status:'在库-正常使用', project:'鸠江开发区项目', register_time:'2025-07-12 08:30:00', alias:'07号车' },
+    { id:8, vin:'LSVAU2A39EN000008', gbt_vin:'GB0000000008', model_name:'长城多用途货车', model_version:'V1.0', iot_code:'11535', model_code:'CC-HY01', plate_no:'京ADJ056', old_model_code:'', vehicle_model:'BQ5080ZLJBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'陵水项目', register_time:'2025-08-22 11:15:00', alias:'08号车' },
+    { id:9, vin:'LSVAU2A39EN000009', gbt_vin:'GB0000000009', model_name:'麒麟清扫车', model_version:'V1.0', iot_code:'14161', model_code:'QL-QJ01', plate_no:'粤AEE077', old_model_code:'', vehicle_model:'BQ5160TXSBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'鸠江项目', register_time:'2025-09-05 15:00:00', alias:'09号车' },
+    { id:10, vin:'LSVAU2A39EN000010', gbt_vin:'GB0000000010', model_name:'爱瑞特纯电动高压冲洗车', model_version:'V2.0', iot_code:'11538', model_code:'ART-GY01', plate_no:'粤AEE078', old_model_code:'', vehicle_model:'BQ5080GQX', asset_source:'外购', vehicle_status:'在库-闲置留用', project:'椒北街道', register_time:'2025-10-18 09:00:00', alias:'10号车' },
+    { id:11, vin:'LSVAU2A39EN000011', gbt_vin:'GB0000000011', model_name:'中联清洗车', model_version:'V1.0', iot_code:'14162', model_code:'ZL-QX01', plate_no:'京ADK033', old_model_code:'', vehicle_model:'BQ5080GQXBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'镜湖区项目', register_time:'2025-11-01 14:20:00', alias:'11号车' },
+    { id:12, vin:'LSVAU2A39EN000012', gbt_vin:'GB0000000012', model_name:'三力洒水车', model_version:'V2.0', iot_code:'11540', model_code:'SL-SS01', plate_no:'京ADG092', old_model_code:'', vehicle_model:'BQ5160GSSEBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'鸠江江北项目', register_time:'2025-12-10 10:00:00', alias:'12号车' },
+];
+
+// ===== 状态 =====
+let currentPage = 1, pageSize = 10;
+let filteredData = [...mockData];
+let selectedIds = new Set();
+let deleteTargetId = null;
+
+// ===== 状态标签映射 =====
+const statusTagClass = {
+    '在库-正常使用':'green', '在库-闲置留用':'blue', '在库-闲置可调出':'orange',
+    '在库-维修':'red', '在库-保养中':'yellow', '在库-待报废':'gray',
+    '待分配':'purple', '已报废':'gray', '已处置':'gray'
+};
+
+// ===== 渲染表格 =====
+function renderTable() {
+    const start = (currentPage - 1) * pageSize;
+    const pageData = filteredData.slice(start, start + pageSize);
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    pageData.forEach(item => {
+        const ck = selectedIds.has(item.id) ? 'checked' : '';
+        const selCls = selectedIds.has(item.id) ? ' selected' : '';
+        const tagCls = statusTagClass[item.vehicle_status] || 'gray';
+        const tr = document.createElement('tr');
+        if (selCls) tr.className = selCls;
+        tr.innerHTML = `
+            <td style="text-align:center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
+            <td title="${item.vin}">${item.vin}</td>
+            <td>${item.gbt_vin}</td>
+            <td>${item.model_name}</td>
+            <td>${item.model_version}</td>
+            <td>${item.iot_code}</td>
+            <td>${item.model_code}</td>
+            <td>${item.plate_no}</td>
+            <td>${item.old_model_code || '—'}</td>
+            <td>${item.vehicle_model}</td>
+            <td>${item.asset_source}</td>
+            <td><span class="status-tag ${tagCls}">${item.vehicle_status}</span></td>
+            <td>${item.project || '—'}</td>
+            <td>${item.register_time}</td>
+            <td style="text-align:center">
+                <a class="action-link" href="./vehicle-asset-detail.html?id=${item.id}">详情</a>
+                <a class="action-link" href="./vehicle-asset-detail.html?mode=edit&id=${item.id}">编辑</a>
+                <a class="action-link danger" onclick="openDeleteModal(${item.id})">删除</a>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+    renderPagination();
+    updateAssignBtn();
+}
+
+// ===== 分页 =====
+function renderPagination() {
+    const total = filteredData.length;
+    Common.renderPagination({
+        total, currentPage, pageSize,
+        containerId: 'paginationEl', infoId: 'totalCount',
+        onPageChange: p => { currentPage = p; renderTable(); }
+    });
+}
+function changePageSize() {
+    pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+    currentPage = 1; renderTable();
+}
+
+// ===== 复选框 =====
+function toggleCheckAll(el) {
+    const start = (currentPage - 1) * pageSize;
+    const pageData = filteredData.slice(start, start + pageSize);
+    pageData.forEach(item => { if (el.checked) selectedIds.add(item.id); else selectedIds.delete(item.id); });
+    renderTable();
+}
+function toggleCheck(id, el) {
+    if (el.checked) selectedIds.add(id); else selectedIds.delete(id);
+    renderTable();
+}
+function updateAssignBtn() {
+    document.getElementById('btnAssign').disabled = selectedIds.size === 0;
+}
+
+// ===== 查询/重置 =====
+function doSearch() {
+    const sv = document.getElementById('s_vin').value.trim().toLowerCase();
+    const sg = document.getElementById('s_gbt_vin').value.trim().toLowerCase();
+    const sm = document.getElementById('s_model_name').value.trim().toLowerCase();
+    const smv = document.getElementById('s_model_version').value;
+    const si = document.getElementById('s_iot_code').value.trim().toLowerCase();
+    const smc = document.getElementById('s_model_code').value.trim().toLowerCase();
+    const sp = document.getElementById('s_plate_no').value.trim().toLowerCase();
+    const so = document.getElementById('s_old_model_code').value.trim().toLowerCase();
+    const svm = document.getElementById('s_vehicle_model').value.trim().toLowerCase();
+    const ss = document.getElementById('s_asset_source').value;
+    const sst = document.getElementById('s_vehicle_status').value;
+    const spr = document.getElementById('s_project').value;
+    const srs = document.getElementById('s_reg_start').value;
+    const sre = document.getElementById('s_reg_end').value;
+    filteredData = mockData.filter(item => {
+        if (sv && !item.vin.toLowerCase().includes(sv)) return false;
+        if (sg && !item.gbt_vin.toLowerCase().includes(sg)) return false;
+        if (sm && !item.model_name.toLowerCase().includes(sm)) return false;
+        if (smv && item.model_version !== smv) return false;
+        if (si && !item.iot_code.toLowerCase().includes(si)) return false;
+        if (smc && !item.model_code.toLowerCase().includes(smc)) return false;
+        if (sp && !item.plate_no.toLowerCase().includes(sp)) return false;
+        if (so && !(item.old_model_code||'').toLowerCase().includes(so)) return false;
+        if (svm && !item.vehicle_model.toLowerCase().includes(svm)) return false;
+        if (ss && item.asset_source !== ss) return false;
+        if (sst && item.vehicle_status !== sst) return false;
+        if (spr && item.project !== spr) return false;
+        if (srs && item.register_time < srs) return false;
+        if (sre && item.register_time > sre + ' 23:59:59') return false;
+        return true;
+    });
+    currentPage = 1; selectedIds.clear(); renderTable();
+}
+function doReset() {
+    document.querySelectorAll('.search-item input, .search-item select').forEach(el => {
+        if (el.type === 'date') el.value = '';
+        else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        else el.value = '';
+    });
+    filteredData = [...mockData]; currentPage = 1; selectedIds.clear(); renderTable();
+}
+
+// ===== 展开/收起 =====
+let expanded = false;
+function toggleSearchExpand() {
+    expanded = !expanded;
+    document.querySelectorAll('.search-item[data-idx]').forEach(el => {
+        const idx = parseInt(el.dataset.idx);
+        if (idx >= 4) el.classList.toggle('visible', expanded);
+    });
+    const toggle = document.getElementById('toggleExpand');
+    toggle.innerHTML = expanded ? '收起 <span class="arrow">▼</span>' : '展开 <span class="arrow">▼</span>';
+    toggle.classList.toggle('expanded', expanded);
+}
+
+// ===== 编辑 =====
+function goEdit() {
+    window.location.href = './vehicle-asset-detail.html?mode=edit';
+}
+
+// ===== 删除 =====
+function openDeleteModal(id) { deleteTargetId = id; document.getElementById('deleteModal').classList.add('active'); }
+function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('active'); deleteTargetId = null; }
+function confirmDelete() {
+    if (deleteTargetId !== null) {
+        const idx = mockData.findIndex(d => d.id === deleteTargetId);
+        if (idx > -1) mockData.splice(idx, 1);
+        filteredData = filteredData.filter(d => d.id !== deleteTargetId);
+        selectedIds.delete(deleteTargetId);
+    }
+    closeDeleteModal(); renderTable();
+    Common.showToast('删除成功', 'success');
+}
+
+// ===== 导出 =====
+function doExport() {
+    if (selectedIds.size > 0) { Common.showToast('已导出选中的 ' + selectedIds.size + ' 条数据', 'success'); }
+    else { document.getElementById('exportModal').classList.add('active'); }
+}
+function closeExportModal() { document.getElementById('exportModal').classList.remove('active'); }
+function confirmExport() { closeExportModal(); Common.showToast('已导出所有数据（共 ' + filteredData.length + ' 条）', 'success'); }
+
+// ===== 车辆分配弹窗 =====
+function openAssignModal() {
+    if (selectedIds.size === 0) { Common.showToast('当前未选择任何车辆', 'warning'); return; }
+    const nonAssignable = [], assignable = [];
+    selectedIds.forEach(id => {
+        const item = mockData.find(d => d.id === id);
+        if (item && item.vehicle_status !== '待分配') nonAssignable.push(item);
+        else if (item) assignable.push(item);
+    });
+    if (nonAssignable.length > 0) { Common.showToast('已分配的车辆请走车辆调拨流程', 'warning'); return; }
+    const tbody = document.getElementById('assignTableBody');
+    tbody.innerHTML = '';
+    assignable.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${item.vin}</td><td>${item.iot_code}</td><td>${item.alias}</td><td>${item.project||'—'}</td>
+            <td><select class="assign-project-select"><option value="">请选择项目</option><option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option></select></td>`;
+        tbody.appendChild(tr);
+    });
+    document.getElementById('batchProject').value = '';
+    document.getElementById('assignModal').classList.add('active');
+}
+function closeAssignModal() { document.getElementById('assignModal').classList.remove('active'); }
+function batchAssignProject(val) { document.querySelectorAll('.assign-project-select').forEach(sel => sel.value = val); }
+function doAssign() {
+    const selects = document.querySelectorAll('.assign-project-select');
+    let allSelected = true;
+    selects.forEach(sel => { if (!sel.value) allSelected = false; });
+    if (!allSelected) { Common.showToast('请为所有车辆选择分配至项目', 'warning'); return; }
+    closeAssignModal(); Common.showToast('分配成功', 'success');
+    selectedIds.clear(); renderTable();
+}
+
+// ===== 初始化 =====
+renderTable();
+</script>
+</body>
+</html>

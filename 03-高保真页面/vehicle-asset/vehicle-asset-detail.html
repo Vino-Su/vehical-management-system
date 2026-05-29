@@ -1,0 +1,851 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>资产详情 - 车辆管理系统</title>
+<link rel="stylesheet" href="../components/common.css">
+<link rel="stylesheet" href="../components/form.css">
+<style>
+/* === Tab 标签 === */
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 24px;
+  gap: 0;
+}
+.tab-item {
+  padding: 0 20px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  user-select: none;
+  white-space: nowrap;
+  position: relative;
+}
+.tab-item:hover { color: var(--primary); }
+.tab-item.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+.tab-item.disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.tab-item.disabled:hover { color: var(--text-disabled); }
+.tab-item .tab-badge {
+  font-size: 11px;
+  color: var(--text-disabled);
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+/* === 查看态信息展示 === */
+.info-section { margin-bottom: 28px; }
+.info-section-title {
+  font-size: 15px; font-weight: 600; color: var(--text-primary);
+  padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+.info-section-title::before {
+  content: ''; display: inline-block;
+  width: 3px; height: 16px; background: var(--primary); border-radius: 2px;
+}
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; }
+.info-grid.cols-1 { grid-template-columns: 1fr; }
+.info-field { display: flex; flex-direction: column; gap: 2px; }
+.info-field.col-span-2 { grid-column: span 2; }
+.info-field .field-label {
+  font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+}
+.info-field .field-value {
+  font-size: 14px; color: var(--text-primary); line-height: 1.6;
+  min-height: 22px;
+}
+.info-field .field-value.empty { color: var(--text-disabled); }
+
+/* === 调拨信息搜索区 === */
+.transfer-search {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
+  margin-bottom: 20px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.transfer-search .filter-item { display: flex; flex-direction: column; gap: 4px; }
+.transfer-search .filter-item label { font-size: 14px; color: var(--text-secondary); }
+.transfer-search .filter-item input,
+.transfer-search .filter-item select {
+  height: 32px; padding: 0 12px;
+  border: 1px solid var(--border-input); border-radius: var(--radius);
+  font-size: 14px; color: var(--text-primary); background: var(--bg-container);
+  outline: none; font-family: inherit;
+}
+.transfer-search .filter-item input { width: 200px; }
+.transfer-search .filter-item select { width: 160px; }
+.transfer-search .filter-item input:focus,
+.transfer-search .filter-item select:focus {
+  border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
+}
+.transfer-search .filter-item input::placeholder { color: var(--text-disabled); }
+.transfer-search .date-range { display: flex; align-items: center; gap: 8px; }
+.transfer-search .date-range input { width: 150px; }
+.transfer-search .date-range .sep { color: var(--text-disabled); }
+.transfer-search .filter-actions { display: flex; gap: 8px; margin-left: auto; align-self: flex-end; }
+
+/* === 操作栏（导出等） === */
+.sub-action-bar {
+  display: flex; align-items: center; justify-content: flex-end;
+  margin-bottom: 12px; gap: 8px;
+}
+
+/* === 变更日志操作类型标签 === */
+.log-type-modify { background: #e6f4ff; color: #1677ff; }
+.log-type-delete { background: #fff2f0; color: #ff4d4f; }
+
+/* === 编辑态底部操作栏 === */
+.edit-footer-bar {
+  position: fixed; bottom: 0; left: var(--sidebar-width); right: 0;
+  height: var(--footer-bar-height);
+  background: var(--bg-container);
+  border-top: 1px solid var(--border-color);
+  display: none;
+  align-items: center; justify-content: flex-end; gap: 12px;
+  padding-right: 24px; z-index: 5;
+  box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+}
+.edit-footer-bar.show { display: flex; }
+
+/* === 页面头部操作区 === */
+.page-header-actions {
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* === 编辑态表单样式（引用建档新增页） === */
+.form-section { margin-bottom: 28px; }
+.form-section .section-title {
+  font-size: 15px; font-weight: 600; color: var(--text-primary);
+  padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+.form-section .section-title::before {
+  content: ''; display: inline-block; width: 3px; height: 16px; background: var(--primary); border-radius: 2px;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
+.form-grid.cols-1 { grid-template-columns: 1fr; }
+.form-item { display: flex; flex-direction: column; gap: 6px; }
+.form-item label { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+.form-item .required { color: var(--error); margin-right: 4px; }
+.form-item input, .form-item select, .form-item textarea {
+  height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+  padding: 0 12px; font-size: 14px; color: var(--text-primary); background: var(--bg-container);
+  outline: none; font-family: inherit;
+}
+.form-item input:focus, .form-item select:focus, .form-item textarea:focus {
+  border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
+}
+.form-item input::placeholder, .form-item textarea::placeholder { color: var(--text-disabled); }
+.form-item input.readonly, .form-item select.readonly { background: #f5f5f5; color: var(--text-secondary); cursor: not-allowed; }
+.form-item textarea { height: auto; min-height: 80px; padding: 8px 12px; resize: vertical; }
+.form-item .hint { font-size: 12px; color: var(--text-disabled); margin-top: 2px; }
+.radio-group { display: flex; align-items: center; gap: 20px; height: 32px; }
+.radio-group label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-primary); cursor: pointer; }
+.radio-group input[type="radio"] { accent-color: var(--primary); }
+
+.upload-area { display: flex; flex-wrap: wrap; gap: 12px; }
+.upload-item {
+  width: 104px; height: 104px; border: 1px dashed var(--border-input); border-radius: var(--radius);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: border-color .2s; position: relative; background: var(--bg-container);
+}
+.upload-item:hover { border-color: var(--primary); }
+.upload-icon { font-size: 24px; color: var(--text-disabled); }
+.upload-text { font-size: 12px; color: var(--text-disabled); margin-top: 4px; }
+.upload-item .remove-btn {
+  position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--error); color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; cursor: pointer; line-height: 1;
+}
+
+.dynamic-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+.dynamic-table thead th { background: #fafafa; color: var(--text-secondary); font-weight: 600; font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+.dynamic-table tbody td { padding: 6px 8px; border-bottom: 1px solid var(--border-color); }
+.dynamic-table tbody td input, .dynamic-table tbody td select {
+  width: 100%; height: 28px; border: 1px solid var(--border-input); border-radius: var(--radius-sm);
+  padding: 0 6px; font-size: 13px; color: var(--text-primary); outline: none; background: var(--bg-container);
+}
+.dynamic-table tbody td input:focus { border-color: var(--primary); }
+.remove-row-btn { color: var(--error); font-size: 13px; cursor: pointer; }
+.remove-row-btn:hover { text-decoration: underline; }
+.add-row-btn { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: 14px; cursor: pointer; padding: 8px 0; }
+.add-row-btn:hover { color: var(--primary-hover); }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-area">
+    <div id="header"></div>
+    <div class="content" id="contentArea">
+      <div class="page-container">
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="page-title">资产详情</div>
+          <div class="page-header-actions">
+            <button class="btn" onclick="goBack()">关闭</button>
+            <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">编辑</button>
+          </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar" id="tabBar">
+          <div class="tab-item active" data-tab="basic" onclick="switchTab('basic')">基础信息</div>
+          <div class="tab-item" data-tab="transfer" onclick="switchTab('transfer')">调拨信息</div>
+          <div class="tab-item disabled" title="暂未开放">维保信息<span class="tab-badge">暂未开放</span></div>
+          <div class="tab-item disabled" title="暂未开放">合规信息<span class="tab-badge">暂未开放</span></div>
+          <div class="tab-item disabled" title="暂未开放">风险信息<span class="tab-badge">暂未开放</span></div>
+          <div class="tab-item disabled" title="暂未开放">费用信息<span class="tab-badge">暂未开放</span></div>
+          <div class="tab-item" data-tab="changelog" onclick="switchTab('changelog')">变更日志</div>
+        </div>
+
+        <!-- Tab Content: 基础信息 -->
+        <div class="tab-content" id="tab-basic">
+          <div id="basicViewMode"></div>
+          <div id="basicEditMode" style="display:none"></div>
+        </div>
+
+        <!-- Tab Content: 调拨信息 -->
+        <div class="tab-content" id="tab-transfer" style="display:none">
+          <div class="transfer-search">
+            <div class="filter-item">
+              <label>调拨申请时间</label>
+              <div class="date-range">
+                <input type="date" id="t_apply_start">
+                <span class="sep">~</span>
+                <input type="date" id="t_apply_end">
+              </div>
+            </div>
+            <div class="filter-item">
+              <label>确认交接时间</label>
+              <div class="date-range">
+                <input type="date" id="t_confirm_start">
+                <span class="sep">~</span>
+                <input type="date" id="t_confirm_end">
+              </div>
+            </div>
+            <div class="filter-item">
+              <label>申请人</label>
+              <input type="text" id="t_applicant" placeholder="请输入申请人">
+            </div>
+            <div class="filter-item">
+              <label>调拨前项目</label>
+              <select id="t_from_project">
+                <option value="">请选择</option>
+                <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label>调拨后项目</label>
+              <select id="t_to_project">
+                <option value="">请选择</option>
+                <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button class="btn" onclick="resetTransferSearch()">重置</button>
+              <button class="btn btn-primary" onclick="searchTransfer()">查询</button>
+            </div>
+          </div>
+
+          <div class="sub-action-bar">
+            <button class="btn" onclick="exportTransfer()"><span class="btn-icon">⤓</span>导出</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:50px;text-align:center"><input type="checkbox" id="transferCheckAll" onchange="toggleTransferCheckAll(this)"></th>
+                  <th style="width:140px">任务ID</th>
+                  <th style="width:180px">调拨申请时间</th>
+                  <th style="width:180px">确认交接时间</th>
+                  <th style="width:120px">申请人</th>
+                  <th style="width:160px">调拨前项目</th>
+                  <th style="width:160px">调拨后项目</th>
+                  <th style="width:100px;text-align:center">操作</th>
+                </tr>
+              </thead>
+              <tbody id="transferTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="pagination-area">
+            <div class="pagination-info">共 <strong id="transferTotalCount">0</strong> 条记录</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="pagination" id="transferPagination"></div>
+              <select class="page-size-select" id="transferPageSizeSelect" onchange="changeTransferPageSize()">
+                <option value="10" selected>10条/页</option>
+                <option value="20">20条/页</option>
+                <option value="50">50条/页</option>
+                <option value="100">100条/页</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content: 变更日志 -->
+        <div class="tab-content" id="tab-changelog" style="display:none">
+          <div class="sub-action-bar">
+            <button class="btn" onclick="exportChangelog()"><span class="btn-icon">⤓</span>导出</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:50px;text-align:center"><input type="checkbox" id="logCheckAll" onchange="toggleLogCheckAll(this)"></th>
+                  <th style="width:100px;text-align:center">操作类型</th>
+                  <th style="width:160px">修改字段</th>
+                  <th style="width:200px">修改前</th>
+                  <th style="width:200px">修改后</th>
+                  <th style="width:120px">操作人</th>
+                  <th style="width:180px">操作时间</th>
+                  <th style="width:120px">操作来源</th>
+                </tr>
+              </thead>
+              <tbody id="logTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="pagination-area">
+            <div class="pagination-info">共 <strong id="logTotalCount">0</strong> 条记录</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="pagination" id="logPagination"></div>
+              <select class="page-size-select" id="logPageSizeSelect" onchange="changeLogPageSize()">
+                <option value="10" selected>10条/页</option>
+                <option value="20">20条/页</option>
+                <option value="50">50条/页</option>
+                <option value="100">100条/页</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 编辑态底部操作栏 -->
+    <div class="edit-footer-bar" id="editFooterBar">
+      <button class="btn btn-lg" onclick="cancelEdit()">取消</button>
+      <button class="btn btn-primary btn-lg" onclick="saveEdit()">确定</button>
+    </div>
+  </div>
+</div>
+
+<script src="../components/common.js"></script>
+<script>
+// ===== 初始化布局 =====
+Common.initLayout({
+    basePath: '../',
+  sidebarId: 'sidebar',
+  activeMenuId: 'asset-manage',
+  headerId: 'header',
+  breadcrumbs: [
+    { label: '车辆管理', href: './vehicle-asset-list.html' },
+    { label: '车辆资产管理', href: './vehicle-asset-list.html' },
+    { label: '资产详情' },
+  ],
+  headerOptions: { showProject: false }
+});
+
+// ===== 车辆模拟数据 =====
+const vehicleData = {
+  vin: 'LSVAU2A39EN000001', gbt_vin: 'GB0000000001', plate_no: '京ADG090', factory_no: 'FN2025030001',
+  is_test: '否', is_network: '是', iot_code: '14156',
+  city: '上海', project: '鸠江项目', operator: '王强', asset_source: '外购',
+  asset_class: '固定资产', contract_entity: '北京XXX科技有限公司', fixed_asset_code: 'FA-2025-0001',
+  asset_attr: '运营车辆-电动', vehicle_status: '在库-正常使用',
+  photo_front: true, photo_45: true,
+  license_front: true, license_back: true, reg_date: '2025-03-15', car_age: '1年2个月',
+  model_name: '麒麟清扫车', model_version: 'V1.0', model_code: 'QL-QJ01',
+  vehicle_category: '作业机动车', alias: '麒麟清扫车', model_class: '轻卡',
+  power_type: '纯电动', emission: '纯电动', total_weight: '8500', curb_weight: '6200',
+  vehicle_mfr: '爱瑞特新能源科技有限公司', vehicle_model_no: 'BQ5160TXSBEV',
+  chassis_mfr: '东风汽车底盘有限公司', chassis_model_no: 'EQ1080GJ1',
+  engine_mfr: '苏州汇川技术有限公司', engine_model: 'TZ220XSH20', motor_power: '120',
+  whole_vehicle_photo: true, whole_vehicle_date: '2025-02-20',
+  chassis_photo: true, tire_model: '215/75R17.5',
+  main_engine_photo: true,
+  sub_engine_photo: true, sub_engine_mfr: '康明斯有限公司', sub_engine_model: 'ISF2.8s5148', sub_engine_power: '110',
+  gearbox_photo: true, gearbox_mfr: '陕西法士特', gearbox_model: '5S300GP',
+  fan_photo: true, fan_model: 'CLK-5.5/中联环境', hp_pump_photo: true, hp_pump_model: 'BHD-25/杭州伯昂',
+  lp_pump_photo: true, lp_pump_model: 'BHD-10/杭州伯昂',
+  other_config: true, remark: '麒麟清扫车，配有前后清扫装置',
+  hw_list: [{name:'T-BOX',code:'TB20240001',status:'正常'},{name:'OBU',code:'OBU20240002',status:'正常'}],
+  sw_list: [{name:'自动驾驶软件',value:'V3.2.1'},{name:'网联SDK',value:'V2.0.0'}],
+  cam_list: [{name:'前视摄像头',tid:'1',minbr:'2',maxbr:'8',fixed:'否',fps:'30',res:'1920x1080',pri:'高',platform:'均支持'}],
+  func_type: '环卫作业', history_img: '是', history_video: '有', realtime_video: '腾讯云',
+  parallel_cockpit: '有', network_protocol: '新网联', vehicle_alias: '01号麒麟清扫车'
+};
+
+// ===== 状态标签映射 =====
+const statusTagMap = {
+  '在库-正常使用': 'tag-green', '在库-闲置留用': 'tag-blue', '在库-闲置可调出': 'tag-orange',
+  '在库-维修': 'tag-red', '在库-保养中': 'tag-orange', '在库-待报废': 'tag-default',
+  '待分配': 'tag-default', '已报废': 'tag-default', '已处置': 'tag-default'
+};
+
+// ===== Tab切换 =====
+let currentTab = 'basic';
+let isEditing = false;
+
+function switchTab(tab) {
+  if (isEditing && tab !== 'basic') { Common.showToast('请先保存或取消编辑', 'error'); return; }
+  currentTab = tab;
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+  const tabEl = document.querySelector(`.tab-item[data-tab="${tab}"]`);
+  if (tabEl) tabEl.classList.add('active');
+  const contentEl = document.getElementById('tab-' + tab);
+  if (contentEl) contentEl.style.display = '';
+  if (tab === 'transfer') renderTransferTable();
+  if (tab === 'changelog') renderLogTable();
+  // 编辑按钮仅在基础信息查看态显示
+  const editBtn = document.getElementById('editBtn');
+  if (editBtn) editBtn.style.display = (tab === 'basic' && !isEditing) ? '' : 'none';
+}
+
+// ===== 基础信息 - 查看态 =====
+function renderBasicView() {
+  const d = vehicleData;
+  const v = (val) => val || '—';
+  const tag = (val, cls) => `<span class="tag ${cls || 'tag-default'}">${val}</span>`;
+  const uploaded = (has) => has ? '<span style="color:var(--primary);cursor:pointer">已上传</span>' : '<span style="color:var(--text-disabled)">—</span>';
+  const hwRows = d.hw_list.map(h => `<tr><td>${h.name}</td><td>${h.code}</td><td>${h.status}</td></tr>`).join('');
+  const swRows = d.sw_list.map(s => `<tr><td>${s.name}</td><td>${s.value}</td></tr>`).join('');
+  const camRows = d.cam_list.map(c => `<tr><td>${c.name}</td><td>${c.tid}</td><td>${c.minbr}</td><td>${c.maxbr}</td><td>${c.fixed}</td><td>${c.fps}</td><td>${c.res}</td><td>${c.pri}</td><td>${c.platform}</td></tr>`).join('');
+
+  document.getElementById('basicViewMode').innerHTML = `
+    <div class="info-section"><div class="info-section-title">车辆基础信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">车架号</span><span class="field-value">${v(d.vin)}</span></div>
+      <div class="info-field"><span class="field-label">国标车架号</span><span class="field-value">${v(d.gbt_vin)}</span></div>
+      <div class="info-field"><span class="field-label">车牌号</span><span class="field-value">${v(d.plate_no)}</span></div>
+      <div class="info-field"><span class="field-label">出厂编号</span><span class="field-value">${v(d.factory_no)}</span></div>
+      <div class="info-field"><span class="field-label">是否为测试车</span><span class="field-value">${v(d.is_test)}</span></div>
+      <div class="info-field"><span class="field-label">是否支持联网</span><span class="field-value">${v(d.is_network)}</span></div>
+      <div class="info-field"><span class="field-label">网联编号</span><span class="field-value">${v(d.iot_code)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">归属信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">所在城市</span><span class="field-value">${v(d.city)}</span></div>
+      <div class="info-field"><span class="field-label">归属项目</span><span class="field-value">${v(d.project)}</span></div>
+      <div class="info-field"><span class="field-label">运营负责人</span><span class="field-value">${v(d.operator)}</span></div>
+      <div class="info-field"><span class="field-label">资产来源</span><span class="field-value">${v(d.asset_source)}</span></div>
+      <div class="info-field"><span class="field-label">资产分类</span><span class="field-value">${v(d.asset_class)}</span></div>
+      <div class="info-field"><span class="field-label">合同主体</span><span class="field-value">${v(d.contract_entity)}</span></div>
+      <div class="info-field"><span class="field-label">固定资产编码</span><span class="field-value">${v(d.fixed_asset_code)}</span></div>
+      <div class="info-field"><span class="field-label">资产属性</span><span class="field-value">${v(d.asset_attr)}</span></div>
+      <div class="info-field"><span class="field-label">车辆状态</span><span class="field-value">${tag(d.vehicle_status, statusTagMap[d.vehicle_status])}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">车辆照片</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">车辆正面</span><span class="field-value">${uploaded(d.photo_front)}</span></div>
+      <div class="info-field"><span class="field-label">车头45°</span><span class="field-value">${uploaded(d.photo_45)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">行驶证信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">行驶证正面照片</span><span class="field-value">${uploaded(d.license_front)}</span></div>
+      <div class="info-field"><span class="field-label">行驶证背面照片</span><span class="field-value">${uploaded(d.license_back)}</span></div>
+      <div class="info-field"><span class="field-label">注册日期</span><span class="field-value">${v(d.reg_date)}</span></div>
+      <div class="info-field"><span class="field-label">车龄</span><span class="field-value">${v(d.car_age)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">车型信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">车型名称（中）</span><span class="field-value">${v(d.model_name)}</span></div>
+      <div class="info-field"><span class="field-label">车型版本</span><span class="field-value">${v(d.model_version)}</span></div>
+      <div class="info-field"><span class="field-label">车型编码</span><span class="field-value">${v(d.model_code)}</span></div>
+      <div class="info-field"><span class="field-label">车辆类别</span><span class="field-value">${v(d.vehicle_category)}</span></div>
+      <div class="info-field"><span class="field-label">别名</span><span class="field-value">${v(d.alias)}</span></div>
+      <div class="info-field"><span class="field-label">车型分类</span><span class="field-value">${v(d.model_class)}</span></div>
+      <div class="info-field"><span class="field-label">动力类别</span><span class="field-value">${v(d.power_type)}</span></div>
+      <div class="info-field"><span class="field-label">排放标准</span><span class="field-value">${v(d.emission)}</span></div>
+      <div class="info-field"><span class="field-label">总质量（KG）</span><span class="field-value">${v(d.total_weight)}</span></div>
+      <div class="info-field"><span class="field-label">整备质量（KG）</span><span class="field-value">${v(d.curb_weight)}</span></div>
+      <div class="info-field"><span class="field-label">整车厂商</span><span class="field-value">${v(d.vehicle_mfr)}</span></div>
+      <div class="info-field"><span class="field-label">整车型号</span><span class="field-value">${v(d.vehicle_model_no)}</span></div>
+      <div class="info-field"><span class="field-label">底盘厂家</span><span class="field-value">${v(d.chassis_mfr)}</span></div>
+      <div class="info-field"><span class="field-label">底盘型号</span><span class="field-value">${v(d.chassis_model_no)}</span></div>
+      <div class="info-field"><span class="field-label">主发动机厂家</span><span class="field-value">${v(d.engine_mfr)}</span></div>
+      <div class="info-field"><span class="field-label">主发动机型号/驱动电机型号</span><span class="field-value">${v(d.engine_model)}</span></div>
+      <div class="info-field"><span class="field-label">驱动电机峰值功率 (KW)</span><span class="field-value">${v(d.motor_power)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">整车信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">整车铭牌/合格证照片</span><span class="field-value">${uploaded(d.whole_vehicle_photo)}</span></div>
+      <div class="info-field"><span class="field-label">整车制造日期</span><span class="field-value">${v(d.whole_vehicle_date)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">底盘信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">底盘铭牌/合格证照片</span><span class="field-value">${uploaded(d.chassis_photo)}</span></div>
+      <div class="info-field"><span class="field-label">轮胎型号</span><span class="field-value">${v(d.tire_model)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">主发动机信息</div><div class="info-grid cols-1" style="max-width:400px">
+      <div class="info-field"><span class="field-label">主发动机铭牌照片</span><span class="field-value">${uploaded(d.main_engine_photo)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">副发动机信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">副发动机铭牌照片</span><span class="field-value">${uploaded(d.sub_engine_photo)}</span></div>
+      <div class="info-field"><span class="field-label">副发动机厂家</span><span class="field-value">${v(d.sub_engine_mfr)}</span></div>
+      <div class="info-field"><span class="field-label">副发动机型号</span><span class="field-value">${v(d.sub_engine_model)}</span></div>
+      <div class="info-field"><span class="field-label">副发动机功率（KW）</span><span class="field-value">${v(d.sub_engine_power)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">变速箱信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">变速箱铭牌</span><span class="field-value">${uploaded(d.gearbox_photo)}</span></div>
+      <div class="info-field"><span class="field-label">变速箱厂家</span><span class="field-value">${v(d.gearbox_mfr)}</span></div>
+      <div class="info-field"><span class="field-label">变速箱型号</span><span class="field-value">${v(d.gearbox_model)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">上装信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">风机铭牌</span><span class="field-value">${uploaded(d.fan_photo)}</span></div>
+      <div class="info-field"><span class="field-label">风机型号/厂家</span><span class="field-value">${v(d.fan_model)}</span></div>
+      <div class="info-field"><span class="field-label">高压水泵铭牌</span><span class="field-value">${uploaded(d.hp_pump_photo)}</span></div>
+      <div class="info-field"><span class="field-label">高压水泵型号/厂家</span><span class="field-value">${v(d.hp_pump_model)}</span></div>
+      <div class="info-field"><span class="field-label">低压水泵铭牌</span><span class="field-value">${uploaded(d.lp_pump_photo)}</span></div>
+      <div class="info-field"><span class="field-label">低压水泵型号/厂家</span><span class="field-value">${v(d.lp_pump_model)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">其他</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">其他配置</span><span class="field-value">${uploaded(d.other_config)}</span></div>
+      <div class="info-field"><span class="field-label">备注</span><span class="field-value">${v(d.remark)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">硬件信息</div>
+      <div class="table-wrapper"><table class="dynamic-table"><thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th></tr></thead><tbody>${hwRows}</tbody></table></div>
+    </div>
+
+    <div class="info-section"><div class="info-section-title">软件信息</div>
+      <div class="table-wrapper"><table class="dynamic-table"><thead><tr><th style="width:45%">软件名称</th><th style="width:45%">具体值</th></tr></thead><tbody>${swRows}</tbody></table></div>
+    </div>
+
+    <div class="info-section"><div class="info-section-title">摄像头信息</div>
+      <div class="table-wrapper"><table class="dynamic-table"><thead><tr><th>名称</th><th>Track_ID</th><th>最小码率</th><th>最大码率</th><th>是否固定码率</th><th>帧率</th><th>分辨率</th><th>优先级</th><th>应用平台</th></tr></thead><tbody>${camRows}</tbody></table></div>
+    </div>
+
+    <div class="info-section"><div class="info-section-title">车辆功能配置</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">功能类型</span><span class="field-value">${v(d.func_type)}</span></div>
+      <div class="info-field"><span class="field-label">车辆别名</span><span class="field-value">${v(d.vehicle_alias)}</span></div>
+      <div class="info-field"><span class="field-label">历史图片</span><span class="field-value">${v(d.history_img)}</span></div>
+      <div class="info-field"><span class="field-label">历史视频</span><span class="field-value">${v(d.history_video)}</span></div>
+      <div class="info-field"><span class="field-label">实时视频</span><span class="field-value">${v(d.realtime_video)}</span></div>
+      <div class="info-field"><span class="field-label">平行驾驶座舱通过</span><span class="field-value">${v(d.parallel_cockpit)}</span></div>
+      <div class="info-field"><span class="field-label">网联协议</span><span class="field-value">${v(d.network_protocol)}</span></div>
+    </div></div>
+  `;
+}
+
+// ===== 基础信息 - 编辑态（引用建档新增页表单结构） =====
+function renderBasicEdit() {
+  const d = vehicleData;
+  const sel = (val, options) => options.map(o => `<option ${o===val?'selected':''}>${o}</option>`).join('');
+  document.getElementById('basicEditMode').innerHTML = `
+    <form id="editForm" onsubmit="return false">
+      <div class="form-section"><div class="section-title">车辆基础信息</div><div class="form-grid">
+        <div class="form-item"><label><span class="required">*</span> 车架号</label><input type="text" value="${d.vin}" maxlength="17"></div>
+        <div class="form-item"><label>国标车架号</label><input type="text" value="${d.gbt_vin}"></div>
+        <div class="form-item"><label>车牌号</label><input type="text" value="${d.plate_no}"></div>
+        <div class="form-item"><label>出厂编号</label><input type="text" value="${d.factory_no}"></div>
+        <div class="form-item"><label><span class="required">*</span> 是否为测试车</label><div class="radio-group"><label><input type="radio" name="isTest" value="1" ${d.is_test==='是'?'checked':''}> 是</label><label><input type="radio" name="isTest" value="0" ${d.is_test==='否'?'checked':''}> 否</label></div></div>
+        <div class="form-item"><label><span class="required">*</span> 是否支持联网</label><div class="radio-group"><label><input type="radio" name="isNetwork" value="1" ${d.is_network==='是'?'checked':''}> 是</label><label><input type="radio" name="isNetwork" value="0" ${d.is_network==='否'?'checked':''}> 否</label></div></div>
+        <div class="form-item"><label>网联编号</label><input type="text" value="${d.iot_code}"></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">归属信息</div><div class="form-grid">
+        <div class="form-item"><label>所在城市</label><input type="text" value="${d.city}"></div>
+        <div class="form-item"><label><span class="required">*</span> 归属项目</label><select><option value="">请选择</option>${sel(d.project,['嘉定研发','椒北街道','经开东区项目','镜湖区项目','鸠江江北项目','鸠江开发区项目','鸠江项目','陵水项目'])}</select></div>
+        <div class="form-item"><label><span class="required">*</span> 运营负责人</label><input type="text" value="${d.operator}"></div>
+        <div class="form-item"><label><span class="required">*</span> 资产来源</label><select><option value="">请选择</option>${sel(d.asset_source,['外购','租赁','融资租赁','借用','自研'])}</select></div>
+        <div class="form-item"><label><span class="required">*</span> 资产分类</label><select><option value="">请选择</option>${sel(d.asset_class,['固定资产'])}</select></div>
+        <div class="form-item"><label>合同主体</label><select><option value="">请选择</option>${sel(d.contract_entity,['北京XXX科技有限公司','上海XXX信息技术有限公司'])}</select></div>
+        <div class="form-item"><label>固定资产编码</label><input type="text" value="${d.fixed_asset_code}"></div>
+        <div class="form-item"><label><span class="required">*</span> 资产属性</label><select><option value="">请选择</option>${sel(d.asset_attr,['非机动车','运营车辆-电动','运营车辆-油动','运营车辆-气动','智能驾驶设备','运输设备','乘用车'])}</select></div>
+        <div class="form-item"><label><span class="required">*</span> 车辆状态</label><select><option value="">请选择</option>${sel(d.vehicle_status,['在库-正常使用','在库-闲置留用','在库-闲置可调出','在库-维修','在库-保养中','在库-待报废','待分配','已报废','已处置'])}</select></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">车辆照片</div><div class="form-grid">
+        <div class="form-item"><label>车辆正面</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>车头45°</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">行驶证信息</div><div class="form-grid">
+        <div class="form-item"><label>行驶证正面照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>行驶证背面照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>注册日期</label><input type="date" value="${d.reg_date}"></div>
+        <div class="form-item"><label>车龄</label><input type="text" value="${d.car_age}" readonly class="readonly"></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">车型信息</div><div class="form-grid">
+        <div class="form-item"><label><span class="required">*</span> 车型名称（中）</label><select><option value="">请选择</option>${sel(d.model_name,['爱瑞特纯电动高压冲洗车','长城多用途货车','独角兽','麒麟清扫车','麒麟无人化扫地车','三力洒水车','泰坦智能驾驶洒水车','中联清洗车'])}</select></div>
+        <div class="form-item"><label>车型版本</label><select><option value="">请选择</option>${sel(d.model_version,['V1.0','V2.0','V3.0'])}</select></div>
+        <div class="form-item"><label>车辆类别</label><input type="text" value="${d.vehicle_category}" readonly class="readonly"></div>
+        <div class="form-item"><label>别名</label><input type="text" value="${d.alias}" readonly class="readonly"></div>
+        <div class="form-item"><label>车型分类</label><input type="text" value="${d.model_class}" readonly class="readonly"></div>
+        <div class="form-item"><label>动力类别</label><input type="text" value="${d.power_type}" readonly class="readonly"></div>
+        <div class="form-item"><label>排放标准</label><input type="text" value="${d.emission}" readonly class="readonly"></div>
+        <div class="form-item"><label>总质量（KG）</label><input type="text" value="${d.total_weight}" readonly class="readonly"></div>
+        <div class="form-item"><label>整备质量（KG）</label><input type="text" value="${d.curb_weight}" readonly class="readonly"></div>
+        <div class="form-item"><label>整车厂商</label><input type="text" value="${d.vehicle_mfr}" readonly class="readonly"></div>
+        <div class="form-item"><label>整车型号</label><input type="text" value="${d.vehicle_model_no}" readonly class="readonly"></div>
+        <div class="form-item"><label>底盘厂家</label><input type="text" value="${d.chassis_mfr}" readonly class="readonly"></div>
+        <div class="form-item"><label>底盘型号</label><input type="text" value="${d.chassis_model_no}" readonly class="readonly"></div>
+        <div class="form-item"><label>主发动机厂家</label><input type="text" value="${d.engine_mfr}" readonly class="readonly"></div>
+        <div class="form-item"><label>主发动机型号/驱动电机型号</label><input type="text" value="${d.engine_model}" readonly class="readonly"></div>
+        <div class="form-item"><label>驱动电机峰值功率 (KW)</label><input type="text" value="${d.motor_power}" readonly class="readonly"></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">整车信息</div><div class="form-grid">
+        <div class="form-item"><label>整车铭牌/合格证照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>整车制造日期</label><input type="date" value="${d.whole_vehicle_date}"></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">底盘信息</div><div class="form-grid">
+        <div class="form-item"><label>底盘铭牌/合格证照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>轮胎型号</label><input type="text" value="${d.tire_model}"></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">主发动机信息</div><div class="form-grid cols-1" style="max-width:400px">
+        <div class="form-item"><label>主发动机铭牌照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">副发动机信息</div><div class="form-grid">
+        <div class="form-item"><label>副发动机铭牌照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>副发动机厂家</label><input type="text" value="${d.sub_engine_mfr}"></div>
+        <div class="form-item"><label>副发动机型号</label><input type="text" value="${d.sub_engine_model}"></div>
+        <div class="form-item"><label>副发动机功率（KW）</label><input type="number" value="${d.sub_engine_power}" min="0"></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">变速箱信息</div><div class="form-grid">
+        <div class="form-item"><label>变速箱铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>变速箱厂家</label><input type="text" value="${d.gearbox_mfr}"></div>
+        <div class="form-item"><label>变速箱型号</label><input type="text" value="${d.gearbox_model}"></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">上装信息</div><div class="form-grid">
+        <div class="form-item"><label>风机铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>风机型号/厂家</label><input type="text" value="${d.fan_model}"></div>
+        <div class="form-item"><label>高压水泵铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>高压水泵型号/厂家</label><input type="text" value="${d.hp_pump_model}"></div>
+        <div class="form-item"><label>低压水泵铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-item"><label>低压水泵型号/厂家</label><input type="text" value="${d.lp_pump_model}"></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">其他</div><div class="form-grid">
+        <div class="form-item"><label>其他配置</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传文件</span></div></div><div class="hint">支持jpg/png/pdf，单文件不超过10MB，可上传多个</div></div>
+        <div class="form-item"><label>备注</label><textarea maxlength="500">${d.remark}</textarea></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">硬件信息</div>
+        <table class="dynamic-table" id="editHwTable"><thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th><th style="width:10%">操作</th></tr></thead>
+        <tbody>${d.hw_list.map(h=>`<tr><td><input type="text" value="${h.name}"></td><td><input type="text" value="${h.code}"></td><td><input type="text" value="${h.status}"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table>
+        <div class="add-row-btn" onclick="addEditHwRow()">＋ 添加硬件</div>
+      </div>
+
+      <div class="form-section"><div class="section-title">软件信息</div>
+        <table class="dynamic-table" id="editSwTable"><thead><tr><th style="width:45%">软件名称</th><th style="width:45%">具体值</th><th style="width:10%">操作</th></tr></thead>
+        <tbody>${d.sw_list.map(s=>`<tr><td><input type="text" value="${s.name}"></td><td><input type="text" value="${s.value}"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table>
+        <div class="add-row-btn" onclick="addEditSwRow()">＋ 添加软件</div>
+      </div>
+
+      <div class="form-section"><div class="section-title">摄像头信息</div>
+        <table class="dynamic-table" id="editCamTable"><thead><tr><th>名称</th><th>Track_ID</th><th>最小码率</th><th>最大码率</th><th>是否固定码率</th><th>帧率</th><th>分辨率</th><th>优先级</th><th>应用平台</th><th>操作</th></tr></thead>
+        <tbody>${d.cam_list.map(c=>`<tr><td><input type="text" value="${c.name}"></td><td><input type="number" value="${c.tid}"></td><td><input type="number" value="${c.minbr}"></td><td><input type="number" value="${c.maxbr}"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.fixed==='是'?'selected':''}>是</option><option ${c.fixed==='否'?'selected':''}>否</option></select></td><td><input type="number" value="${c.fps}"></td><td><input type="text" value="${c.res}"></td><td><input type="text" value="${c.pri}"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.platform==='均支持'?'selected':''}>均支持</option><option ${c.platform==='云平台'?'selected':''}>云平台</option><option ${c.platform==='自动驾驶'?'selected':''}>自动驾驶</option></select></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table>
+        <div class="add-row-btn" onclick="addEditCamRow()">＋ 添加摄像头</div>
+      </div>
+
+      <div class="form-section"><div class="section-title">车辆功能配置</div><div class="form-grid">
+        <div class="form-item"><label>功能类型</label><input type="text" value="${d.func_type}"></div>
+        <div class="form-item"><label>车辆别名</label><input type="text" value="${d.vehicle_alias}"></div>
+        <div class="form-item"><label>历史图片</label><div class="radio-group"><label><input type="radio" name="historyImg" value="1" ${d.history_img==='是'?'checked':''}> 是</label><label><input type="radio" name="historyImg" value="0" ${d.history_img==='否'?'checked':''}> 否</label></div></div>
+        <div class="form-item"><label>历史视频</label><div class="radio-group"><label><input type="radio" name="historyVideo" value="1" ${d.history_video==='有'?'checked':''}> 有</label><label><input type="radio" name="historyVideo" value="0" ${d.history_video==='无'?'checked':''}> 无</label></div></div>
+        <div class="form-item"><label>实时视频</label><select><option value="">请选择</option>${sel(d.realtime_video,['腾讯云','WebRTC','GB28181','新GB28181','无'])}</select></div>
+        <div class="form-item"><label>平行驾驶座舱通过</label><div class="radio-group"><label><input type="radio" name="parallelCockpit" value="1" ${d.parallel_cockpit==='有'?'checked':''}> 有</label><label><input type="radio" name="parallelCockpit" value="0" ${d.parallel_cockpit==='无'?'checked':''}> 无</label></div></div>
+        <div class="form-item"><label>网联协议</label><select><option value="">请选择</option>${sel(d.network_protocol,['新网联','旧网联','无'])}</select></div>
+      </div></div>
+    </form>
+  `;
+}
+
+function simulateUpload(el) {
+  el.innerHTML = '<div style="text-align:center;padding-top:30px;font-size:28px">📷</div><div style="font-size:12px;color:var(--text-secondary);padding:4px">已上传</div><span class="remove-btn" onclick="event.stopPropagation();removeUpload(this.parentElement)">✕</span>';
+}
+function removeUpload(el) {
+  el.innerHTML = '<span class="upload-icon">＋</span><span class="upload-text">上传照片</span>';
+  el.onclick = function(){ simulateUpload(el); };
+}
+
+function addEditHwRow() {
+  const tbody = document.querySelector('#editHwTable tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td><input type="text" placeholder="请输入"></td><td><input type="text" placeholder="请输入"></td><td><input type="text" placeholder="请输入"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>';
+  tbody.appendChild(tr);
+}
+function addEditSwRow() {
+  const tbody = document.querySelector('#editSwTable tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td><input type="text" placeholder="请输入"></td><td><input type="text" placeholder="请输入"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>';
+  tbody.appendChild(tr);
+}
+function addEditCamRow() {
+  const tbody = document.querySelector('#editCamTable tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text" placeholder="名称"></td><td><input type="number" placeholder="ID"></td><td><input type="number" placeholder="码率"></td><td><input type="number" placeholder="码率"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td><td><input type="number" placeholder="帧率"></td><td><input type="text" placeholder="分辨率"></td><td><input type="text" placeholder="优先级"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>均支持</option><option>云平台</option><option>自动驾驶</option></select></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>`;
+  tbody.appendChild(tr);
+}
+function removeRow(el) {
+  const tbody = el.closest('tbody');
+  if (tbody.rows.length > 1) el.closest('tr').remove();
+  else Common.showToast('至少保留一行', 'error');
+}
+
+// ===== 编辑态切换 =====
+function toggleEdit() {
+  if (isEditing) return;
+  // 先切换到基础信息Tab（此时isEditing仍为false，switchTab可正常执行）
+  switchTab('basic');
+  isEditing = true;
+  document.getElementById('basicViewMode').style.display = 'none';
+  document.getElementById('basicEditMode').style.display = '';
+  document.getElementById('editBtn').style.display = 'none';
+  document.getElementById('editFooterBar').classList.add('show');
+}
+
+function cancelEdit() {
+  isEditing = false;
+  document.getElementById('basicViewMode').style.display = '';
+  document.getElementById('basicEditMode').style.display = 'none';
+  document.getElementById('editBtn').style.display = '';
+  document.getElementById('editFooterBar').classList.remove('show');
+}
+
+function saveEdit() {
+  Common.showToast('保存成功', 'success');
+  cancelEdit();
+  renderBasicView();
+}
+
+function goBack() {
+  window.location.href = './vehicle-asset-list.html';
+}
+
+// ===== 调拨信息 =====
+const transferData = [
+  { id:'DB20250301001', apply_time:'2025-03-01 09:30:00', confirm_time:'2025-03-03 14:00:00', applicant:'王强', from:'镜湖区项目', to:'鸠江项目' },
+  { id:'DB20250215002', apply_time:'2025-02-15 11:20:00', confirm_time:'2025-02-18 10:30:00', applicant:'李明', from:'鸠江江北项目', to:'镜湖区项目' },
+  { id:'DB20250120003', apply_time:'2025-01-20 16:45:00', confirm_time:'2025-01-22 09:00:00', applicant:'赵伟', from:'陵水项目', to:'鸠江江北项目' },
+  { id:'DB20241210004', apply_time:'2024-12-10 08:15:00', confirm_time:'2024-12-12 15:30:00', applicant:'王强', from:'鸠江项目', to:'陵水项目' },
+  { id:'DB20241105005', apply_time:'2024-11-05 13:00:00', confirm_time:'2024-11-08 11:00:00', applicant:'李明', from:'镜湖区项目', to:'鸠江江北项目' },
+  { id:'DB20241001006', apply_time:'2024-10-01 10:30:00', confirm_time:'2024-10-03 16:45:00', applicant:'赵伟', from:'鸠江江北项目', to:'鸠江项目' },
+];
+let transferPage = 1, transferPageSize = 10, transferSelected = new Set();
+
+function renderTransferTable() {
+  const tbody = document.getElementById('transferTableBody');
+  const start = (transferPage - 1) * transferPageSize;
+  const pageData = transferData.slice(start, start + transferPageSize);
+  tbody.innerHTML = pageData.map(d => {
+    const ck = transferSelected.has(d.id) ? 'checked' : '';
+    return `<tr>
+      <td style="text-align:center"><input type="checkbox" data-id="${d.id}" ${ck} onchange="toggleTransferCheck('${d.id}',this)"></td>
+      <td>${d.id}</td><td>${d.apply_time}</td><td>${d.confirm_time}</td>
+      <td>${d.applicant}</td><td>${d.from}</td><td>${d.to}</td>
+      <td style="text-align:center"><a class="btn-link" onclick="Common.showToast('该功能后续版本开发','error')">详情</a></td>
+    </tr>`;
+  }).join('');
+  Common.renderPagination({
+    total: transferData.length, currentPage: transferPage, pageSize: transferPageSize,
+    containerId: 'transferPagination', infoId: 'transferTotalCount',
+    onPageChange: p => { transferPage = p; renderTransferTable(); }
+  });
+}
+function changeTransferPageSize() {
+  transferPageSize = parseInt(document.getElementById('transferPageSizeSelect').value);
+  transferPage = 1; renderTransferTable();
+}
+function toggleTransferCheckAll(el) {
+  transferSelected.clear();
+  if (el.checked) transferData.forEach(d => transferSelected.add(d.id));
+  renderTransferTable();
+}
+function toggleTransferCheck(id, el) {
+  if (el.checked) transferSelected.add(id); else transferSelected.delete(id);
+}
+function searchTransfer() { transferPage = 1; renderTransferTable(); Common.showToast('查询完成','success'); }
+function resetTransferSearch() {
+  ['t_apply_start','t_apply_end','t_confirm_start','t_confirm_end','t_applicant'].forEach(id => document.getElementById(id).value = '');
+  ['t_from_project','t_to_project'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  transferPage = 1; renderTransferTable();
+}
+function exportTransfer() { Common.showToast('导出成功','success'); }
+
+// ===== 变更日志 =====
+const logData = [
+  { type:'修改', field:'车辆状态', before:'待分配', after:'在库-正常使用', user:'王强', time:'2025-03-15 10:30:00', source:'Web端' },
+  { type:'修改', field:'归属项目', before:'—', after:'鸠江项目', user:'王强', time:'2025-03-15 10:30:00', source:'Web端' },
+  { type:'修改', field:'运营负责人', before:'李明', after:'王强', user:'王强', time:'2025-05-20 10:15:00', source:'Web端' },
+  { type:'修改', field:'车辆状态', before:'在库-闲置留用', after:'在库-正常使用', user:'李明', time:'2025-05-15 09:00:00', source:'Web端' },
+  { type:'修改', field:'资产来源', before:'租赁', after:'外购', user:'赵伟', time:'2025-05-10 16:45:00', source:'Web端' },
+  { type:'修改', field:'备注', before:'—', after:'麒麟清扫车，配有前后清扫装置', user:'王强', time:'2025-05-05 11:20:00', source:'Web端' },
+  { type:'删除', field:'—', before:'—', after:'—', user:'管理员', time:'2025-04-28 15:30:00', source:'Web端' },
+  { type:'修改', field:'网联编号', before:'WL000', after:'14156', user:'王强', time:'2025-04-20 08:30:00', source:'APP端' },
+];
+let logPage = 1, logPageSize = 10, logSelected = new Set();
+
+function renderLogTable() {
+  const tbody = document.getElementById('logTableBody');
+  const start = (logPage - 1) * logPageSize;
+  const pageData = logData.slice(start, start + logPageSize);
+  tbody.innerHTML = pageData.map((d, i) => {
+    const ck = logSelected.has(i) ? 'checked' : '';
+    const typeTag = d.type === '修改' ? 'tag-blue log-type-modify' : 'tag-red log-type-delete';
+    return `<tr>
+      <td style="text-align:center"><input type="checkbox" data-idx="${i}" ${ck} onchange="toggleLogCheck(${i},this)"></td>
+      <td style="text-align:center"><span class="tag ${typeTag}">${d.type}</span></td>
+      <td>${d.field}</td><td>${d.before}</td><td>${d.after}</td>
+      <td>${d.user}</td><td>${d.time}</td><td>${d.source}</td>
+    </tr>`;
+  }).join('');
+  Common.renderPagination({
+    total: logData.length, currentPage: logPage, pageSize: logPageSize,
+    containerId: 'logPagination', infoId: 'logTotalCount',
+    onPageChange: p => { logPage = p; renderLogTable(); }
+  });
+}
+function changeLogPageSize() {
+  logPageSize = parseInt(document.getElementById('logPageSizeSelect').value);
+  logPage = 1; renderLogTable();
+}
+function toggleLogCheckAll(el) {
+  logSelected.clear();
+  if (el.checked) logData.forEach((_, i) => logSelected.add(i));
+  renderLogTable();
+}
+function toggleLogCheck(idx, el) {
+  if (el.checked) logSelected.add(idx); else logSelected.delete(idx);
+}
+function exportChangelog() { Common.showToast('导出成功','success'); }
+
+// ===== 初始化 =====
+renderBasicView();
+renderBasicEdit();
+
+// 检查URL参数是否为编辑模式
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('mode') === 'edit') {
+  toggleEdit();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建车型信息</title>
+    <link rel="stylesheet" href="../components/common.css">
+    <style>
+        /* ===== 表单分组 ===== */
+        .form-section { margin-bottom: 28px; }
+        .form-section .section-title {
+            font-size: 15px; font-weight: 600; color: var(--text-primary);
+            padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+        }
+        .form-section .section-title::before {
+            content: ''; display: inline-block; width: 3px; height: 16px; background: var(--primary); border-radius: 2px;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
+        .form-grid.cols-1 { grid-template-columns: 1fr; }
+        .form-item { display: flex; flex-direction: column; gap: 6px; }
+        .form-item label { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+        .form-item .required { color: var(--error); margin-right: 4px; }
+        .form-item input, .form-item select, .form-item textarea {
+            height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 0 12px; font-size: 14px; color: var(--text-primary); background: var(--bg-container);
+            outline: none; font-family: inherit;
+        }
+        .form-item input:focus, .form-item select:focus, .form-item textarea:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
+        }
+        .form-item input::placeholder, .form-item textarea::placeholder { color: var(--text-disabled); }
+        .form-item input.readonly, .form-item select.readonly { background: #f5f5f5; color: var(--text-secondary); cursor: not-allowed; }
+        .form-item textarea { height: auto; min-height: 80px; padding: 8px 12px; resize: vertical; }
+        .radio-group { display: flex; align-items: center; gap: 20px; height: 32px; }
+        .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-primary); cursor: pointer; }
+        .radio-group input[type="radio"] { accent-color: var(--primary); }
+
+        /* ===== 底部操作栏 ===== */
+        .footer-bar {
+            position: fixed; bottom: 0; left: var(--sidebar-width); right: 0;
+            height: var(--footer-bar-height); background: var(--bg-container);
+            border-top: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+            padding-right: 24px; z-index: 5; box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+        <div id="header"></div>
+        <div class="content">
+            <div class="page-container">
+                <div class="page-header">
+                    <div class="page-title">新建车型信息</div>
+                    <div><button class="btn" onclick="window.location.href='./vehicle-model-list.html'">返回</button></div>
+                </div>
+
+                <form id="addForm" onsubmit="return false">
+                    <!-- 车型信息 -->
+                    <div class="form-section">
+                        <div class="section-title">车型信息</div>
+                        <div class="form-grid">
+                            <div class="form-item">
+                                <label><span class="required">*</span> 车型来源</label>
+                                <div class="radio-group">
+                                    <label><input type="radio" name="model_source" value="自研" checked> 自研</label>
+                                    <label><input type="radio" name="model_source" value="非自研"> 非自研</label>
+                                </div>
+                            </div>
+                            <div class="form-item">
+                                <label><span class="required">*</span> 车型名称（中）</label>
+                                <input type="text" id="f_model_name" placeholder="请输入车型名称，全局唯一">
+                            </div>
+                            <div class="form-item">
+                                <label>车型名称（英）</label>
+                                <input type="text" id="f_model_name_en" placeholder="请输入英文名称，全局唯一">
+                            </div>
+                            <div class="form-item">
+                                <label><span class="required">*</span> 车型别名</label>
+                                <select id="f_model_alias">
+                                    <option value="">请选择</option>
+                                    <option>扫路车</option>
+                                    <option>运输车</option>
+                                    <option>小型清洗机</option>
+                                    <option>小型扫路机</option>
+                                    <option>皮卡</option>
+                                </select>
+                            </div>
+                            <div class="form-item">
+                                <label><span class="required">*</span> 用途分类</label>
+                                <select id="f_vehicle_category">
+                                    <option value="">请选择</option>
+                                    <option>作业机动车</option>
+                                    <option>非机动车</option>
+                                    <option>乘用车</option>
+                                    <option>其他</option>
+                                </select>
+                            </div>
+                            <div class="form-item">
+                                <label>车型编码</label>
+                                <input type="text" id="f_model_code" placeholder="请输入车型编码，全局唯一">
+                            </div>
+                            <div class="form-item">
+                                <label><span class="required">*</span> 编码头</label>
+                                <select id="f_header_code">
+                                    <option value="">请选择</option>
+                                    <option value="5100">5100</option>
+                                    <option value="5200">5200</option>
+                                    <option value="5300">5300</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 版本信息 -->
+                    <div class="form-section">
+                        <div class="section-title">版本信息</div>
+                        <div class="form-grid">
+                            <div class="form-item">
+                                <label><span class="required">*</span> 车型版本</label>
+                                <input type="text" id="f_version" placeholder="请输入版本号，如 V1.0">
+                            </div>
+                            <div class="form-item">
+                                <label><span class="required">*</span> 车辆型号</label>
+                                <input type="text" id="f_vehicle_model" placeholder="如 C_UN_V0.6">
+                            </div>
+                            <div class="form-item">
+                                <label>历史车型编码</label>
+                                <input type="text" id="f_old_model_code" class="readonly" readonly placeholder="暂不处理">
+                            </div>
+                            <div class="form-item">
+                                <label><span class="required">*</span> 动力类别</label>
+                                <select id="f_power_type">
+                                    <option value="">请选择</option>
+                                    <option>纯电动</option>
+                                    <option>柴油</option>
+                                    <option>汽油</option>
+                                    <option>混动</option>
+                                    <option>天然气</option>
+                                </select>
+                            </div>
+                            <div class="form-item">
+                                <label><span class="required">*</span> 排放标准</label>
+                                <select id="f_emission_std">
+                                    <option value="">请选择</option>
+                                    <option>国三</option>
+                                    <option>国四</option>
+                                    <option>国五</option>
+                                    <option>国六</option>
+                                    <option>纯电动</option>
+                                    <option>非道路移动机械</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 主要参数信息 -->
+                    <div class="form-section">
+                        <div class="section-title">主要参数信息</div>
+                        <div class="form-grid">
+                            <div class="form-item">
+                                <label><span class="required">*</span> 底盘厂商</label>
+                                <input type="text" id="f_chassis_mfr" placeholder="请输入底盘厂商">
+                            </div>
+                            <div class="form-item">
+                                <label>底盘型号</label>
+                                <input type="text" id="f_chassis_model" placeholder="请输入底盘型号">
+                            </div>
+                            <div class="form-item">
+                                <label><span class="required">*</span> 整车厂商</label>
+                                <input type="text" id="f_manufacturer" placeholder="请输入整车厂商">
+                            </div>
+                            <div class="form-item">
+                                <label>最大重量 (KG)</label>
+                                <input type="number" id="f_max_weight" placeholder="请输入最大重量" oninput="calcLoadClass()">
+                            </div>
+                            <div class="form-item">
+                                <label>整车质量 (KG)</label>
+                                <input type="number" id="f_curb_weight" placeholder="请输入整车质量">
+                            </div>
+                            <div class="form-item">
+                                <label>载重分类</label>
+                                <input type="text" id="f_load_class" class="readonly" readonly placeholder="根据最大重量自动计算">
+                            </div>
+                            <div class="form-item">
+                                <label>主发动机厂家</label>
+                                <input type="text" id="f_main_eng_mfr" placeholder="请输入主发动机厂家">
+                            </div>
+                            <div class="form-item">
+                                <label>主发动机型号/驱动电机型号</label>
+                                <input type="text" id="f_main_eng_model" placeholder="请输入型号">
+                            </div>
+                            <div class="form-item">
+                                <label>驱动电机峰值功率 (KW)</label>
+                                <input type="number" id="f_peak_power" placeholder="请输入功率">
+                            </div>
+                            <div class="form-item">
+                                <label>动力电池额定电压/容量(V/Ah)</label>
+                                <input type="text" id="f_battery_spec" placeholder="如 380V/200Ah">
+                            </div>
+                            <div class="form-item">
+                                <label>最大清扫宽度(mm)</label>
+                                <input type="number" id="f_max_sweep" placeholder="请输入清扫宽度">
+                            </div>
+                            <div class="form-item">
+                                <label>最大冲洗宽度(mm)</label>
+                                <input type="number" id="f_max_wash" placeholder="请输入冲洗宽度">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 其他信息 -->
+                    <div class="form-section">
+                        <div class="section-title">其他信息</div>
+                        <div class="form-grid cols-1">
+                            <div class="form-item">
+                                <label>备注</label>
+                                <textarea id="f_remark" maxlength="500" placeholder="请输入备注信息，最多500字"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 底部操作栏 -->
+<div class="footer-bar">
+    <button class="btn btn-lg" onclick="window.location.href='./vehicle-model-list.html'">取消</button>
+    <button class="btn btn-primary btn-lg" onclick="doSave()">确定</button>
+</div>
+
+<script src="../components/common.js"></script>
+<script>
+Common.initLayout({
+    basePath: '../',
+    sidebarId: 'sidebar',
+    activeMenuId: 'vehicle-model',
+    headerId: 'header',
+    breadcrumbs: [{ label: '系统管理', href: './vehicle-model-list.html' }, { label: '车型管理', href: './vehicle-model-list.html' }, { label: '新建车型信息' }],
+    headerOptions: { showProject: false }
+});
+
+// 车型来源联动编码头
+const sourceRadios = document.querySelectorAll('input[name="model_source"]');
+sourceRadios.forEach(r => {
+    r.addEventListener('change', function() {
+        const headerSelect = document.getElementById('f_header_code');
+        if (this.value === '非自研') {
+            headerSelect.value = '5100';
+        } else {
+            headerSelect.value = '';
+        }
+    });
+});
+
+function calcLoadClass() {
+    const w = parseFloat(document.getElementById('f_max_weight').value);
+    let cls = '';
+    if (w >= 8000) cls = '重卡';
+    else if (w > 3000) cls = '轻卡';
+    else if (w > 0) cls = '微卡';
+    document.getElementById('f_load_class').value = cls;
+}
+
+function doSave() {
+    // 必填校验
+    const reqIds = [
+        'f_model_name','f_model_alias','f_vehicle_category',
+        'f_version','f_vehicle_model','f_power_type','f_emission_std',
+        'f_chassis_mfr','f_manufacturer'
+    ];
+    for (const id of reqIds) {
+        const el = document.getElementById(id);
+        if (!el.value.trim()) {
+            Common.toast('请填写必填项：' + el.previousElementSibling.textContent.replace('*', '').trim());
+            el.focus();
+            return;
+        }
+    }
+    // 编码头校验
+    if (!document.getElementById('f_header_code').value) {
+        Common.toast('请选择编码头');
+        return;
+    }
+    Common.toast('保存成功');
+    setTimeout(() => {
+        window.location.href = './vehicle-model-list.html';
+    }, 800);
+}
+</script>
+</body>
+</html>

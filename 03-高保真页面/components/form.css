@@ -1,0 +1,49 @@
+/* ============================================
+   车辆管理系统 - 表单页专用样式
+   用于二级详情/新增页面（整页滚动布局）
+   ============================================ */
+
+/* 表单页需要整页滚动，覆盖layout的固定高度和overflow */
+.layout.form-layout {
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+  display: flex;
+}
+
+.layout.form-layout .main-area {
+  overflow: visible;
+}
+
+.layout.form-layout .content {
+  overflow: visible;
+  flex: none;
+}
+
+/* 表单页面内容区全宽 */
+.content.form-page {
+  max-width: 100%;
+  padding: 24px 24px calc(24px + var(--footer-bar-height));
+}
+
+.form-page .page-container {
+  padding: 24px 32px 40px;
+}
+
+/* 底部固定操作栏 - 按钮右侧对齐 */
+.footer-bar {
+  position: fixed;
+  bottom: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: var(--footer-bar-height);
+  background: var(--bg-container);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  z-index: 5;
+  padding: 0 24px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+}

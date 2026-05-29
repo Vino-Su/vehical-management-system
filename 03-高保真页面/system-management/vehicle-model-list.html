@@ -1,0 +1,633 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车型管理 - 列表页</title>
+    <link rel="stylesheet" href="../components/common.css">
+    <style>
+        /* ========== 查询筛选区 ========== */
+        .search-bar {
+            background: var(--bg-container);
+            border-radius: var(--radius);
+            padding: 20px 24px 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        .search-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 16px;
+        }
+        .search-item {
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-item.visible { display: flex; }
+        .search-item label {
+            font-size: 14px; color: var(--text-secondary); white-space: nowrap;
+        }
+        .search-item input,
+        .search-item select {
+            height: 32px; border: 1px solid var(--border-input);
+            border-radius: var(--radius); padding: 0 12px;
+            font-size: 14px; color: var(--text-primary); outline: none;
+            transition: border-color .2s; min-width: 160px;
+        }
+        .search-item input:focus,
+        .search-item select:focus { border-color: var(--primary); }
+        .search-item input::placeholder { color: var(--text-disabled); }
+        .search-actions {
+            display: flex; align-items: center; gap: 8px; margin-left: auto;
+        }
+        .toggle-expand {
+            color: var(--primary); font-size: 14px; cursor: pointer;
+            user-select: none; display: flex; align-items: center; gap: 4px;
+        }
+        .toggle-expand:hover { color: var(--primary-hover); }
+        .toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
+        .toggle-expand.expanded .arrow { transform: rotate(180deg); }
+
+        /* ========== 操作栏 ========== */
+        .action-bar {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+        }
+        .btn-export { margin-left: auto; }
+
+        /* ========== 可折叠行表格 ========== */
+        .model-row { cursor: pointer; }
+        .model-row:hover { background: #f7f8fa; }
+        .model-row.expanded { background: #f0f7ff; }
+        .model-row.expanded:hover { background: #e6f2ff; }
+        .expand-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; font-size: 12px; color: var(--text-secondary);
+            transition: transform .2s;
+        }
+        .model-row.expanded .expand-icon { transform: rotate(90deg); color: var(--primary); }
+
+        /* 版本行容器 */
+        .version-wrap { display: none; background: #fafbfc; }
+        .version-wrap.show { display: table-row; }
+        .version-wrap > td { padding: 0; border-bottom: none; }
+        .version-inner { padding: 12px 24px 16px 60px; }
+        .version-table {
+            width: 100%; border-collapse: collapse;
+            border: 1px solid var(--border-color); border-radius: var(--radius);
+        }
+        .version-table thead th {
+            background: #f2f3f5; color: var(--text-secondary); font-weight: 600;
+            font-size: 13px; padding: 10px 12px; text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .version-table tbody td {
+            color: var(--text-primary); font-size: 13px;
+            padding: 10px 12px; border-bottom: 1px solid var(--border-color);
+            background: var(--bg-container);
+        }
+        .version-table tbody tr:last-child td { border-bottom: none; }
+        .version-table tbody tr:hover td { background: #f7f8fa; }
+
+        /* ========== 操作链接 ========== */
+        .action-link { color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+        .action-link:hover { color: var(--primary-hover); }
+        .action-link + .action-link { margin-left: 10px; }
+        .action-link.danger { color: var(--error); }
+        .action-link.danger:hover { color: #ff7875; }
+
+        /* ========== 导出确认弹窗 ========== */
+        .export-tip {
+            padding: 16px 20px; font-size: 14px; color: var(--text-primary);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+        <div id="header"></div>
+        <div class="content">
+            <div class="page-container">
+                <!-- 查询筛选区 -->
+                <div class="search-bar">
+                    <div class="search-row" id="searchRow">
+                        <div class="search-item visible" data-idx="0">
+                            <label>车型名称（中）</label>
+                            <input type="text" id="s_model_name" placeholder="请输入车型名称">
+                        </div>
+                        <div class="search-item visible" data-idx="1">
+                            <label>车型名称（英）</label>
+                            <input type="text" id="s_model_name_en" placeholder="请输入英文名称">
+                        </div>
+                        <div class="search-item visible" data-idx="2">
+                            <label>车型版本</label>
+                            <input type="text" id="s_model_version" placeholder="请输入版本号">
+                        </div>
+                        <div class="search-item visible" data-idx="3">
+                            <label>车型别名</label>
+                            <select id="s_model_alias">
+                                <option value="">请选择</option>
+                                <option>扫路车</option><option>运输车</option><option>小型清洗机</option><option>小型扫路机</option><option>皮卡</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="4">
+                            <label>车型编码</label>
+                            <input type="text" id="s_model_code" placeholder="请输入车型编码">
+                        </div>
+                        <div class="search-item" data-idx="5">
+                            <label>车型来源</label>
+                            <select id="s_model_source">
+                                <option value="">请选择</option>
+                                <option>自研</option><option>非自研</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="6">
+                            <label>动力类别</label>
+                            <select id="s_power_type">
+                                <option value="">请选择</option>
+                                <option>纯电动</option><option>柴油</option><option>汽油</option><option>混动</option><option>天然气</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="7">
+                            <label>排放标准</label>
+                            <select id="s_emission_std">
+                                <option value="">请选择</option>
+                                <option>国三</option><option>国四</option><option>国五</option><option>国六</option><option>纯电动</option><option>非道路移动机械</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="8">
+                            <label>整车厂商</label>
+                            <input type="text" id="s_manufacturer" placeholder="请输入整车厂商">
+                        </div>
+                        <div class="search-item" data-idx="9">
+                            <label>创建人</label>
+                            <input type="text" id="s_creator" placeholder="请输入创建人">
+                        </div>
+                        <div class="search-item" data-idx="10">
+                            <label>创建时间</label>
+                            <input type="date" id="s_create_start">
+                            <span style="margin:0 4px;color:var(--text-disabled)">~</span>
+                            <input type="date" id="s_create_end">
+                        </div>
+                        <div class="search-actions">
+                            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+                            <button class="btn" onclick="doReset()">重置</button>
+                            <span class="toggle-expand" id="toggleExpand" onclick="toggleExpand()">展开 <span class="arrow">▼</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作栏 -->
+                <div class="action-bar">
+                    <button class="btn btn-primary" onclick="window.location.href='./vehicle-model-add.html'">新建</button>
+                    <button class="btn btn-export" onclick="doExport()">导出</button>
+                </div>
+
+                <!-- 数据列表 -->
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:50px;text-align:center"></th>
+                                <th>车型名称（中）</th>
+                                <th>车型名称（英）</th>
+                                <th>车型别名</th>
+                                <th>车型编码</th>
+                                <th>车型来源</th>
+                                <th>创建人</th>
+                                <th style="width:180px">创建时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="pagination-area">
+                    <div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <div class="pagination" id="paginationEl"></div>
+                        <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
+                            <option value="10" selected>10条/页</option>
+                            <option value="20">20条/页</option>
+                            <option value="50">50条/页</option>
+                            <option value="100">100条/页</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 导出确认弹窗 -->
+<div class="modal" id="exportModal">
+    <div class="modal-mask" onclick="closeExportModal()"></div>
+    <div class="modal-content" style="width:420px">
+        <div class="modal-header">
+            <span class="modal-title">导出确认</span>
+            <span class="modal-close" onclick="closeExportModal()">&times;</span>
+        </div>
+        <div class="export-tip" id="exportTip">是否导出所有数据？</div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeExportModal()">否</button>
+            <button class="btn btn-primary" onclick="confirmExport()">是</button>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal" id="deleteModal">
+    <div class="modal-mask" onclick="closeDeleteModal()"></div>
+    <div class="modal-content" style="width:420px">
+        <div class="modal-header">
+            <span class="modal-title">删除确认</span>
+            <span class="modal-close" onclick="closeDeleteModal()">&times;</span>
+        </div>
+        <div class="export-tip">确定要删除该车型版本吗？删除后不可恢复。</div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeDeleteModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmDelete()">确定</button>
+        </div>
+    </div>
+</div>
+
+<script src="../components/common.js"></script>
+<script>
+Common.initLayout({
+    basePath: '../',
+    sidebarId: 'sidebar',
+    activeMenuId: 'vehicle-model',
+    headerId: 'header',
+    breadcrumbs: [{ label: '系统管理' }, { label: '车型管理' }],
+    headerOptions: { showProject: false }
+});
+
+// ===== 模拟数据 =====
+const mockModels = [
+    {
+        id: 1,
+        model_name: '麒麟清扫车',
+        model_name_en: 'Kirin Sweeper',
+        model_alias: '扫路车',
+        model_code: 'QL-QJ-001',
+        model_source: '自研',
+        creator: '王强',
+        create_time: '2025-03-15 10:30:00',
+        versions: [
+            { id: 101, version: 'V1.0', vehicle_model: 'C_UN_V0.6', power_type: '纯电动', emission_std: '纯电动', manufacturer: '麒麟智能汽车', max_weight: 8500, curb_weight: 3200, load_class: '重卡', chassis_mfr: '东风底盘', chassis_model: 'DF-C850', main_eng_mfr: '宁德时代', main_eng_model: 'CATL-200', peak_power: 120, battery_spec: '380V/200Ah', max_sweep_width: 3500, max_wash_width: 2800, remark: '标准版', creator: '王强', create_time: '2025-03-15 10:30:00' },
+            { id: 102, version: 'V2.0', vehicle_model: 'C_UN_V0.9', power_type: '纯电动', emission_std: '纯电动', manufacturer: '麒麟智能汽车', max_weight: 9000, curb_weight: 3500, load_class: '重卡', chassis_mfr: '东风底盘', chassis_model: 'DF-C900', main_eng_mfr: '宁德时代', main_eng_model: 'CATL-250', peak_power: 150, battery_spec: '380V/250Ah', max_sweep_width: 4000, max_wash_width: 3000, remark: '加强版，增大清扫宽度', creator: '王强', create_time: '2025-06-20 14:00:00' }
+        ]
+    },
+    {
+        id: 2,
+        model_name: '爱瑞特纯电动高压冲洗车',
+        model_name_en: 'Airit Electric High Pressure Washer',
+        model_alias: '小型清洗机',
+        model_code: 'ART-GY-001',
+        model_source: '非自研',
+        creator: '李明',
+        create_time: '2025-04-20 14:00:00',
+        versions: [
+            { id: 201, version: 'V1.0', vehicle_model: 'ART-HP100', power_type: '纯电动', emission_std: '纯电动', manufacturer: '爱瑞特环保科技', max_weight: 2800, curb_weight: 1500, load_class: '微卡', chassis_mfr: '江淮底盘', chassis_model: 'JH-C28', main_eng_mfr: '比亚迪', main_eng_model: 'BYD-80', peak_power: 80, battery_spec: '320V/100Ah', max_sweep_width: 0, max_wash_width: 2500, remark: '基础冲洗版', creator: '李明', create_time: '2025-04-20 14:00:00' }
+        ]
+    },
+    {
+        id: 3,
+        model_name: '泰坦智能驾驶洒水车',
+        model_name_en: 'Titan Intelligent Sprinkler',
+        model_alias: '运输车',
+        model_code: 'TT-SS-001',
+        model_source: '自研',
+        creator: '赵伟',
+        create_time: '2025-05-10 09:20:00',
+        versions: [
+            { id: 301, version: 'V1.0', vehicle_model: 'TT-SP001', power_type: '纯电动', emission_std: '纯电动', manufacturer: '泰坦智能科技', max_weight: 12000, curb_weight: 4500, load_class: '重卡', chassis_mfr: '重汽底盘', chassis_model: 'ZQ-C12', main_eng_mfr: '宁德时代', main_eng_model: 'CATL-300', peak_power: 200, battery_spec: '540V/300Ah', max_sweep_width: 0, max_wash_width: 5000, remark: '智能驾驶洒水版', creator: '赵伟', create_time: '2025-05-10 09:20:00' },
+            { id: 302, version: 'V1.1', vehicle_model: 'TT-SP002', power_type: '混动', emission_std: '国六', manufacturer: '泰坦智能科技', max_weight: 12000, curb_weight: 4800, load_class: '重卡', chassis_mfr: '重汽底盘', chassis_model: 'ZQ-C12H', main_eng_mfr: '潍柴动力', main_eng_model: 'WC-H200', peak_power: 180, battery_spec: '380V/150Ah', max_sweep_width: 0, max_wash_width: 5000, remark: '混动增程版', creator: '赵伟', create_time: '2025-08-15 11:30:00' }
+        ]
+    },
+    {
+        id: 4,
+        model_name: '中联清洗车',
+        model_name_en: 'Zoomlion Cleaning Truck',
+        model_alias: '小型清洗机',
+        model_code: 'ZL-QX-001',
+        model_source: '非自研',
+        creator: '王强',
+        create_time: '2025-06-01 16:45:00',
+        versions: [
+            { id: 401, version: 'V1.0', vehicle_model: 'ZL-C800', power_type: '柴油', emission_std: '国五', manufacturer: '中联重科', max_weight: 8000, curb_weight: 3500, load_class: '重卡', chassis_mfr: '福田底盘', chassis_model: 'FT-C80', main_eng_mfr: '康明斯', main_eng_model: 'CUM-D180', peak_power: 0, battery_spec: '—', max_sweep_width: 0, max_wash_width: 3500, remark: '标准清洗版', creator: '王强', create_time: '2025-06-01 16:45:00' },
+            { id: 402, version: 'V2.0', vehicle_model: 'ZL-C900', power_type: '柴油', emission_std: '国六', manufacturer: '中联重科', max_weight: 9500, curb_weight: 4000, load_class: '重卡', chassis_mfr: '福田底盘', chassis_model: 'FT-C95', main_eng_mfr: '康明斯', main_eng_model: 'CUM-D200', peak_power: 0, battery_spec: '—', max_sweep_width: 0, max_wash_width: 4000, remark: '国六升级款', creator: '王强', create_time: '2025-09-10 10:00:00' }
+        ]
+    },
+    {
+        id: 5,
+        model_name: '三力洒水车',
+        model_name_en: 'Sanli Sprinkler Truck',
+        model_alias: '运输车',
+        model_code: 'SL-SS-001',
+        model_source: '非自研',
+        creator: '李明',
+        create_time: '2025-07-12 08:30:00',
+        versions: [
+            { id: 501, version: 'V1.0', vehicle_model: 'SL-S500', power_type: '柴油', emission_std: '国五', manufacturer: '三力专用汽车', max_weight: 5000, curb_weight: 2200, load_class: '轻卡', chassis_mfr: '东风底盘', chassis_model: 'DF-C50', main_eng_mfr: '玉柴', main_eng_model: 'YC-D130', peak_power: 0, battery_spec: '—', max_sweep_width: 0, max_wash_width: 3000, remark: '基础洒水版', creator: '李明', create_time: '2025-07-12 08:30:00' }
+        ]
+    },
+    {
+        id: 6,
+        model_name: '麒麟无人化扫地车',
+        model_name_en: 'Kirin Unmanned Sweeper',
+        model_alias: '扫路车',
+        model_code: 'QL-WR-001',
+        model_source: '自研',
+        creator: '赵伟',
+        create_time: '2025-08-22 11:15:00',
+        versions: [
+            { id: 601, version: 'V1.0', vehicle_model: 'C_UN_R1.0', power_type: '纯电动', emission_std: '纯电动', manufacturer: '麒麟智能汽车', max_weight: 3500, curb_weight: 1800, load_class: '轻卡', chassis_mfr: '麒麟自研底盘', chassis_model: 'QL-C35', main_eng_mfr: '宁德时代', main_eng_model: 'CATL-100', peak_power: 60, battery_spec: '320V/80Ah', max_sweep_width: 2000, max_wash_width: 0, remark: 'L4无人驾驶版', creator: '赵伟', create_time: '2025-08-22 11:15:00' },
+            { id: 602, version: 'V1.5', vehicle_model: 'C_UN_R1.5', power_type: '纯电动', emission_std: '纯电动', manufacturer: '麒麟智能汽车', max_weight: 3800, curb_weight: 1900, load_class: '轻卡', chassis_mfr: '麒麟自研底盘', chassis_model: 'QL-C38', main_eng_mfr: '宁德时代', main_eng_model: 'CATL-120', peak_power: 75, battery_spec: '320V/100Ah', max_sweep_width: 2200, max_wash_width: 0, remark: '续航增强版', creator: '赵伟', create_time: '2025-11-05 09:00:00' }
+        ]
+    },
+    {
+        id: 7,
+        model_name: '长城多用途货车',
+        model_name_en: 'Great Wall Multi-purpose Truck',
+        model_alias: '皮卡',
+        model_code: 'CC-HY-001',
+        model_source: '非自研',
+        creator: '王强',
+        create_time: '2025-09-05 15:00:00',
+        versions: [
+            { id: 701, version: 'V1.0', vehicle_model: 'CC-PV100', power_type: '汽油', emission_std: '国六', manufacturer: '长城汽车', max_weight: 2800, curb_weight: 1600, load_class: '微卡', chassis_mfr: '长城底盘', chassis_model: 'CC-P28', main_eng_mfr: '长城动力', main_eng_model: 'GW-G150', peak_power: 0, battery_spec: '—', max_sweep_width: 0, max_wash_width: 0, remark: '多功能皮卡', creator: '王强', create_time: '2025-09-05 15:00:00' }
+        ]
+    },
+    {
+        id: 8,
+        model_name: '独角兽',
+        model_name_en: 'Unicorn',
+        model_alias: '扫路车',
+        model_code: 'DJS-ZN-001',
+        model_source: '自研',
+        creator: '李明',
+        create_time: '2025-10-18 09:00:00',
+        versions: [
+            { id: 801, version: 'V1.0', vehicle_model: 'UC-SW01', power_type: '纯电动', emission_std: '纯电动', manufacturer: '独角兽智能', max_weight: 6000, curb_weight: 2800, load_class: '轻卡', chassis_mfr: '独角兽底盘', chassis_model: 'UC-C60', main_eng_mfr: '比亚迪', main_eng_model: 'BYD-150', peak_power: 110, battery_spec: '380V/180Ah', max_sweep_width: 3000, max_wash_width: 2500, remark: '标准智能清扫', creator: '李明', create_time: '2025-10-18 09:00:00' }
+        ]
+    },
+    {
+        id: 9,
+        model_name: '泰坦智能驾驶洒水车',
+        model_name_en: 'Titan Intelligent Sprinkler V3',
+        model_alias: '运输车',
+        model_code: 'TT-SS-002',
+        model_source: '自研',
+        creator: '赵伟',
+        create_time: '2025-11-01 14:20:00',
+        versions: [
+            { id: 901, version: 'V3.0', vehicle_model: 'TT-SP300', power_type: '纯电动', emission_std: '纯电动', manufacturer: '泰坦智能科技', max_weight: 15000, curb_weight: 5500, load_class: '重卡', chassis_mfr: '重汽底盘', chassis_model: 'ZQ-C15', main_eng_mfr: '宁德时代', main_eng_model: 'CATL-400', peak_power: 250, battery_spec: '600V/400Ah', max_sweep_width: 0, max_wash_width: 6000, remark: '大容量智能版', creator: '赵伟', create_time: '2025-11-01 14:20:00' }
+        ]
+    },
+    {
+        id: 10,
+        model_name: '中联清洗车',
+        model_name_en: 'Zoomlion Cleaning Pro',
+        model_alias: '小型清洗机',
+        model_code: 'ZL-QX-002',
+        model_source: '非自研',
+        creator: '王强',
+        create_time: '2025-12-10 10:00:00',
+        versions: [
+            { id: 1001, version: 'V1.0', vehicle_model: 'ZL-CP100', power_type: '纯电动', emission_std: '纯电动', manufacturer: '中联重科', max_weight: 4500, curb_weight: 2000, load_class: '轻卡', chassis_mfr: '福田底盘', chassis_model: 'FT-C45', main_eng_mfr: '宁德时代', main_eng_model: 'CATL-120', peak_power: 90, battery_spec: '380V/120Ah', max_sweep_width: 0, max_wash_width: 2800, remark: '电动清洗版', creator: '王强', create_time: '2025-12-10 10:00:00' }
+        ]
+    },
+];
+
+let currentPage = 1, pageSize = 10;
+let filteredModels = [...mockModels];
+let selectedVersionIds = new Set();
+let currentDeleteId = null;
+
+function renderTable() {
+    const start = (currentPage - 1) * pageSize;
+    const pageData = filteredModels.slice(start, start + pageSize);
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    pageData.forEach(model => {
+        // 车型行
+        const modelRow = document.createElement('tr');
+        modelRow.className = 'model-row';
+        modelRow.dataset.modelId = model.id;
+        modelRow.onclick = function(e) { toggleModelExpand(model.id); };
+        modelRow.innerHTML = `
+            <td style="text-align:center"><span class="expand-icon">▶</span></td>
+            <td>${model.model_name}</td>
+            <td>${model.model_name_en || '—'}</td>
+            <td>${model.model_alias}</td>
+            <td>${model.model_code || '—'}</td>
+            <td>${model.model_source}</td>
+            <td>${model.creator}</td>
+            <td>${model.create_time}</td>
+        `;
+        tbody.appendChild(modelRow);
+
+        // 版本行容器
+        const versionWrap = document.createElement('tr');
+        versionWrap.className = 'version-wrap';
+        versionWrap.id = 'versions-' + model.id;
+        versionWrap.innerHTML = `
+            <td colspan="8">
+                <div class="version-inner">
+                    <table class="version-table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px;text-align:center"><input type="checkbox" onchange="toggleVersionCheckAll(${model.id},this)"></th>
+                                <th>车型版本</th>
+                                <th>车辆型号</th>
+                                <th>动力类别</th>
+                                <th>排放标准</th>
+                                <th>整车厂商</th>
+                                <th style="width:200px;text-align:center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${model.versions.map(v => {
+                                const ck = selectedVersionIds.has(v.id) ? 'checked' : '';
+                                return `<tr>
+                                    <td style="text-align:center"><input type="checkbox" data-vid="${v.id}" ${ck} onchange="toggleVersionCheck(${v.id},this)"></td>
+                                    <td>${v.version}</td>
+                                    <td>${v.vehicle_model}</td>
+                                    <td>${v.power_type}</td>
+                                    <td>${v.emission_std}</td>
+                                    <td>${v.manufacturer}</td>
+                                    <td style="text-align:center">
+                                        <a class="action-link" href="./vehicle-model-detail.html?id=${v.id}&modelId=${model.id}&mode=view">详情</a>
+                                        <a class="action-link" href="./vehicle-model-detail.html?id=${v.id}&modelId=${model.id}&mode=edit">编辑</a>
+                                        <a class="action-link" href="./vehicle-model-new-version.html?modelId=${model.id}&baseVersionId=${v.id}">新建版本</a>
+                                        <a class="action-link danger" onclick="openDeleteModal(${v.id})">删除</a>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(versionWrap);
+    });
+
+    document.getElementById('totalCount').textContent = filteredModels.length;
+    Common.renderPagination('paginationEl', currentPage, Math.ceil(filteredModels.length / pageSize), (p) => {
+        currentPage = p;
+        renderTable();
+    });
+}
+
+function toggleModelExpand(modelId) {
+    const wrap = document.getElementById('versions-' + modelId);
+    const row = document.querySelector('.model-row[data-model-id="' + modelId + '"]');
+    if (!wrap || !row) return;
+    const isShow = wrap.classList.contains('show');
+    if (isShow) {
+        wrap.classList.remove('show');
+        row.classList.remove('expanded');
+    } else {
+        wrap.classList.add('show');
+        row.classList.add('expanded');
+    }
+}
+
+function toggleVersionCheck(vid, cb) {
+    if (cb.checked) selectedVersionIds.add(vid);
+    else selectedVersionIds.delete(vid);
+}
+
+function toggleVersionCheckAll(modelId, cb) {
+    const wrap = document.getElementById('versions-' + modelId);
+    if (!wrap) return;
+    const checks = wrap.querySelectorAll('input[type="checkbox"][data-vid]');
+    checks.forEach(c => {
+        c.checked = cb.checked;
+        const vid = parseInt(c.dataset.vid);
+        if (cb.checked) selectedVersionIds.add(vid);
+        else selectedVersionIds.delete(vid);
+    });
+}
+
+function toggleExpand() {
+    const items = document.querySelectorAll('.search-item:not(.visible)');
+    const el = document.getElementById('toggleExpand');
+    const expanded = el.classList.contains('expanded');
+    items.forEach(it => it.classList.toggle('visible', !expanded));
+    if (expanded) {
+        el.classList.remove('expanded');
+        el.innerHTML = '展开 <span class="arrow">▼</span>';
+    } else {
+        el.classList.add('expanded');
+        el.innerHTML = '收起 <span class="arrow">▲</span>';
+    }
+}
+
+function doSearch() {
+    const name = document.getElementById('s_model_name').value.trim();
+    const nameEn = document.getElementById('s_model_name_en').value.trim();
+    const version = document.getElementById('s_model_version').value.trim();
+    const alias = document.getElementById('s_model_alias').value;
+    const code = document.getElementById('s_model_code').value.trim();
+    const source = document.getElementById('s_model_source').value;
+    const power = document.getElementById('s_power_type').value;
+    const emission = document.getElementById('s_emission_std').value;
+    const mfr = document.getElementById('s_manufacturer').value.trim();
+    const creator = document.getElementById('s_creator').value.trim();
+    const d1 = document.getElementById('s_create_start').value;
+    const d2 = document.getElementById('s_create_end').value;
+
+    filteredModels = mockModels.filter(m => {
+        if (name && !m.model_name.includes(name)) return false;
+        if (nameEn && !m.model_name_en.includes(nameEn)) return false;
+        if (alias && m.model_alias !== alias) return false;
+        if (code && !m.model_code.includes(code)) return false;
+        if (source && m.model_source !== source) return false;
+        if (creator && !m.creator.includes(creator)) return false;
+        if (d1 && m.create_time < d1 + ' 00:00:00') return false;
+        if (d2 && m.create_time > d2 + ' 23:59:59') return false;
+        // 版本级字段查询
+        const vMatch = m.versions.some(v => {
+            if (version && !v.version.includes(version)) return false;
+            if (power && v.power_type !== power) return false;
+            if (emission && v.emission_std !== emission) return false;
+            if (mfr && !v.manufacturer.includes(mfr)) return false;
+            return true;
+        });
+        if ((version || power || emission || mfr) && !vMatch) return false;
+        return true;
+    });
+    currentPage = 1;
+    renderTable();
+}
+
+function doReset() {
+    document.getElementById('s_model_name').value = '';
+    document.getElementById('s_model_name_en').value = '';
+    document.getElementById('s_model_version').value = '';
+    document.getElementById('s_model_alias').value = '';
+    document.getElementById('s_model_code').value = '';
+    document.getElementById('s_model_source').value = '';
+    document.getElementById('s_power_type').value = '';
+    document.getElementById('s_emission_std').value = '';
+    document.getElementById('s_manufacturer').value = '';
+    document.getElementById('s_creator').value = '';
+    document.getElementById('s_create_start').value = '';
+    document.getElementById('s_create_end').value = '';
+    filteredModels = [...mockModels];
+    currentPage = 1;
+    renderTable();
+}
+
+function changePageSize() {
+    pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+    currentPage = 1;
+    renderTable();
+}
+
+function doExport() {
+    if (selectedVersionIds.size === 0) {
+        document.getElementById('exportModal').style.display = 'block';
+    } else {
+        Common.toast('导出成功：已导出选中的 ' + selectedVersionIds.size + ' 条数据');
+    }
+}
+
+function closeExportModal() {
+    document.getElementById('exportModal').style.display = 'none';
+}
+
+function confirmExport() {
+    closeExportModal();
+    Common.toast('导出成功：已导出当前筛选条件下的所有数据');
+}
+
+function openDeleteModal(vid) {
+    currentDeleteId = vid;
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    currentDeleteId = null;
+}
+
+function confirmDelete() {
+    closeDeleteModal();
+    if (currentDeleteId) {
+        Common.toast('删除成功');
+        currentDeleteId = null;
+    }
+}
+
+renderTable();
+</script>
+</body>
+</html>

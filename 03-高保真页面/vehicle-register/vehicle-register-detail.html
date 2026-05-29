@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车辆档案详情 - 车辆管理系统</title>
+<link rel="stylesheet" href="../components/common.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-area">
+    <div id="header"></div>
+    <div class="content">
+      <div class="page-container">
+        <div class="page-header">
+          <div class="page-title">车辆档案详情</div>
+          <div><button class="btn" onclick="window.location.href='./vehicle-register-list.html'">返回</button></div>
+        </div>
+        <div class="placeholder-state">
+          <div class="placeholder-icon">🚗</div>
+          <div class="placeholder-text">车辆资产管理详情页</div>
+          <div class="placeholder-hint">该页面将在车辆资产管理模块中开发，目前为预留入口</div>
+          <div style="margin-top:24px">
+            <a href="./vehicle-register-list.html" class="btn">返回列表</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../components/common.js"></script>
+<script>
+Common.initLayout({
+    basePath: '../',
+  sidebarId: 'sidebar',
+  activeMenuId: 'vehicle-register',
+  headerId: 'header',
+  breadcrumbs: [
+    { label: '车辆管理', href: './vehicle-register-list.html' },
+    { label: '车辆建档', href: './vehicle-register-list.html' },
+    { label: '车辆档案详情' },
+  ],
+  headerOptions: { showProject: false }
+});
+</script>
+</body>
+</html>
