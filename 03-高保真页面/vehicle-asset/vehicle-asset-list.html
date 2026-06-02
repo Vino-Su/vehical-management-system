@@ -189,8 +189,7 @@
 
                 <!-- 操作栏 -->
                 <div class="action-bar">
-                    <button class="btn btn-primary" onclick="goEdit()">编辑</button>
-                    <button class="btn" id="btnAssign" onclick="openAssignModal()" disabled>车辆分配</button>
+                <button class="btn btn-primary" id="btnAssign" onclick="openAssignModal()">车辆分配</button>
                     <button class="btn btn-export" onclick="doExport()">导出</button>
                 </div>
 
@@ -371,7 +370,6 @@ function renderTable() {
         tbody.appendChild(tr);
     });
     renderPagination();
-    updateAssignBtn();
 }
 
 // ===== 分页 =====
@@ -398,9 +396,6 @@ function toggleCheckAll(el) {
 function toggleCheck(id, el) {
     if (el.checked) selectedIds.add(id); else selectedIds.delete(id);
     renderTable();
-}
-function updateAssignBtn() {
-    document.getElementById('btnAssign').disabled = selectedIds.size === 0;
 }
 
 // ===== 查询/重置 =====
@@ -460,11 +455,6 @@ function toggleSearchExpand() {
     toggle.classList.toggle('expanded', expanded);
 }
 
-// ===== 编辑 =====
-function goEdit() {
-    window.location.href = './vehicle-asset-detail.html?mode=edit';
-}
-
 // ===== 删除 =====
 function openDeleteModal(id) { deleteTargetId = id; document.getElementById('deleteModal').classList.add('active'); }
 function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('active'); deleteTargetId = null; }
@@ -489,7 +479,7 @@ function confirmExport() { closeExportModal(); Common.showToast('已导出所有
 
 // ===== 车辆分配弹窗 =====
 function openAssignModal() {
-    if (selectedIds.size === 0) { Common.showToast('当前未选择任何车辆', 'warning'); return; }
+    if (selectedIds.size === 0) { Common.showToast('未选择车辆', 'warning'); return; }
     const nonAssignable = [], assignable = [];
     selectedIds.forEach(id => {
         const item = mockData.find(d => d.id === id);

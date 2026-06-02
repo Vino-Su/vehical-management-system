@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调度任务管理 - 列表页</title>
+    <link rel="stylesheet" href="../components/common.css">
+    <style>
+        /* ========== 查询筛选区 ========== */
+        .search-bar {
+            background: var(--bg-container); border-radius: var(--radius); padding: 20px 24px 16px;
+            margin-bottom: 16px; box-shadow: var(--shadow-sm);
+        }
+        .search-row {
+            display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;
+        }
+        .search-item {
+            display: none; align-items: center; gap: 8px;
+        }
+        .search-item.visible { display: flex; }
+        .search-item label {
+            font-size: 14px; color: var(--text-secondary); white-space: nowrap;
+        }
+        .search-item input, .search-item select {
+            height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 0 12px; font-size: 14px; color: var(--text-primary); outline: none; min-width: 160px;
+        }
+        .search-item input:focus, .search-item select:focus { border-color: var(--primary); }
+        .search-item input::placeholder { color: var(--text-disabled); }
+        .search-actions {
+            display: flex; align-items: center; gap: 8px; margin-left: auto;
+        }
+        .toggle-expand {
+            color: var(--primary); font-size: 14px; cursor: pointer; user-select: none;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .toggle-expand:hover { color: var(--primary-hover); }
+        .toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
+        .toggle-expand.expanded .arrow { transform: rotate(180deg); }
+
+        /* ========== 操作栏 ========== */
+        .action-bar {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+        }
+
+        /* ========== 状态标签 ========== */
+        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; line-height: 20px; white-space: nowrap; }
+        .status-tag.green { background: #f6ffed; color: #52c41a; }
+        .status-tag.blue { background: #e6f4ff; color: #1677ff; }
+        .status-tag.orange { background: #fff7e6; color: #fa8c16; }
+        .status-tag.red { background: #fff2f0; color: #ff4d4f; }
+        .status-tag.gray { background: #f2f3f5; color: #86909c; }
+
+        /* ========== 操作链接 ========== */
+        .action-link { color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: none; }
+        .action-link:hover { color: var(--primary-hover); }
+        .action-link + .action-link { margin-left: 10px; }
+        .action-link.danger { color: var(--error); }
+        .action-link.danger:hover { color: #ff7875; }
+
+        /* ========== 弹窗样式 ========== */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.45);
+            display: none; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--bg-container); border-radius: var(--radius-lg);
+            display: flex; flex-direction: column; box-shadow: var(--shadow-md);
+        }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 24px; border-bottom: 1px solid var(--border-color);
+        }
+        .modal-header h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; }
+        .modal-close { font-size: 20px; color: var(--text-secondary); cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: var(--text-primary); }
+        .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+        .modal-footer {
+            display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+            padding: 12px 24px; border-top: 1px solid var(--border-color);
+        }
+
+        /* 新建调度申请弹窗 */
+        .apply-modal { width: 900px; max-width: 90vw; max-height: 85vh; }
+        .apply-section { margin-bottom: 20px; }
+        .apply-section-title {
+            font-size: 14px; font-weight: 600; color: var(--text-primary);
+            margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);
+        }
+        .apply-form {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 24px;
+        }
+        .form-item {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .form-item.full-width { grid-column: span 2; }
+        .form-item label {
+            font-size: 14px; color: var(--text-secondary); white-space: nowrap; min-width: 90px; text-align: right;
+        }
+        .form-item label .required { color: var(--error); margin-right: 4px; }
+        .form-item input, .form-item select, .form-item textarea {
+            flex: 1; height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 0 12px; font-size: 14px; color: var(--text-primary); outline: none;
+        }
+        .form-item input:focus, .form-item select:focus, .form-item textarea:focus { border-color: var(--primary); }
+        .form-item input:read-only, .form-item textarea:read-only {
+            background: #f7f8fa; color: var(--text-secondary);
+        }
+        .form-item textarea { height: 60px; padding: 8px 12px; resize: vertical; }
+
+        /* 车辆清单 */
+        .vehicle-list-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        .vehicle-list-table thead th {
+            background: #fafafa; color: var(--text-secondary); font-weight: 600;
+            font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color);
+        }
+        .vehicle-list-table tbody td {
+            color: var(--text-primary); font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--border-color);
+        }
+        .vehicle-list-table .action-link.danger { color: var(--error); }
+        .vehicle-list-table .action-link.danger:hover { color: #ff7875; }
+        .add-vehicle-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            color: var(--primary); font-size: 13px; cursor: pointer; margin-top: 8px;
+        }
+        .add-vehicle-btn:hover { color: var(--primary-hover); }
+
+        /* 审批弹窗 */
+        .approve-modal { width: 500px; }
+        .approve-info {
+            background: #f7f8fa; border-radius: var(--radius); padding: 16px; margin-bottom: 16px;
+        }
+        .approve-info-row {
+            display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px;
+        }
+        .approve-info-row .label { color: var(--text-secondary); }
+        .approve-info-row .value { color: var(--text-primary); font-weight: 500; }
+        .approve-form-item {
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .approve-form-item label { font-size: 14px; color: var(--text-secondary); }
+        .approve-form-item textarea {
+            width: 100%; height: 80px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 8px 12px; font-size: 14px; resize: vertical; outline: none;
+        }
+        .approve-form-item textarea:focus { border-color: var(--primary); }
+
+        /* 确认弹窗 */
+        .confirm-box { width: 420px; }
+        .confirm-body {
+            display: flex; align-items: flex-start; gap: 12px; padding: 24px;
+        }
+        .confirm-icon { font-size: 22px; color: var(--warning); flex-shrink: 0; margin-top: 2px; }
+        .confirm-text { font-size: 14px; color: var(--text-primary); line-height: 1.6; }
+
+        /* 添加车辆弹窗 */
+        .add-vehicle-modal { width: 800px; max-width: 90vw; max-height: 80vh; }
+        .add-vehicle-search {
+            display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 16px;
+            padding-bottom: 16px; border-bottom: 1px solid var(--border-color);
+        }
+        .add-vehicle-search .search-field {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .add-vehicle-search .search-field label {
+            font-size: 14px; color: var(--text-secondary); white-space: nowrap;
+        }
+        .add-vehicle-search .search-field input, .add-vehicle-search .search-field select {
+            height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 0 12px; font-size: 14px; outline: none; min-width: 160px;
+        }
+        .add-vehicle-table { width: 100%; border-collapse: collapse; }
+        .add-vehicle-table thead th {
+            background: #fafafa; color: var(--text-secondary); font-weight: 600;
+            font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color);
+        }
+        .add-vehicle-table tbody td {
+            color: var(--text-primary); font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--border-color);
+        }
+        .add-vehicle-table tbody tr:hover { background: var(--bg-hover); }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+        <div id="header"></div>
+        <div class="content">
+            <div class="page-container">
+                <!-- 查询筛选区 -->
+                <div class="search-bar">
+                    <div class="search-row" id="searchRow">
+                        <div class="search-item visible" data-idx="0">
+                            <label>任务编号</label>
+                            <input type="text" id="s_task_no" placeholder="请输入任务编号">
+                        </div>
+                        <div class="search-item visible" data-idx="1">
+                            <label>角色</label>
+                            <select id="s_role">
+                                <option value="">请选择</option>
+                                <option>营运作业工人</option><option>压测研发工程师</option><option>研发工程师</option>
+                                <option>管理人员</option><option>商务人员</option><option>售后工人</option><option>维修厂工人</option>
+                            </select>
+                        </div>
+                        <div class="search-item visible" data-idx="2">
+                            <label>周转方式</label>
+                            <select id="s_transfer_type">
+                                <option value="">请选择</option>
+                                <option>大周转</option><option>小周转</option>
+                            </select>
+                        </div>
+                        <div class="search-item visible" data-idx="3">
+                            <label>周转用途</label>
+                            <select id="s_transfer_purpose">
+                                <option value="">请选择</option>
+                                <option>项目流转</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="4">
+                            <label>流转前项目</label>
+                            <select id="s_from_project">
+                                <option value="">请选择</option>
+                                <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option>
+                                <option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="5">
+                            <label>流转后项目</label>
+                            <select id="s_to_project">
+                                <option value="">请选择</option>
+                                <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option>
+                                <option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="6">
+                            <label>任务状态</label>
+                            <select id="s_task_status">
+                                <option value="">请选择</option>
+                                <option>已提交</option><option>已撤回</option><option>出库审批退回</option>
+                                <option>待出库</option><option>已出库</option><option>待交接</option>
+                                <option>已完成</option><option>已关闭</option>
+                            </select>
+                        </div>
+                        <div class="search-item" data-idx="7">
+                            <label>申请时间</label>
+                            <input type="date" id="s_apply_start"><span style="color:var(--text-disabled)">~</span><input type="date" id="s_apply_end">
+                        </div>
+                        <div class="search-actions">
+                            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+                            <button class="btn" onclick="doReset()">重置</button>
+                            <span class="toggle-expand" id="toggleExpand" onclick="toggleSearchExpand()">
+                                展开 <span class="arrow">▼</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作栏 -->
+                <div class="action-bar">
+                    <button class="btn btn-primary" onclick="openApplyModal()">新建调度申请</button>
+                    <button class="btn" style="margin-left:auto" onclick="doExport()">导出</button>
+                </div>
+
+                <!-- 数据列表 -->
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:50px;text-align:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
+                                <th>任务编号</th>
+                                <th style="width:60px">车辆数</th>
+                                <th>角色</th>
+                                <th>周转方式</th>
+                                <th>周转用途</th>
+                                <th>申请时间</th>
+                                <th>流转前项目</th>
+                                <th>流转后项目</th>
+                                <th>任务状态</th>
+                                <th style="width:260px;text-align:center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="pagination-area">
+                    <div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <div class="pagination" id="paginationEl"></div>
+                        <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
+                            <option value="10" selected>10条/页</option>
+                            <option value="20">20条/页</option>
+                            <option value="50">50条/页</option>
+                            <option value="100">100条/页</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新建调度申请弹窗 -->
+<div class="modal-overlay" id="applyModal">
+    <div class="modal-box apply-modal">
+        <div class="modal-header"><h3>新建调度申请</h3><span class="modal-close" onclick="closeApplyModal()">×</span></div>
+        <div class="modal-body">
+            <div class="apply-section">
+                <div class="apply-section-title">申请信息</div>
+                <div class="apply-form">
+                    <div class="form-item">
+                        <label><span class="required">*</span>用户角色</label>
+                        <select id="a_role">
+                            <option value="">请选择</option>
+                            <option>营运作业工人</option><option>压测研发工程师</option><option>研发工程师</option>
+                            <option>管理人员</option><option>商务人员</option><option>售后工人</option><option>维修厂工人</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label>车辆编号</label>
+                        <input type="text" id="a_vehicle_nos" readonly placeholder="自动汇总">
+                    </div>
+                    <div class="form-item">
+                        <label>车架号</label>
+                        <input type="text" id="a_vin_codes" readonly placeholder="自动汇总">
+                    </div>
+                    <div class="form-item">
+                        <label>当前项目</label>
+                        <input type="text" id="a_current_project" readonly placeholder="自动汇总">
+                    </div>
+                    <div class="form-item">
+                        <label><span class="required">*</span>接收项目</label>
+                        <select id="a_to_project">
+                            <option value="">请选择</option>
+                            <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option>
+                            <option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label><span class="required">*</span>接收人</label>
+                        <select id="a_receiver">
+                            <option value="">请选择</option>
+                            <option>张三</option><option>李四</option><option>王五</option><option>赵六</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label><span class="required">*</span>预计接收时间</label>
+                        <input type="date" id="a_receive_time">
+                    </div>
+                    <div class="form-item">
+                        <label><span class="required">*</span>周转用途</label>
+                        <select id="a_transfer_purpose"><option value="项目流转" selected>项目流转</option></select>
+                    </div>
+                    <div class="form-item">
+                        <label><span class="required">*</span>审批人</label>
+                        <select id="a_approver">
+                            <option value="">请选择</option>
+                            <option>张三</option><option>李四</option><option>王五</option><option>赵六</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="apply-section">
+                <div class="apply-section-title">车辆清单</div>
+                <table class="vehicle-list-table">
+                    <thead>
+                        <tr><th>车辆编号</th><th>车架号</th><th>车型名称（中）</th><th>归属项目</th><th style="width:80px;text-align:center">操作</th></tr>
+                    </thead>
+                    <tbody id="applyVehicleList"></tbody>
+                </table>
+                <div class="add-vehicle-btn" onclick="addVehicleToApply()"><span>+</span> 添加车辆</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeApplyModal()">取消</button>
+            <button class="btn btn-primary" onclick="submitApply()">提交</button>
+        </div>
+    </div>
+</div>
+
+<!-- 出库审批弹窗 -->
+<div class="modal-overlay" id="outboundApproveModal">
+    <div class="modal-box approve-modal">
+        <div class="modal-header"><h3>出库审批</h3><span class="modal-close" onclick="closeOutboundApproveModal()">×</span></div>
+        <div class="modal-body">
+            <div class="approve-info">
+                <div class="approve-info-row"><span class="label">任务编号</span><span class="value" id="oa_task_no"></span></div>
+                <div class="approve-info-row"><span class="label">车辆数</span><span class="value" id="oa_vehicle_count"></span></div>
+                <div class="approve-info-row"><span class="label">流转前项目</span><span class="value" id="oa_from_project"></span></div>
+                <div class="approve-info-row"><span class="label">流转后项目</span><span class="value" id="oa_to_project"></span></div>
+            </div>
+            <div class="approve-form-item">
+                <label>审批意见（可选）</label>
+                <textarea id="oa_comment" placeholder="请输入审批意见"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="doOutboundApprove(false)">不同意</button>
+            <button class="btn btn-primary" onclick="doOutboundApprove(true)">同意</button>
+        </div>
+    </div>
+</div>
+
+<!-- 交接审批弹窗 -->
+<div class="modal-overlay" id="handoverApproveModal">
+    <div class="modal-box approve-modal">
+        <div class="modal-header"><h3>交接审批</h3><span class="modal-close" onclick="closeHandoverApproveModal()">×</span></div>
+        <div class="modal-body">
+            <div class="approve-info">
+                <div class="approve-info-row"><span class="label">任务编号</span><span class="value" id="ha_task_no"></span></div>
+                <div class="approve-info-row"><span class="label">车辆数</span><span class="value" id="ha_vehicle_count"></span></div>
+                <div class="approve-info-row"><span class="label">流转前项目</span><span class="value" id="ha_from_project"></span></div>
+                <div class="approve-info-row"><span class="label">流转后项目</span><span class="value" id="ha_to_project"></span></div>
+            </div>
+            <div class="approve-form-item">
+                <label>审批意见（可选）</label>
+                <textarea id="ha_comment" placeholder="请输入审批意见"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="doHandoverApprove(false)">不同意</button>
+            <button class="btn btn-primary" onclick="doHandoverApprove(true)">同意</button>
+        </div>
+    </div>
+</div>
+
+<!-- 撤回确认弹窗 -->
+<div class="modal-overlay" id="withdrawModal">
+    <div class="modal-box confirm-box">
+        <div class="modal-header"><h3>提示</h3><span class="modal-close" onclick="closeWithdrawModal()">×</span></div>
+        <div class="confirm-body">
+            <span class="confirm-icon">⚠</span>
+            <span class="confirm-text">确定要撤回该调度申请吗？撤回后可再次提交。</span>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeWithdrawModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmWithdraw()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 添加车辆弹窗 -->
+<div class="modal-overlay" id="addVehicleModal">
+    <div class="modal-box add-vehicle-modal">
+        <div class="modal-header"><h3>添加车辆</h3><span class="modal-close" onclick="closeAddVehicleModal()">×</span></div>
+        <div class="modal-body">
+            <div class="add-vehicle-search">
+                <div class="search-field">
+                    <label>车架号</label>
+                    <input type="text" id="av_vin" placeholder="请输入车架号">
+                </div>
+                <div class="search-field">
+                    <label>车型名称（中）</label>
+                    <input type="text" id="av_model" placeholder="请输入车型名称">
+                </div>
+                <div class="search-field">
+                    <label>归属项目</label>
+                    <select id="av_project">
+                        <option value="">请选择</option>
+                        <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option>
+                        <option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:8px;margin-left:auto">
+                    <button class="btn btn-primary" onclick="searchAddVehicles()">查询</button>
+                    <button class="btn" onclick="resetAddVehicles()">重置</button>
+                </div>
+            </div>
+            <div class="table-wrapper" style="max-height:320px;overflow-y:auto">
+                <table class="add-vehicle-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;text-align:center"><input type="checkbox" id="avCheckAll" onchange="toggleAvCheckAll(this)"></th>
+                            <th>车辆编号</th>
+                            <th>车架号</th>
+                            <th>车型名称（中）</th>
+                            <th>车型版本</th>
+                            <th>网联编号</th>
+                            <th>归属项目</th>
+                            <th>车辆状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="addVehicleTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeAddVehicleModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmAddVehicles()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 导出确认弹窗 -->
+<div class="modal-overlay" id="exportModal">
+    <div class="modal-box confirm-box">
+        <div class="modal-header"><h3>提示</h3><span class="modal-close" onclick="closeExportModal()">×</span></div>
+        <div class="confirm-body">
+            <span class="confirm-icon">⚠</span>
+            <span class="confirm-text">是否导出所有数据？</span>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeExportModal()">否</button>
+            <button class="btn btn-primary" onclick="confirmExport()">是</button>
+        </div>
+    </div>
+</div>
+
+<script src="../components/common.js"></script>
+<script>
+// ===== 初始化布局 =====
+Common.initLayout({
+    basePath: '../',
+    sidebarId: 'sidebar',
+    activeMenuId: 'transfer-apply',
+    headerId: 'header',
+    breadcrumbs: [{ label: '调度管理', href: './dispatch-record-list.html' }, { label: '调度任务管理' }],
+    headerOptions: { showProject: false }
+});
+
+// ===== 模拟数据（覆盖多种任务状态）=====
+const mockData = [
+    { id:1, task_no:'DB202606010001', vehicle_count:2, role:'管理人员', transfer_type:'大周转', transfer_purpose:'项目流转', apply_time:'2026-05-28 09:30:00', from_project:'镜湖区项目', to_project:'鸠江项目', task_status:'已提交' },
+    { id:2, task_no:'DB202606010002', vehicle_count:1, role:'研发工程师', transfer_type:'小周转', transfer_purpose:'项目流转', apply_time:'2026-05-28 10:15:00', from_project:'椒北街道', to_project:'嘉定研发', task_status:'已撤回' },
+    { id:3, task_no:'DB202606010003', vehicle_count:3, role:'营运作业工人', transfer_type:'大周转', transfer_purpose:'项目流转', apply_time:'2026-05-28 11:00:00', from_project:'经开东区项目', to_project:'陵水项目', task_status:'出库审批退回' },
+    { id:4, task_no:'DB202606010004', vehicle_count:1, role:'管理人员', transfer_type:'小周转', transfer_purpose:'项目流转', apply_time:'2026-05-28 14:20:00', from_project:'鸠江江北项目', to_project:'镜湖区项目', task_status:'待出库' },
+    { id:5, task_no:'DB202606010005', vehicle_count:2, role:'商务人员', transfer_type:'大周转', transfer_purpose:'项目流转', apply_time:'2026-05-29 08:45:00', from_project:'鸠江开发区项目', to_project:'椒北街道', task_status:'已出库' },
+    { id:6, task_no:'DB202606010006', vehicle_count:1, role:'售后工人', transfer_type:'小周转', transfer_purpose:'项目流转', apply_time:'2026-05-29 09:30:00', from_project:'嘉定研发', to_project:'经开东区项目', task_status:'待交接' },
+    { id:7, task_no:'DB202606010007', vehicle_count:2, role:'压测研发工程师', transfer_type:'大周转', transfer_purpose:'项目流转', apply_time:'2026-05-29 10:00:00', from_project:'鸠江项目', to_project:'鸠江江北项目', task_status:'已完成' },
+    { id:8, task_no:'DB202606010008', vehicle_count:1, role:'维修厂工人', transfer_type:'小周转', transfer_purpose:'项目流转', apply_time:'2026-05-29 11:30:00', from_project:'陵水项目', to_project:'鸠江开发区项目', task_status:'已关闭' },
+    { id:9, task_no:'DB202606010009', vehicle_count:3, role:'管理人员', transfer_type:'大周转', transfer_purpose:'项目流转', apply_time:'2026-05-29 14:00:00', from_project:'镜湖区项目', to_project:'嘉定研发', task_status:'已提交' },
+    { id:10, task_no:'DB202606010010', vehicle_count:2, role:'研发工程师', transfer_type:'小周转', transfer_purpose:'项目流转', apply_time:'2026-05-30 09:00:00', from_project:'椒北街道', to_project:'鸠江项目', task_status:'已出库' },
+    { id:11, task_no:'DB202606010011', vehicle_count:1, role:'营运作业工人', transfer_type:'大周转', transfer_purpose:'项目流转', apply_time:'2026-05-30 10:30:00', from_project:'经开东区项目', to_project:'镜湖区项目', task_status:'待出库' },
+    { id:12, task_no:'DB202606010012', vehicle_count:2, role:'商务人员', transfer_type:'小周转', transfer_purpose:'项目流转', apply_time:'2026-05-30 15:00:00', from_project:'鸠江江北项目', to_project:'陵水项目', task_status:'已完成' },
+];
+
+// ===== 状态标签颜色映射 =====
+const statusTagClass = {
+    '已提交':'blue', '已撤回':'orange', '出库审批退回':'red',
+    '待出库':'blue', '已出库':'blue', '待交接':'blue',
+    '已完成':'green', '已关闭':'gray'
+};
+
+// ===== 状态 =====
+let currentPage = 1, pageSize = 10;
+let filteredData = [...mockData];
+let selectedIds = new Set();
+let applyVehicles = [];
+let currentActionId = null; // 当前操作的记录ID
+
+// ===== 渲染表格 =====
+function renderTable() {
+    const start = (currentPage - 1) * pageSize;
+    const pageData = filteredData.slice(start, start + pageSize);
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    pageData.forEach(item => {
+        const ck = selectedIds.has(item.id) ? 'checked' : '';
+        const selCls = selectedIds.has(item.id) ? ' selected' : '';
+        const tagCls = statusTagClass[item.task_status] || 'gray';
+        const actions = buildActions(item);
+        const tr = document.createElement('tr');
+        if (selCls) tr.className = selCls;
+        tr.innerHTML = `
+            <td style="text-align:center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
+            <td>${item.task_no}</td>
+            <td style="text-align:center">${item.vehicle_count}</td>
+            <td>${item.role}</td>
+            <td>${item.transfer_type}</td>
+            <td>${item.transfer_purpose}</td>
+            <td>${item.apply_time}</td>
+            <td>${item.from_project}</td>
+            <td>${item.to_project}</td>
+            <td><span class="status-tag ${tagCls}">${item.task_status}</span></td>
+            <td style="text-align:center">${actions}</td>`;
+        tbody.appendChild(tr);
+    });
+    renderPagination();
+}
+
+// ===== 构建操作按钮 =====
+function buildActions(item) {
+    let html = `<a class="action-link" href="./dispatch-detail.html?id=${item.id}&status=${encodeURIComponent(item.task_status)}">详情</a>`;
+    switch (item.task_status) {
+        case '已提交':
+            html += `<a class="action-link danger" onclick="openWithdrawModal(${item.id})">撤回</a>`;
+            html += `<a class="action-link" onclick="openOutboundApproveModal(${item.id})">出库审批</a>`;
+            break;
+        case '已撤回':
+        case '出库审批退回':
+            html += `<a class="action-link" onclick="openReapplyModal(${item.id})">再次提交</a>`;
+            break;
+        case '待出库':
+            html += `<a class="action-link" href="./dispatch-detail.html?id=${item.id}&status=${encodeURIComponent(item.task_status)}">出库信息完善</a>`;
+            break;
+        case '已出库':
+            html += `<a class="action-link" onclick="openHandoverApproveModal(${item.id})">交接审批</a>`;
+            break;
+        case '待交接':
+            html += `<a class="action-link" href="./dispatch-detail.html?id=${item.id}&status=${encodeURIComponent(item.task_status)}">交接信息完善</a>`;
+            break;
+    }
+    return html;
+}
+
+// ===== 分页 =====
+function renderPagination() {
+    Common.renderPagination({
+        total: filteredData.length, currentPage, pageSize,
+        containerId: 'paginationEl', infoId: 'totalCount',
+        onPageChange: p => { currentPage = p; renderTable(); }
+    });
+}
+function changePageSize() {
+    pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+    currentPage = 1; renderTable();
+}
+
+// ===== 复选框 =====
+function toggleCheckAll(el) {
+    const start = (currentPage - 1) * pageSize;
+    const pageData = filteredData.slice(start, start + pageSize);
+    pageData.forEach(item => { if (el.checked) selectedIds.add(item.id); else selectedIds.delete(item.id); });
+    renderTable();
+}
+function toggleCheck(id, el) {
+    if (el.checked) selectedIds.add(id); else selectedIds.delete(id);
+    renderTable();
+}
+
+// ===== 查询/重置 =====
+function doSearch() {
+    const st = document.getElementById('s_task_no').value.trim().toLowerCase();
+    const sr = document.getElementById('s_role').value;
+    const stt = document.getElementById('s_transfer_type').value;
+    const stp = document.getElementById('s_transfer_purpose').value;
+    const sfp = document.getElementById('s_from_project').value;
+    const stop = document.getElementById('s_to_project').value;
+    const sst = document.getElementById('s_task_status').value;
+    const sas = document.getElementById('s_apply_start').value;
+    const sae = document.getElementById('s_apply_end').value;
+    filteredData = mockData.filter(item => {
+        if (st && !item.task_no.toLowerCase().includes(st)) return false;
+        if (sr && item.role !== sr) return false;
+        if (stt && item.transfer_type !== stt) return false;
+        if (stp && item.transfer_purpose !== stp) return false;
+        if (sfp && item.from_project !== sfp) return false;
+        if (stop && item.to_project !== stop) return false;
+        if (sst && item.task_status !== sst) return false;
+        if (sas && item.apply_time < sas) return false;
+        if (sae && item.apply_time > sae + ' 23:59:59') return false;
+        return true;
+    });
+    currentPage = 1; selectedIds.clear(); renderTable();
+}
+function doReset() {
+    document.querySelectorAll('.search-item input, .search-item select').forEach(el => {
+        if (el.type === 'date') el.value = '';
+        else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        else el.value = '';
+    });
+    filteredData = [...mockData]; currentPage = 1; selectedIds.clear(); renderTable();
+}
+
+// ===== 展开/收起 =====
+let expanded = false;
+function toggleSearchExpand() {
+    expanded = !expanded;
+    document.querySelectorAll('.search-item[data-idx]').forEach(el => {
+        const idx = parseInt(el.dataset.idx);
+        if (idx >= 4) el.classList.toggle('visible', expanded);
+    });
+    const toggle = document.getElementById('toggleExpand');
+    toggle.innerHTML = expanded ? '收起 <span class="arrow">▼</span>' : '展开 <span class="arrow">▼</span>';
+    toggle.classList.toggle('expanded', expanded);
+}
+
+// ===== 新建调度申请弹窗 =====
+function openApplyModal() {
+    applyVehicles = [];
+    document.getElementById('a_vehicle_nos').value = '';
+    document.getElementById('a_vin_codes').value = '';
+    document.getElementById('a_current_project').value = '';
+    renderApplyVehicleList();
+    document.getElementById('a_role').value = '';
+    document.getElementById('a_to_project').value = '';
+    document.getElementById('a_receiver').value = '';
+    document.getElementById('a_receive_time').value = '';
+    document.getElementById('a_approver').value = '';
+    document.getElementById('applyModal').classList.add('active');
+}
+function closeApplyModal() {
+    document.getElementById('applyModal').classList.remove('active');
+    applyVehicles = [];
+}
+function renderApplyVehicleList() {
+    const tbody = document.getElementById('applyVehicleList');
+    tbody.innerHTML = '';
+    applyVehicles.forEach((item, idx) => {
+        tbody.innerHTML += `<tr>
+            <td>${item.vehicle_no || item.id}</td>
+            <td>${item.vin || '—'}</td>
+            <td>${item.model_name || '—'}</td>
+            <td>${item.project || '—'}</td>
+            <td style="text-align:center"><span class="action-link danger" onclick="removeApplyVehicle(${idx})">删除</span></td>
+        </tr>`;
+    });
+}
+function removeApplyVehicle(idx) {
+    if (applyVehicles.length <= 1) {
+        Common.showToast('车辆清单不能为空', 'warning');
+        return;
+    }
+    applyVehicles.splice(idx, 1);
+    renderApplyVehicleList();
+}
+function addVehicleToApply() {
+    openAddVehicleModal();
+}
+function submitApply() {
+    const role = document.getElementById('a_role').value;
+    const toProject = document.getElementById('a_to_project').value;
+    const receiver = document.getElementById('a_receiver').value;
+    const receiveTime = document.getElementById('a_receive_time').value;
+    const approver = document.getElementById('a_approver').value;
+    if (!role) { Common.showToast('用户角色不能为空', 'error'); return; }
+    if (applyVehicles.length === 0) { Common.showToast('车辆清单不能为空', 'error'); return; }
+    if (!toProject) { Common.showToast('接收项目不能为空', 'error'); return; }
+    if (!receiver) { Common.showToast('接收人不能为空', 'error'); return; }
+    if (!receiveTime) { Common.showToast('预计接收时间不能为空', 'error'); return; }
+    if (!approver) { Common.showToast('审批人不能为空', 'error'); return; }
+    Common.showToast('提交成功', 'success');
+    closeApplyModal();
+}
+
+// ===== 再次提交 =====
+function openReapplyModal(id) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    currentActionId = id;
+    applyVehicles = [];
+    document.getElementById('a_vehicle_nos').value = '';
+    document.getElementById('a_vin_codes').value = '';
+    document.getElementById('a_current_project').value = item.from_project;
+    renderApplyVehicleList();
+    document.getElementById('a_role').value = item.role;
+    document.getElementById('a_to_project').value = item.to_project;
+    document.getElementById('a_receiver').value = '';
+    document.getElementById('a_receive_time').value = '';
+    document.getElementById('a_approver').value = '';
+    document.getElementById('applyModal').classList.add('active');
+}
+
+// ===== 撤回 =====
+function openWithdrawModal(id) {
+    currentActionId = id;
+    document.getElementById('withdrawModal').classList.add('active');
+}
+function closeWithdrawModal() {
+    document.getElementById('withdrawModal').classList.remove('active');
+    currentActionId = null;
+}
+function confirmWithdraw() {
+    if (currentActionId !== null) {
+        const item = mockData.find(d => d.id === currentActionId);
+        if (item) item.task_status = '已撤回';
+    }
+    closeWithdrawModal();
+    doSearch();
+    Common.showToast('撤回成功', 'success');
+}
+
+// ===== 出库审批 =====
+function openOutboundApproveModal(id) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    currentActionId = id;
+    document.getElementById('oa_task_no').textContent = item.task_no;
+    document.getElementById('oa_vehicle_count').textContent = item.vehicle_count + ' 辆';
+    document.getElementById('oa_from_project').textContent = item.from_project;
+    document.getElementById('oa_to_project').textContent = item.to_project;
+    document.getElementById('oa_comment').value = '';
+    document.getElementById('outboundApproveModal').classList.add('active');
+}
+function closeOutboundApproveModal() {
+    document.getElementById('outboundApproveModal').classList.remove('active');
+    currentActionId = null;
+}
+function doOutboundApprove(agree) {
+    if (currentActionId !== null) {
+        const item = mockData.find(d => d.id === currentActionId);
+        if (item) item.task_status = agree ? '待出库' : '出库审批退回';
+    }
+    closeOutboundApproveModal();
+    doSearch();
+    Common.showToast(agree ? '审批通过' : '已退回', agree ? 'success' : 'warning');
+}
+
+// ===== 交接审批 =====
+function openHandoverApproveModal(id) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    currentActionId = id;
+    document.getElementById('ha_task_no').textContent = item.task_no;
+    document.getElementById('ha_vehicle_count').textContent = item.vehicle_count + ' 辆';
+    document.getElementById('ha_from_project').textContent = item.from_project;
+    document.getElementById('ha_to_project').textContent = item.to_project;
+    document.getElementById('ha_comment').value = '';
+    document.getElementById('handoverApproveModal').classList.add('active');
+}
+function closeHandoverApproveModal() {
+    document.getElementById('handoverApproveModal').classList.remove('active');
+    currentActionId = null;
+}
+function doHandoverApprove(agree) {
+    if (currentActionId !== null) {
+        const item = mockData.find(d => d.id === currentActionId);
+        if (item) item.task_status = agree ? '待交接' : '已关闭';
+    }
+    closeHandoverApproveModal();
+    doSearch();
+    Common.showToast(agree ? '审批通过' : '流程已关闭', agree ? 'success' : 'warning');
+}
+
+// ===== 导出 =====
+function doExport() {
+    if (selectedIds.size > 0) {
+        Common.showToast('已导出选中的 ' + selectedIds.size + ' 条数据', 'success');
+        selectedIds.clear(); renderTable();
+    } else {
+        document.getElementById('exportModal').classList.add('active');
+    }
+}
+function closeExportModal() { document.getElementById('exportModal').classList.remove('active'); }
+function confirmExport() {
+    closeExportModal();
+    Common.showToast('已导出所有数据（共 ' + filteredData.length + ' 条）', 'success');
+}
+
+// ===== 添加车辆弹窗 =====
+const avMockData = [
+    { id:101, vehicle_no:'V003', vin:'LSVAU2A39EN000003', model_name:'中联清洗车', model_version:'V1.0', iot_code:'14158', project:'镜湖区项目', vehicle_status:'在库-闲置可调出' },
+    { id:102, vehicle_no:'V010', vin:'LSVAU2A39EN000010', model_name:'爱瑞特纯电动高压冲洗车', model_version:'V2.0', iot_code:'11538', project:'椒北街道', vehicle_status:'在库-闲置可调出' },
+    { id:103, vehicle_no:'V013', vin:'LSVAU2A39EN000013', model_name:'麒麟清扫车', model_version:'V1.0', iot_code:'14163', project:'鸠江项目', vehicle_status:'在库-闲置可调出' },
+    { id:104, vehicle_no:'V014', vin:'LSVAU2A39EN000014', model_name:'三力洒水车', model_version:'V2.0', iot_code:'14164', project:'鸠江江北项目', vehicle_status:'在库-闲置可调出' },
+    { id:105, vehicle_no:'V015', vin:'LSVAU2A39EN000015', model_name:'泰坦智能驾驶洒水车', model_version:'V1.0', iot_code:'11541', project:'经开东区项目', vehicle_status:'在库-闲置可调出' },
+    { id:106, vehicle_no:'V016', vin:'LSVAU2A39EN000016', model_name:'长城多用途货车', model_version:'V1.0', iot_code:'11542', project:'陵水项目', vehicle_status:'在库-闲置可调出' },
+    { id:107, vehicle_no:'V017', vin:'LSVAU2A39EN000017', model_name:'麒麟无人化扫地车', model_version:'V2.0', iot_code:'14165', project:'鸠江开发区项目', vehicle_status:'在库-闲置可调出' },
+    { id:108, vehicle_no:'V018', vin:'LSVAU2A39EN000018', model_name:'独角兽', model_version:'V1.0', iot_code:'11543', project:'嘉定研发', vehicle_status:'在库-闲置可调出' },
+];
+let avFilteredData = [...avMockData];
+let avSelectedIds = new Set();
+let avCurrentProject = '';
+
+function openAddVehicleModal() {
+    avCurrentProject = applyVehicles.length > 0 ? applyVehicles[0].project : '';
+    if (avCurrentProject) {
+        document.getElementById('av_project').value = avCurrentProject;
+    } else {
+        document.getElementById('av_project').value = '';
+    }
+    document.getElementById('av_vin').value = '';
+    document.getElementById('av_model').value = '';
+    searchAddVehicles();
+    avSelectedIds.clear();
+    document.getElementById('addVehicleModal').classList.add('active');
+}
+function closeAddVehicleModal() {
+    document.getElementById('addVehicleModal').classList.remove('active');
+    avSelectedIds.clear();
+}
+function renderAddVehicleTable() {
+    const tbody = document.getElementById('addVehicleTableBody');
+    tbody.innerHTML = '';
+    avFilteredData.forEach(item => {
+        const ck = avSelectedIds.has(item.id) ? 'checked' : '';
+        tbody.innerHTML += `<tr>
+            <td style="text-align:center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleAvCheck(${item.id},this)"></td>
+            <td>${item.vehicle_no}</td>
+            <td>${item.vin}</td>
+            <td>${item.model_name}</td>
+            <td>${item.model_version}</td>
+            <td>${item.iot_code}</td>
+            <td>${item.project}</td>
+            <td><span class="status-tag-inline orange">${item.vehicle_status}</span></td>
+        </tr>`;
+    });
+}
+function searchAddVehicles() {
+    const sv = document.getElementById('av_vin').value.trim().toLowerCase();
+    const sm = document.getElementById('av_model').value.trim().toLowerCase();
+    const sp = document.getElementById('av_project').value;
+    avFilteredData = avMockData.filter(item => {
+        if (sv && !item.vin.toLowerCase().includes(sv)) return false;
+        if (sm && !item.model_name.toLowerCase().includes(sm)) return false;
+        if (sp && item.project !== sp) return false;
+        return true;
+    });
+    renderAddVehicleTable();
+}
+function resetAddVehicles() {
+    document.getElementById('av_vin').value = '';
+    document.getElementById('av_model').value = '';
+    document.getElementById('av_project').value = avCurrentProject;
+    searchAddVehicles();
+}
+function toggleAvCheckAll(el) {
+    avFilteredData.forEach(item => { if (el.checked) avSelectedIds.add(item.id); else avSelectedIds.delete(item.id); });
+    renderAddVehicleTable();
+}
+function toggleAvCheck(id, el) {
+    if (el.checked) avSelectedIds.add(id); else avSelectedIds.delete(id);
+}
+function confirmAddVehicles() {
+    if (avSelectedIds.size === 0) { Common.showToast('请选择要添加的车辆', 'warning'); return; }
+    // 项目一致性校验
+    const selectedProjects = new Set();
+    avSelectedIds.forEach(id => {
+        const item = avMockData.find(d => d.id === id);
+        if (item) selectedProjects.add(item.project);
+    });
+    if (applyVehicles.length > 0) {
+        const existingProject = applyVehicles[0].project;
+        selectedProjects.forEach(proj => {
+            if (proj !== existingProject) {
+                Common.showToast('所选车辆归属项目与当前清单不一致', 'error');
+                return;
+            }
+        });
+    }
+    avSelectedIds.forEach(id => {
+        const item = avMockData.find(d => d.id === id);
+        if (item && !applyVehicles.find(v => v.vin === item.vin)) {
+            applyVehicles.push({...item, handover_status: '未交接', outbound_status: '未出库'});
+        }
+    });
+    // 更新只读字段
+    if (applyVehicles.length > 0) {
+        const projects = new Set(applyVehicles.map(v => v.project));
+        document.getElementById('a_vehicle_nos').value = applyVehicles.map(v => v.vehicle_no).join(', ');
+        document.getElementById('a_vin_codes').value = applyVehicles.map(v => v.vin).join(', ');
+        document.getElementById('a_current_project').value = Array.from(projects)[0] || '';
+    }
+    renderApplyVehicleList();
+    closeAddVehicleModal();
+    Common.showToast('已添加 ' + avSelectedIds.size + ' 辆车辆', 'success');
+}
+
+// ===== 初始化 =====
+renderTable();
+</script>
+</body>
+</html>

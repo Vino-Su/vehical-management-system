@@ -182,6 +182,125 @@
 .remove-row-btn:hover { text-decoration: underline; }
 .add-row-btn { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: 14px; cursor: pointer; padding: 8px 0; }
 .add-row-btn:hover { color: var(--primary-hover); }
+
+/* === 调度历史详情弹窗 === */
+.dispatch-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 2000;
+  display: none; align-items: center; justify-content: center;
+}
+.dispatch-modal-overlay.show { display: flex; }
+.dispatch-modal-box {
+  width: 1100px; max-width: 90vw; max-height: 85vh;
+  background: var(--bg-container); border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; box-shadow: var(--shadow-md);
+}
+.dispatch-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+}
+.dispatch-modal-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
+.dispatch-modal-header .close-btn { font-size: 20px; color: var(--text-secondary); cursor: pointer; background: none; border: none; }
+.dispatch-modal-header .close-btn:hover { color: var(--text-primary); }
+.dispatch-modal-vehicle-info {
+  display: flex; align-items: center; gap: 12px; padding: 12px 24px;
+  background: #fafafa; border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+  font-size: 13px; color: var(--text-secondary);
+}
+.dispatch-modal-vehicle-info .value { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+.dispatch-modal-vehicle-info .sep { color: var(--text-disabled); margin: 0 4px; }
+.dispatch-modal-body {
+  display: flex; flex: 1; overflow: hidden; min-height: 0;
+}
+.dispatch-modal-main {
+  flex: 7; display: flex; flex-direction: column; overflow: hidden;
+  border-right: 1px solid var(--border-color);
+}
+.dispatch-modal-sidebar {
+  flex: 3; display: flex; flex-direction: column; overflow: hidden;
+}
+.dispatch-step-bar {
+  display: flex; align-items: center; padding: 16px 24px; gap: 12px;
+  border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+}
+.dispatch-step-item {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 6px 10px; border-radius: var(--radius); border: 2px solid transparent;
+  transition: all .2s;
+}
+.dispatch-step-item:hover:not(.d-step-disabled) { background: #f5f5f5; }
+.dispatch-step-item.d-step-selected { border-color: var(--primary); background: #e6f4ff; }
+.dispatch-step-item.d-step-disabled { cursor: not-allowed; opacity: .45; }
+.dispatch-step-item.d-step-disabled.d-step-selected { border-color: transparent; background: transparent; }
+.dispatch-step-circle {
+  width: 24px; height: 24px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
+  border: 2px solid var(--border-input); color: var(--text-disabled); background: #fff;
+  transition: all .2s; flex-shrink: 0;
+}
+.dispatch-step-item.d-step-done .dispatch-step-circle { border-color: var(--success); background: var(--success); color: #fff; }
+.dispatch-step-item.d-step-active .dispatch-step-circle { border-color: var(--primary); background: var(--primary); color: #fff; }
+.dispatch-step-item.d-step-closed .dispatch-step-circle { border-color: var(--text-disabled); background: var(--text-disabled); color: #fff; }
+.dispatch-step-item.d-step-done .dispatch-step-label { color: var(--text-primary); }
+.dispatch-step-item.d-step-active .dispatch-step-label { color: var(--primary); font-weight: 600; }
+.dispatch-step-item.d-step-closed .dispatch-step-label { color: var(--text-disabled); }
+.dispatch-step-label { font-size: 13px; white-space: nowrap; }
+.dispatch-step-line { width: 32px; height: 2px; background: var(--border-color); flex-shrink: 0; }
+.dispatch-step-line.d-step-done { background: var(--success); }
+.dispatch-modal-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.dispatch-modal-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+  padding: 12px 24px; border-top: 1px solid var(--border-color); flex-shrink: 0;
+}
+.dispatch-log-sidebar-header {
+  padding: 16px 20px 12px; font-size: 14px; font-weight: 600;
+  border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+  display: flex; align-items: center; gap: 6px;
+}
+.dispatch-log-sidebar-header::before {
+  content: ''; display: inline-block; width: 3px; height: 14px;
+  background: var(--primary); border-radius: 2px;
+}
+.dispatch-log-list { flex: 1; overflow-y: auto; padding: 12px 20px; }
+.dispatch-log-item {
+  position: relative; padding: 0 0 20px 20px;
+  border-left: 2px solid var(--border-color);
+}
+.dispatch-log-item:last-child { padding-bottom: 0; }
+.dispatch-log-item.d-log-latest { border-left-color: var(--primary); }
+.dispatch-log-dot {
+  position: absolute; left: -7px; top: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--border-color); border: 2px solid #fff;
+}
+.dispatch-log-item.d-log-latest .dispatch-log-dot { background: var(--primary); }
+.dispatch-log-node { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.dispatch-log-item.d-log-latest .dispatch-log-node { color: var(--primary); }
+.dispatch-log-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.dispatch-modal-vehicle-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.dispatch-modal-vehicle-table thead th {
+  background: #fafafa; color: var(--text-secondary); font-weight: 600;
+  font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color);
+}
+.dispatch-modal-vehicle-table tbody td {
+  padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border-color);
+}
+.dispatch-modal-vehicle-table tbody tr.d-current-vehicle { background: #e6f4ff; }
+.d-current-tag {
+  display: inline-block; padding: 1px 6px; border-radius: 10px;
+  background: #1677ff; color: #fff; font-size: 11px; margin-left: 6px; line-height: 18px;
+}
+.dispatch-img-preview-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 3000;
+  display: none; align-items: center; justify-content: center;
+}
+.dispatch-img-preview-overlay.show { display: flex; }
+.dispatch-img-preview-overlay img {
+  max-width: 80vw; max-height: 80vh; border-radius: var(--radius);
+  box-shadow: 0 8px 30px rgba(0,0,0,.3);
+}
+.dispatch-img-preview-close {
+  position: absolute; top: 20px; right: 30px; font-size: 32px;
+  color: #fff; cursor: pointer; background: none; border: none;
+}
 </style>
 </head>
 <body>
@@ -203,7 +322,7 @@
         <!-- Tab Bar -->
         <div class="tab-bar" id="tabBar">
           <div class="tab-item active" data-tab="basic" onclick="switchTab('basic')">基础信息</div>
-          <div class="tab-item" data-tab="transfer" onclick="switchTab('transfer')">调拨信息</div>
+          <div class="tab-item" data-tab="transfer" onclick="switchTab('transfer')">调度信息</div>
           <div class="tab-item disabled" title="暂未开放">维保信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item disabled" title="暂未开放">合规信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item disabled" title="暂未开放">风险信息<span class="tab-badge">暂未开放</span></div>
@@ -221,7 +340,7 @@
         <div class="tab-content" id="tab-transfer" style="display:none">
           <div class="transfer-search">
             <div class="filter-item">
-              <label>调拨申请时间</label>
+              <label>调度申请时间</label>
               <div class="date-range">
                 <input type="date" id="t_apply_start">
                 <span class="sep">~</span>
@@ -241,14 +360,14 @@
               <input type="text" id="t_applicant" placeholder="请输入申请人">
             </div>
             <div class="filter-item">
-              <label>调拨前项目</label>
+              <label>流转前项目</label>
               <select id="t_from_project">
                 <option value="">请选择</option>
                 <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
               </select>
             </div>
             <div class="filter-item">
-              <label>调拨后项目</label>
+              <label>流转后项目</label>
               <select id="t_to_project">
                 <option value="">请选择</option>
                 <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
@@ -269,12 +388,13 @@
               <thead>
                 <tr>
                   <th style="width:50px;text-align:center"><input type="checkbox" id="transferCheckAll" onchange="toggleTransferCheckAll(this)"></th>
-                  <th style="width:140px">任务ID</th>
-                  <th style="width:180px">调拨申请时间</th>
+                  <th style="width:160px">任务编号</th>
+                  <th style="width:120px">任务状态</th>
+                  <th style="width:180px">调度申请时间</th>
                   <th style="width:180px">确认交接时间</th>
                   <th style="width:120px">申请人</th>
-                  <th style="width:160px">调拨前项目</th>
-                  <th style="width:160px">调拨后项目</th>
+                  <th style="width:160px">流转前项目</th>
+                  <th style="width:160px">流转后项目</th>
                   <th style="width:100px;text-align:center">操作</th>
                 </tr>
               </thead>
@@ -370,7 +490,7 @@ const vehicleData = {
   photo_front: true, photo_45: true,
   license_front: true, license_back: true, reg_date: '2025-03-15', car_age: '1年2个月',
   model_name: '麒麟清扫车', model_version: 'V1.0', model_code: 'QL-QJ01',
-  vehicle_category: '作业机动车', alias: '麒麟清扫车', model_class: '轻卡',
+  vehicle_category: '作业机动车', model_alias: '扫路车', model_class: '轻卡',
   power_type: '纯电动', emission: '纯电动', total_weight: '8500', curb_weight: '6200',
   vehicle_mfr: '爱瑞特新能源科技有限公司', vehicle_model_no: 'BQ5160TXSBEV',
   chassis_mfr: '东风汽车底盘有限公司', chassis_model_no: 'EQ1080GJ1',
@@ -386,8 +506,13 @@ const vehicleData = {
   hw_list: [{name:'T-BOX',code:'TB20240001',status:'正常'},{name:'OBU',code:'OBU20240002',status:'正常'}],
   sw_list: [{name:'自动驾驶软件',value:'V3.2.1'},{name:'网联SDK',value:'V2.0.0'}],
   cam_list: [{name:'前视摄像头',tid:'1',minbr:'2',maxbr:'8',fixed:'否',fps:'30',res:'1920x1080',pri:'高',platform:'均支持'}],
-  func_type: '环卫作业', history_img: '是', history_video: '有', realtime_video: '腾讯云',
-  parallel_cockpit: '有', network_protocol: '新网联', vehicle_alias: '01号麒麟清扫车'
+  history_img: '是', history_video: '有', realtime_video: '腾讯云',
+  parallel_cockpit: '有', network_protocol: '新网联', stream_type: 'WebRTC',
+  cam_img_list: [
+    {name:'前视摄像头',tid:'1',support_history:'是',history_quality:'80',support_perception:'是',perception_quality:'90',support_cloud:'是',cloud_quality:'85',support_vehicle:'否',vehicle_quality:'—'},
+    {name:'后视摄像头',tid:'2',support_history:'是',history_quality:'75',support_perception:'否',perception_quality:'—',support_cloud:'否',cloud_quality:'—',support_vehicle:'否',vehicle_quality:'—'}
+  ],
+  is_parallel: '否', max_speed: '', max_steer: ''
 };
 
 // ===== 状态标签映射 =====
@@ -467,7 +592,7 @@ function renderBasicView() {
       <div class="info-field"><span class="field-label">车型版本</span><span class="field-value">${v(d.model_version)}</span></div>
       <div class="info-field"><span class="field-label">车型编码</span><span class="field-value">${v(d.model_code)}</span></div>
       <div class="info-field"><span class="field-label">车辆类别</span><span class="field-value">${v(d.vehicle_category)}</span></div>
-      <div class="info-field"><span class="field-label">别名</span><span class="field-value">${v(d.alias)}</span></div>
+      <div class="info-field"><span class="field-label">车型别名</span><span class="field-value">${v(d.model_alias)}</span></div>
       <div class="info-field"><span class="field-label">车型分类</span><span class="field-value">${v(d.model_class)}</span></div>
       <div class="info-field"><span class="field-label">动力类别</span><span class="field-value">${v(d.power_type)}</span></div>
       <div class="info-field"><span class="field-label">排放标准</span><span class="field-value">${v(d.emission)}</span></div>
@@ -536,13 +661,22 @@ function renderBasicView() {
     </div>
 
     <div class="info-section"><div class="info-section-title">车辆功能配置</div><div class="info-grid">
-      <div class="info-field"><span class="field-label">功能类型</span><span class="field-value">${v(d.func_type)}</span></div>
-      <div class="info-field"><span class="field-label">车辆别名</span><span class="field-value">${v(d.vehicle_alias)}</span></div>
       <div class="info-field"><span class="field-label">历史图片</span><span class="field-value">${v(d.history_img)}</span></div>
       <div class="info-field"><span class="field-label">历史视频</span><span class="field-value">${v(d.history_video)}</span></div>
       <div class="info-field"><span class="field-label">实时视频</span><span class="field-value">${v(d.realtime_video)}</span></div>
-      <div class="info-field"><span class="field-label">平行驾驶座舱通过</span><span class="field-value">${v(d.parallel_cockpit)}</span></div>
+      <div class="info-field"><span class="field-label">平行驾驶座舱通话</span><span class="field-value">${v(d.parallel_cockpit)}</span></div>
       <div class="info-field"><span class="field-label">网联协议</span><span class="field-value">${v(d.network_protocol)}</span></div>
+      <div class="info-field"><span class="field-label">推拉流类型</span><span class="field-value">${v(d.stream_type)}</span></div>
+    </div></div>
+
+    <div class="info-section"><div class="info-section-title">摄像头图片配置</div>
+      <div class="table-wrapper"><table class="dynamic-table"><thead><tr><th>名称</th><th>Track_ID</th><th>是否支持历史图片</th><th>历史图片质量</th><th>是否支持感知标记</th><th>感知标记图片质量</th><th>是否支持云端打标</th><th>云端打标图片质量</th><th>是否支持车端打标</th><th>车端打标图片质量</th></tr></thead><tbody>${d.cam_img_list.map(c=>`<tr><td>${c.name}</td><td>${c.tid}</td><td>${c.support_history}</td><td>${v(c.history_quality)}</td><td>${c.support_perception}</td><td>${v(c.perception_quality)}</td><td>${c.support_cloud}</td><td>${v(c.cloud_quality)}</td><td>${c.support_vehicle}</td><td>${v(c.vehicle_quality)}</td></tr>`).join('')}</tbody></table></div>
+    </div>
+
+    <div class="info-section"><div class="info-section-title">平行驾驶配置</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">是否平行驾驶</span><span class="field-value">${v(d.is_parallel)}</span></div>
+      <div class="info-field"><span class="field-label">最大车速（km/h）</span><span class="field-value">${v(d.max_speed)}</span></div>
+      <div class="info-field"><span class="field-label">最大转向角</span><span class="field-value">${v(d.max_steer)}</span></div>
     </div></div>
   `;
 }
@@ -591,7 +725,7 @@ function renderBasicEdit() {
         <div class="form-item"><label><span class="required">*</span> 车型名称（中）</label><select><option value="">请选择</option>${sel(d.model_name,['爱瑞特纯电动高压冲洗车','长城多用途货车','独角兽','麒麟清扫车','麒麟无人化扫地车','三力洒水车','泰坦智能驾驶洒水车','中联清洗车'])}</select></div>
         <div class="form-item"><label>车型版本</label><select><option value="">请选择</option>${sel(d.model_version,['V1.0','V2.0','V3.0'])}</select></div>
         <div class="form-item"><label>车辆类别</label><input type="text" value="${d.vehicle_category}" readonly class="readonly"></div>
-        <div class="form-item"><label>别名</label><input type="text" value="${d.alias}" readonly class="readonly"></div>
+        <div class="form-item"><label>车型别名</label><select><option value="">请选择</option>${sel(d.model_alias,['扫路车','运输车','小型清洗机','小型扫路机','皮卡'])}</select></div>
         <div class="form-item"><label>车型分类</label><input type="text" value="${d.model_class}" readonly class="readonly"></div>
         <div class="form-item"><label>动力类别</label><input type="text" value="${d.power_type}" readonly class="readonly"></div>
         <div class="form-item"><label>排放标准</label><input type="text" value="${d.emission}" readonly class="readonly"></div>
@@ -666,13 +800,35 @@ function renderBasicEdit() {
       </div>
 
       <div class="form-section"><div class="section-title">车辆功能配置</div><div class="form-grid">
-        <div class="form-item"><label>功能类型</label><input type="text" value="${d.func_type}"></div>
-        <div class="form-item"><label>车辆别名</label><input type="text" value="${d.vehicle_alias}"></div>
         <div class="form-item"><label>历史图片</label><div class="radio-group"><label><input type="radio" name="historyImg" value="1" ${d.history_img==='是'?'checked':''}> 是</label><label><input type="radio" name="historyImg" value="0" ${d.history_img==='否'?'checked':''}> 否</label></div></div>
         <div class="form-item"><label>历史视频</label><div class="radio-group"><label><input type="radio" name="historyVideo" value="1" ${d.history_video==='有'?'checked':''}> 有</label><label><input type="radio" name="historyVideo" value="0" ${d.history_video==='无'?'checked':''}> 无</label></div></div>
         <div class="form-item"><label>实时视频</label><select><option value="">请选择</option>${sel(d.realtime_video,['腾讯云','WebRTC','GB28181','新GB28181','无'])}</select></div>
-        <div class="form-item"><label>平行驾驶座舱通过</label><div class="radio-group"><label><input type="radio" name="parallelCockpit" value="1" ${d.parallel_cockpit==='有'?'checked':''}> 有</label><label><input type="radio" name="parallelCockpit" value="0" ${d.parallel_cockpit==='无'?'checked':''}> 无</label></div></div>
+        <div class="form-item"><label>平行驾驶座舱通话</label><div class="radio-group"><label><input type="radio" name="parallelCockpit" value="1" ${d.parallel_cockpit==='有'?'checked':''}> 有</label><label><input type="radio" name="parallelCockpit" value="0" ${d.parallel_cockpit==='无'?'checked':''}> 无</label></div></div>
         <div class="form-item"><label>网联协议</label><select><option value="">请选择</option>${sel(d.network_protocol,['新网联','旧网联','无'])}</select></div>
+        <div class="form-item"><label>推拉流类型</label><select><option value="">请选择</option>${sel(d.stream_type,['WebRTC','ZLMediaKit','其他'])}</select></div>
+      </div></div>
+
+      <div class="form-section"><div class="section-title">摄像头图片配置</div>
+        <table class="dynamic-table" id="editCamImgTable"><thead><tr><th>名称</th><th>Track_ID</th><th>是否支持历史图片</th><th>历史图片质量</th><th>是否支持感知标记</th><th>感知标记图片质量</th><th>是否支持云端打标</th><th>云端打标图片质量</th><th>是否支持车端打标</th><th>车端打标图片质量</th><th>操作</th></tr></thead>
+        <tbody>${d.cam_img_list.map(c=>`<tr>
+          <td><input type="text" value="${c.name}"></td><td><input type="number" value="${c.tid}"></td>
+          <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.support_history==='是'?'selected':''}>是</option><option ${c.support_history==='否'?'selected':''}>否</option></select></td>
+          <td><input type="number" value="${c.history_quality}" min="0"></td>
+          <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.support_perception==='是'?'selected':''}>是</option><option ${c.support_perception==='否'?'selected':''}>否</option></select></td>
+          <td><input type="number" value="${c.perception_quality}" min="0"></td>
+          <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.support_cloud==='是'?'selected':''}>是</option><option ${c.support_cloud==='否'?'selected':''}>否</option></select></td>
+          <td><input type="number" value="${c.cloud_quality}" min="0"></td>
+          <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.support_vehicle==='是'?'selected':''}>是</option><option ${c.support_vehicle==='否'?'selected':''}>否</option></select></td>
+          <td><input type="number" value="${c.vehicle_quality}" min="0"></td>
+          <td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>
+        </tr>`).join('')}</tbody></table>
+        <div class="add-row-btn" onclick="addEditCamImgRow()">＋ 添加摄像头图片配置</div>
+      </div>
+
+      <div class="form-section"><div class="section-title">平行驾驶配置</div><div class="form-grid">
+        <div class="form-item"><label>是否平行驾驶</label><div class="radio-group"><label><input type="radio" name="isParallel" value="1" ${d.is_parallel==='是'?'checked':''}> 是</label><label><input type="radio" name="isParallel" value="0" ${d.is_parallel==='否'?'checked':''}> 否</label></div></div>
+        <div class="form-item"><label>最大车速（km/h）</label><input type="number" value="${d.max_speed||''}" min="0"></div>
+        <div class="form-item"><label>最大转向角</label><input type="number" value="${d.max_steer||''}" min="0"></div>
       </div></div>
     </form>
   `;
@@ -710,6 +866,22 @@ function removeRow(el) {
   else Common.showToast('至少保留一行', 'error');
 }
 
+function addEditCamImgRow() {
+  const tbody = document.querySelector('#editCamImgTable tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text" placeholder="名称"></td><td><input type="number" placeholder="ID"></td>
+    <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
+    <td><input type="number" placeholder="质量" min="0"></td>
+    <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
+    <td><input type="number" placeholder="质量" min="0"></td>
+    <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
+    <td><input type="number" placeholder="质量" min="0"></td>
+    <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
+    <td><input type="number" placeholder="质量" min="0"></td>
+    <td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>`;
+  tbody.appendChild(tr);
+}
+
 // ===== 编辑态切换 =====
 function toggleEdit() {
   if (isEditing) return;
@@ -740,14 +912,19 @@ function goBack() {
   window.location.href = './vehicle-asset-list.html';
 }
 
-// ===== 调拨信息 =====
+// ===== 调度信息 =====
+const statusTagMap2 = {
+  '已完成': 'tag-green', '已提交': 'tag-blue', '已撤回': 'tag-orange',
+  '出库审批退回': 'tag-red', '待出库': 'tag-blue', '已出库': 'tag-blue',
+  '待交接': 'tag-blue', '已关闭': 'tag-default'
+};
 const transferData = [
-  { id:'DB20250301001', apply_time:'2025-03-01 09:30:00', confirm_time:'2025-03-03 14:00:00', applicant:'王强', from:'镜湖区项目', to:'鸠江项目' },
-  { id:'DB20250215002', apply_time:'2025-02-15 11:20:00', confirm_time:'2025-02-18 10:30:00', applicant:'李明', from:'鸠江江北项目', to:'镜湖区项目' },
-  { id:'DB20250120003', apply_time:'2025-01-20 16:45:00', confirm_time:'2025-01-22 09:00:00', applicant:'赵伟', from:'陵水项目', to:'鸠江江北项目' },
-  { id:'DB20241210004', apply_time:'2024-12-10 08:15:00', confirm_time:'2024-12-12 15:30:00', applicant:'王强', from:'鸠江项目', to:'陵水项目' },
-  { id:'DB20241105005', apply_time:'2024-11-05 13:00:00', confirm_time:'2024-11-08 11:00:00', applicant:'李明', from:'镜湖区项目', to:'鸠江江北项目' },
-  { id:'DB20241001006', apply_time:'2024-10-01 10:30:00', confirm_time:'2024-10-03 16:45:00', applicant:'赵伟', from:'鸠江江北项目', to:'鸠江项目' },
+  { id:'DB20250301001', status:'已完成', apply_time:'2025-03-01 09:30:00', confirm_time:'2025-03-03 14:00:00', applicant:'王强', from:'镜湖区项目', to:'鸠江项目' },
+  { id:'DB20250215002', status:'已完成', apply_time:'2025-02-15 11:20:00', confirm_time:'2025-02-18 10:30:00', applicant:'李明', from:'鸠江江北项目', to:'镜湖区项目' },
+  { id:'DB20250120003', status:'已完成', apply_time:'2025-01-20 16:45:00', confirm_time:'2025-01-22 09:00:00', applicant:'赵伟', from:'陵水项目', to:'鸠江江北项目' },
+  { id:'DB20241210004', status:'已完成', apply_time:'2024-12-10 08:15:00', confirm_time:'2024-12-12 15:30:00', applicant:'王强', from:'鸠江项目', to:'陵水项目' },
+  { id:'DB20241105005', status:'已关闭', apply_time:'2024-11-05 13:00:00', confirm_time:'—', applicant:'李明', from:'镜湖区项目', to:'鸠江江北项目' },
+  { id:'DB20241001006', status:'已完成', apply_time:'2024-10-01 10:30:00', confirm_time:'2024-10-03 16:45:00', applicant:'赵伟', from:'鸠江江北项目', to:'鸠江项目' },
 ];
 let transferPage = 1, transferPageSize = 10, transferSelected = new Set();
 
@@ -757,11 +934,12 @@ function renderTransferTable() {
   const pageData = transferData.slice(start, start + transferPageSize);
   tbody.innerHTML = pageData.map(d => {
     const ck = transferSelected.has(d.id) ? 'checked' : '';
+    const tag = statusTagMap2[d.status] || 'tag-default';
     return `<tr>
       <td style="text-align:center"><input type="checkbox" data-id="${d.id}" ${ck} onchange="toggleTransferCheck('${d.id}',this)"></td>
-      <td>${d.id}</td><td>${d.apply_time}</td><td>${d.confirm_time}</td>
+      <td>${d.id}</td><td><span class="tag ${tag}">${d.status}</span></td><td>${d.apply_time}</td><td>${d.confirm_time}</td>
       <td>${d.applicant}</td><td>${d.from}</td><td>${d.to}</td>
-      <td style="text-align:center"><a class="btn-link" onclick="Common.showToast('该功能后续版本开发','error')">详情</a></td>
+      <td style="text-align:center"><a class="btn-link" onclick="openDispatchModal('${d.id}')">详情</a></td>
     </tr>`;
   }).join('');
   Common.renderPagination({
@@ -846,6 +1024,263 @@ const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('mode') === 'edit') {
   toggleEdit();
 }
+
+// ===== 调度历史详情弹窗 =====
+var dispatchModalData = null;
+var dispatchModalStep = 'apply';
+
+function openDispatchModal(taskId) {
+  // 查找对应的调度记录
+  var record = transferData.find(function(d) { return d.id === taskId; });
+  if (!record) { Common.showToast('未找到调度记录', 'error'); return; }
+
+  // 构建弹窗数据（模拟完整调度详情数据）
+  dispatchModalData = {
+    taskNo: record.id,
+    taskStatus: record.status,
+    currentVehicle: { vin: 'LSVAU2A39EN000001', modelName: '麒麟清扫车', plateNo: '京ADG090' },
+    vehicles: [
+      { no: 'VEH20250301', vin: 'LSVAU2A39EN000001', modelName: '麒麟清扫车', project: record.from },
+      { no: 'VEH20250102', vin: 'LSVAU2A39EN000002', modelName: '三力洒水车', project: record.from }
+    ],
+    application: {
+      applicant: record.applicant, role: '研发工程师',
+      fromProject: record.from, toProject: record.to,
+      receiver: '李明', expectedDate: '2025-03-05',
+      purpose: '项目流转', approver: '赵伟',
+      applyTime: record.apply_time
+    },
+    outbound: {
+      departTime: '2025-03-02', departMethod: '板车运输',
+      vehicleOutbound: { status: '已出库', beforePhoto: true, outboundDoc: true, outboundDocName: '出库单_' + taskId + '_001.pdf', remark: '车辆外观完好，无异常损伤' }
+    },
+    handover: {
+      vehicleHandover: { status: '已交接', receivePhoto: true, remark: '车辆已验收，外观完好，功能正常', isAccepted: '是', confirmTime: record.confirm_time }
+    },
+    logs: [
+      { node: '调度申请提交', person: record.applicant, time: record.apply_time, result: '提交成功' },
+      { node: '出库审批', person: '赵伟', time: '2025-03-01 14:00:00', result: '同意' },
+      { node: '确认出库', person: record.applicant, time: '2025-03-02 10:00:00', result: '出库成功' },
+      { node: '交接审批', person: '李明', time: '2025-03-03 09:00:00', result: '同意' },
+      { node: '单车交接确认', person: '李明', time: record.confirm_time, result: record.status === '已完成' ? '已交接' : '—' },
+      { node: '任务结束', person: '李明', time: record.confirm_time, result: record.status === '已完成' ? '任务结束' : '—' }
+    ]
+  };
+
+  // 过滤已完成任务的日志
+  if (record.status !== '已完成' && record.status !== '已关闭') {
+    dispatchModalData.logs = dispatchModalData.logs.filter(function(l) { return l.result !== '—'; });
+  }
+
+  // 设置默认步骤
+  var s = record.status;
+  if (s === '待出库' || s === '已出库') dispatchModalStep = 'outbound';
+  else if (s === '待交接') dispatchModalStep = 'handover';
+  else dispatchModalStep = 'apply';
+
+  // 更新弹窗标题
+  document.getElementById('dispatchModalTitle').textContent = '调度历史详情 — ' + record.id;
+
+  // 更新车辆信息条
+  document.getElementById('dispatchVehicleInfo').innerHTML =
+    '<span>当前车辆：</span>' +
+    '<span class="value">' + dispatchModalData.currentVehicle.vin + '</span>' +
+    '<span class="sep">|</span>' +
+    '<span class="value">' + dispatchModalData.currentVehicle.modelName + '</span>' +
+    '<span class="sep">|</span>' +
+    '<span class="value">' + dispatchModalData.currentVehicle.plateNo + '</span>';
+
+  // 渲染步骤条
+  renderDispatchStepBar();
+  // 渲染详情内容
+  renderDispatchStepContent();
+  // 渲染流程日志
+  renderDispatchLogList();
+  // 显示弹窗
+  document.getElementById('dispatchModalOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDispatchModal() {
+  document.getElementById('dispatchModalOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  dispatchModalData = null;
+}
+
+function renderDispatchStepBar() {
+  var container = document.getElementById('dispatchStepBar');
+  var steps = [
+    { key: 'apply', label: '调度申请', status: 'done' },
+    { key: 'outbound', label: '车辆出库', status: 'done' },
+    { key: 'handover', label: '车辆交接', status: 'done' }
+  ];
+
+  var s = dispatchModalData.taskStatus;
+  // 根据任务状态设置步骤状态
+  if (['已提交', '已撤回', '出库审批退回'].indexOf(s) >= 0) {
+    steps[1].status = 'disabled';
+    steps[2].status = 'disabled';
+  } else if (s === '待出库') {
+    steps[1].status = 'active';
+    steps[2].status = 'disabled';
+  } else if (s === '已出库') {
+    steps[1].status = 'done';
+    steps[2].status = 'disabled';
+  } else if (s === '待交接') {
+    steps[1].status = 'done';
+    steps[2].status = 'active';
+  } else if (s === '已关闭') {
+    steps[2].status = 'closed';
+  }
+
+  var html = '';
+  steps.forEach(function(step, i) {
+    var cls = 'dispatch-step-item';
+    if (step.status === 'done') cls += ' d-step-done';
+    else if (step.status === 'active') cls += ' d-step-active';
+    else if (step.status === 'disabled') cls += ' d-step-disabled';
+    else if (step.status === 'closed') cls += ' d-step-closed';
+    if (step.key === dispatchModalStep) cls += ' d-step-selected';
+
+    var circleText = step.status === 'done' ? '✓' : (step.status === 'active' ? (i + 1) : (i + 1));
+    var clickable = step.status !== 'disabled';
+    html += '<div class="' + cls + '"' + (clickable ? ' onclick="switchDispatchStep(\'' + step.key + '\')"' : '') + '>' +
+      '<span class="dispatch-step-circle">' + circleText + '</span>' +
+      '<span class="dispatch-step-label">' + step.label + '</span>' +
+      '</div>';
+    if (i < steps.length - 1) {
+      html += '<div class="dispatch-step-line' + (step.status === 'done' ? ' d-step-done' : '') + '"></div>';
+    }
+  });
+  container.innerHTML = html;
+}
+
+function switchDispatchStep(step) {
+  if (dispatchModalStep === step) return;
+  dispatchModalStep = step;
+  renderDispatchStepBar();
+  renderDispatchStepContent();
+}
+
+function renderDispatchStepContent() {
+  var container = document.getElementById('dispatchStepContent');
+  var d = dispatchModalData;
+  if (dispatchModalStep === 'apply') {
+    var a = d.application;
+    var rows = d.vehicles.map(function(v) {
+      var isCur = v.vin === d.currentVehicle.vin;
+      return '<tr' + (isCur ? ' class="d-current-vehicle"' : '') + '>' +
+        '<td>' + v.no + '</td><td>' + v.vin + (isCur ? '<span class="d-current-tag">当前车辆</span>' : '') + '</td>' +
+        '<td>' + v.modelName + '</td><td>' + v.project + '</td></tr>';
+    }).join('');
+    container.innerHTML =
+      '<div class="info-section"><div class="info-section-title">申请信息</div><div class="info-grid">' +
+        '<div class="info-field"><span class="field-label">任务编号</span><span class="field-value">' + d.taskNo + '</span></div>' +
+        '<div class="info-field"><span class="field-label">任务状态</span><span class="field-value"><span class="tag ' + (statusTagMap2[d.taskStatus] || 'tag-default') + '">' + d.taskStatus + '</span></span></div>' +
+        '<div class="info-field"><span class="field-label">申请人</span><span class="field-value">' + a.applicant + '</span></div>' +
+        '<div class="info-field"><span class="field-label">用户角色</span><span class="field-value">' + a.role + '</span></div>' +
+        '<div class="info-field"><span class="field-label">当前项目</span><span class="field-value">' + a.fromProject + '</span></div>' +
+        '<div class="info-field"><span class="field-label">接收项目</span><span class="field-value">' + a.toProject + '</span></div>' +
+        '<div class="info-field"><span class="field-label">接收人</span><span class="field-value">' + a.receiver + '</span></div>' +
+        '<div class="info-field"><span class="field-label">预计接收时间</span><span class="field-value">' + a.expectedDate + '</span></div>' +
+        '<div class="info-field"><span class="field-label">周转用途</span><span class="field-value">' + a.purpose + '</span></div>' +
+        '<div class="info-field"><span class="field-label">审批人</span><span class="field-value">' + a.approver + '</span></div>' +
+        '<div class="info-field"><span class="field-label">申请时间</span><span class="field-value">' + a.applyTime + '</span></div>' +
+      '</div></div>' +
+      '<div class="info-section"><div class="info-section-title">车辆清单</div>' +
+        '<table class="dispatch-modal-vehicle-table"><thead><tr><th>车辆编号</th><th>车架号</th><th>车型名称（中）</th><th>归属项目</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>' +
+      '</div>';
+  } else if (dispatchModalStep === 'outbound') {
+    var o = d.outbound, vo = o.vehicleOutbound;
+    container.innerHTML =
+      '<div class="info-section"><div class="info-section-title">整批出库信息</div><div class="info-grid">' +
+        '<div class="info-field"><span class="field-label">发车时间</span><span class="field-value">' + o.departTime + '</span></div>' +
+        '<div class="info-field"><span class="field-label">发车方式</span><span class="field-value">' + o.departMethod + '</span></div>' +
+      '</div></div>' +
+      '<div class="info-section"><div class="info-section-title">当前车辆出库信息</div><div class="info-grid">' +
+        '<div class="info-field"><span class="field-label">出库状态</span><span class="field-value"><span class="tag tag-green">' + vo.status + '</span></span></div>' +
+        '<div class="info-field"><span class="field-label">出库说明</span><span class="field-value">' + (vo.remark || '—') + '</span></div>' +
+        '<div class="info-field col-span-2"><span class="field-label">移出前车辆照片</span><span class="field-value"><span class="btn-link" onclick="previewDispatchImg()">点击预览</span></span></div>' +
+        '<div class="info-field col-span-2"><span class="field-label">车辆出库单</span><span class="field-value"><span class="btn-link" onclick="Common.showToast(\'模拟下载: ' + vo.outboundDocName + '\',\'info\')">📎 ' + vo.outboundDocName + '</span></span></div>' +
+      '</div></div>';
+  } else if (dispatchModalStep === 'handover') {
+    var vh = d.handover.vehicleHandover;
+    var accTag = vh.isAccepted === '是' ? 'tag-green' : 'tag-red';
+    container.innerHTML =
+      '<div class="info-section"><div class="info-section-title">当前车辆交接信息</div><div class="info-grid">' +
+        '<div class="info-field"><span class="field-label">交接状态</span><span class="field-value"><span class="tag tag-green">' + vh.status + '</span></span></div>' +
+        '<div class="info-field"><span class="field-label">是否确认接收</span><span class="field-value"><span class="tag ' + accTag + '">' + vh.isAccepted + '</span></span></div>' +
+        '<div class="info-field"><span class="field-label">确认交接时间</span><span class="field-value">' + vh.confirmTime + '</span></div>' +
+        '<div class="info-field"><span class="field-label">交接说明</span><span class="field-value">' + (vh.remark || '—') + '</span></div>' +
+        '<div class="info-field col-span-2"><span class="field-label">接收时车辆照片</span><span class="field-value"><span class="btn-link" onclick="previewDispatchImg()">点击预览</span></span></div>' +
+      '</div></div>';
+  }
+}
+
+function renderDispatchLogList() {
+  var container = document.getElementById('dispatchLogList');
+  var logs = dispatchModalData.logs;
+  var resultTags = { '提交成功': 'tag-blue', '同意': 'tag-green', '不同意': 'tag-red', '出库成功': 'tag-green', '已交接': 'tag-green', '任务结束': 'tag-green', '—': '' };
+  container.innerHTML = logs.map(function(log, i) {
+    var isLatest = i === logs.length - 1;
+    var tagCls = resultTags[log.result] || '';
+    var resultHtml = tagCls ? '<span class="tag ' + tagCls + '">' + log.result + '</span>' : log.result;
+    return '<div class="dispatch-log-item' + (isLatest ? ' d-log-latest' : '') + '">' +
+      '<div class="dispatch-log-dot"></div>' +
+      '<div class="dispatch-log-node">' + log.node + '</div>' +
+      '<div class="dispatch-log-meta">' +
+        '<span>' + log.person + '</span><br>' + log.time + '<br>' + resultHtml +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function previewDispatchImg() {
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="#e6f4ff" width="400" height="300"/><text x="200" y="155" text-anchor="middle" fill="#1677ff" font-size="20" font-family="sans-serif">车辆照片示例</text></svg>';
+  document.getElementById('dispatchImgPreviewSrc').src = 'data:image/svg+xml,' + encodeURIComponent(svg);
+  document.getElementById('dispatchImgPreview').classList.add('show');
+}
+
+function closeDispatchImgPreview() {
+  document.getElementById('dispatchImgPreview').classList.remove('show');
+}
+
+// 键盘ESC关闭弹窗
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('dispatchModalOverlay').classList.contains('show')) {
+    closeDispatchModal();
+  }
+});
+
 </script>
+
+<!-- 调度历史详情弹窗 -->
+<div class="dispatch-modal-overlay" id="dispatchModalOverlay">
+  <div class="dispatch-modal-box">
+    <div class="dispatch-modal-header">
+      <h3 id="dispatchModalTitle">调度历史详情</h3>
+      <button class="close-btn" onclick="closeDispatchModal()">✕</button>
+    </div>
+    <div class="dispatch-modal-vehicle-info" id="dispatchVehicleInfo"></div>
+    <div class="dispatch-modal-body">
+      <div class="dispatch-modal-main">
+        <div class="dispatch-step-bar" id="dispatchStepBar"></div>
+        <div class="dispatch-modal-content" id="dispatchStepContent"></div>
+      </div>
+      <div class="dispatch-modal-sidebar">
+        <div class="dispatch-log-sidebar-header">流程日志</div>
+        <div class="dispatch-log-list" id="dispatchLogList"></div>
+      </div>
+    </div>
+    <div class="dispatch-modal-footer">
+      <button class="btn btn-lg" onclick="closeDispatchModal()">关闭</button>
+    </div>
+  </div>
+</div>
+<div class="dispatch-img-preview-overlay" id="dispatchImgPreview" onclick="closeDispatchImgPreview()">
+  <button class="dispatch-img-preview-close">✕</button>
+  <img id="dispatchImgPreviewSrc" src="" alt="预览图片">
+</div>
 </body>
 </html>

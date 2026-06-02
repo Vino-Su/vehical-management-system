@@ -11,10 +11,9 @@ const Common = {
       { label: '车辆资产盘点', id: 'asset-inventory', href: '' },
       { label: '车辆资产信息维护', id: 'asset-maintain', href: '' },
     ]},
-    { group: '车辆调拨管理', items: [
-      { label: '可用车辆库', id: 'transfer-available', href: '' },
-      { label: '调拨申请', id: 'transfer-apply', href: '' },
-      { label: '调拨审批', id: 'transfer-approve', href: '' },
+    { group: '调度管理', items: [
+      { label: '可用车辆库', id: 'transfer-available', href: 'vehicle-dispatch/dispatch-vehicle-list.html' },
+      { label: '调度任务管理', id: 'transfer-apply', href: 'vehicle-dispatch/dispatch-record-list.html' },
     ]},
     { group: '车辆运行管理', items: [] },
     { group: '车辆退出管理', items: [] },

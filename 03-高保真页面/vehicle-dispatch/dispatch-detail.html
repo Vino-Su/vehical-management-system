@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调度申请详情</title>
+    <link rel="stylesheet" href="../components/common.css">
+    <style>
+        /* ========== 详情页布局 ========== */
+        .detail-layout {
+            display: flex; gap: 16px; height: calc(100vh - 140px);
+        }
+        .detail-main {
+            flex: 7; background: var(--bg-container); border-radius: var(--radius);
+            box-shadow: var(--shadow-sm); display: flex; flex-direction: column; overflow: hidden;
+        }
+        .detail-sidebar {
+            flex: 3; background: var(--bg-container); border-radius: var(--radius);
+            box-shadow: var(--shadow-sm); display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* ========== 顶部操作栏 ========== */
+        .detail-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 24px; border-bottom: 1px solid var(--border-color);
+        }
+        .detail-header h2 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; }
+
+        /* ========== 步骤条 ========== */
+        .step-bar {
+            display: flex; align-items: center; padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color); background: #fafafa;
+        }
+        .step-item {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            transition: all .2s; padding: 6px 10px; border-radius: var(--radius);
+            border: 2px solid transparent;
+        }
+        .step-item.selected {
+            border-color: var(--primary); background: #e6f4ff;
+        }
+        .step-item.disabled { cursor: not-allowed; opacity: .5; }
+        .step-item.disabled.selected { border-color: transparent; background: transparent; }
+        .step-circle {
+            width: 28px; height: 28px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 13px; font-weight: 600;
+            border: 2px solid var(--border-input); color: var(--text-disabled); background: #fff;
+            transition: all .2s;
+        }
+        .step-item.active .step-circle {
+            border-color: var(--primary); color: var(--primary); background: #e6f4ff;
+        }
+        .step-item.completed .step-circle {
+            border-color: var(--success); color: #fff; background: var(--success);
+        }
+        .step-item.closed .step-circle {
+            border-color: var(--text-disabled); color: #fff; background: var(--text-disabled);
+        }
+        .step-label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
+        .step-item.active .step-label { color: var(--primary); font-weight: 500; }
+        .step-item.completed .step-label { color: var(--success); }
+        .step-item.closed .step-label { color: var(--text-disabled); }
+        .step-line {
+            flex: 1; height: 2px; background: var(--border-color); margin: 0 12px; min-width: 40px;
+        }
+        .step-line.completed { background: var(--success); }
+        .step-line.closed { background: var(--text-disabled); }
+
+        /* ========== 内容区 ========== */
+        .detail-content {
+            flex: 1; overflow-y: auto; padding: 24px;
+        }
+        .detail-section { margin-bottom: 24px; }
+        .detail-section-title {
+            font-size: 14px; font-weight: 600; color: var(--text-primary);
+            margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);
+        }
+        .detail-form {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 24px;
+        }
+        .detail-form-item {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .detail-form-item.full-width { grid-column: span 2; }
+        .detail-form-item label {
+            font-size: 14px; color: var(--text-secondary); white-space: nowrap; min-width: 90px; text-align: right;
+        }
+        .detail-form-item .value {
+            flex: 1; font-size: 14px; color: var(--text-primary); padding: 6px 0;
+        }
+        .detail-form-item input, .detail-form-item select, .detail-form-item textarea {
+            flex: 1; height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 0 12px; font-size: 14px; color: var(--text-primary); outline: none;
+        }
+        .detail-form-item input:focus, .detail-form-item select:focus, .detail-form-item textarea:focus { border-color: var(--primary); }
+        .detail-form-item input:read-only, .detail-form-item textarea:read-only {
+            background: #f7f8fa; color: var(--text-secondary); border-color: var(--border-color);
+        }
+        .detail-form-item textarea { height: 60px; padding: 8px 12px; resize: vertical; }
+
+        /* ========== 车辆表格 ========== */
+        .vehicle-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        .vehicle-table thead th {
+            background: #fafafa; color: var(--text-secondary); font-weight: 600;
+            font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color);
+        }
+        .vehicle-table tbody td {
+            color: var(--text-primary); font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--border-color);
+        }
+        .vehicle-table tbody tr:hover { background: var(--bg-hover); }
+        .status-tag-inline {
+            display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; line-height: 18px;
+        }
+        .status-tag-inline.blue { background: #e6f4ff; color: #1677ff; }
+        .status-tag-inline.green { background: #f6ffed; color: #52c41a; }
+        .status-tag-inline.red { background: #fff2f0; color: #ff4d4f; }
+        .status-tag-inline.gray { background: #f2f3f5; color: #86909c; }
+
+        /* ========== 单车展开表单（出库/交接共用） ========== */
+        .single-form-row {
+            background: #f7f8fa; padding: 16px 24px; border-bottom: 1px solid var(--border-color);
+        }
+        .single-form-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 24px;
+        }
+        .single-form-item {
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .single-form-item label {
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .single-form-item label .required { color: var(--error); margin-right: 2px; }
+        .single-form-item input, .single-form-item select, .single-form-item textarea {
+            height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 0 12px; font-size: 14px; outline: none;
+        }
+        .single-form-item input:focus, .single-form-item select:focus { border-color: var(--primary); }
+        .single-form-item textarea { height: 60px; padding: 8px 12px; resize: vertical; }
+        .single-form-actions {
+            display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;
+        }
+        .upload-placeholder {
+            display: flex; align-items: center; justify-content: center;
+            height: 80px; border: 1px dashed var(--border-input); border-radius: var(--radius);
+            background: #fff; color: var(--text-secondary); font-size: 13px; cursor: pointer;
+        }
+        .upload-placeholder:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ========== 流程日志 ========== */
+        .log-header {
+            padding: 16px 20px; border-bottom: 1px solid var(--border-color);
+            font-size: 14px; font-weight: 600; color: var(--text-primary);
+        }
+        .log-list {
+            flex: 1; overflow-y: auto; padding: 12px 20px;
+        }
+        .log-item {
+            position: relative; padding-left: 20px; padding-bottom: 20px;
+            border-left: 2px solid var(--border-color);
+        }
+        .log-item:last-child { border-left-color: transparent; }
+        .log-dot {
+            position: absolute; left: -6px; top: 2px; width: 10px; height: 10px;
+            border-radius: 50%; background: var(--border-color); border: 2px solid #fff;
+        }
+        .log-item.active .log-dot { background: var(--primary); }
+        .log-item.completed .log-dot { background: var(--success); }
+        .log-item.rejected .log-dot { background: var(--error); }
+        .log-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+        .log-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+
+        /* ========== 底部操作栏 ========== */
+        .detail-footer {
+            display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+            padding: 12px 24px; border-top: 1px solid var(--border-color); background: #fafafa;
+        }
+
+        /* ========== 审批意见输入 ========== */
+        .approve-inline {
+            display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
+        }
+        .approve-inline label { font-size: 14px; color: var(--text-secondary); }
+        .approve-inline textarea {
+            width: 100%; height: 60px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 8px 12px; font-size: 14px; resize: vertical; outline: none;
+        }
+        .approve-inline textarea:focus { border-color: var(--primary); }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+        <div id="header"></div>
+        <div class="content">
+            <div class="page-container" style="padding:0;overflow:hidden">
+                <div class="detail-layout">
+                    <!-- 左侧详情区 -->
+                    <div class="detail-main">
+                        <div class="detail-header">
+                            <h2 id="pageTitle">调度申请详情</h2>
+                            <button class="btn" onclick="window.history.back()">关闭</button>
+                        </div>
+                        <!-- 步骤条 -->
+                        <div class="step-bar" id="stepBar">
+                            <div class="step-item completed selected" data-step="apply" onclick="switchStep('apply')">
+                                <div class="step-circle">1</div>
+                                <span class="step-label">调度申请</span>
+                            </div>
+                            <div class="step-line" id="line1"></div>
+                            <div class="step-item" data-step="outbound" id="stepOutbound" onclick="switchStep('outbound')">
+                                <div class="step-circle">2</div>
+                                <span class="step-label">车辆出库</span>
+                            </div>
+                            <div class="step-line" id="line2"></div>
+                            <div class="step-item" data-step="handover" id="stepHandover" onclick="switchStep('handover')">
+                                <div class="step-circle">3</div>
+                                <span class="step-label">车辆交接</span>
+                            </div>
+                        </div>
+                        <!-- 内容区 -->
+                        <div class="detail-content" id="detailContent"></div>
+                        <!-- 底部操作栏 -->
+                        <div class="detail-footer" id="detailFooter"></div>
+                    </div>
+                    <!-- 右侧流程日志区 -->
+                    <div class="detail-sidebar">
+                        <div class="log-header">流程日志</div>
+                        <div class="log-list" id="logList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../components/common.js"></script>
+<script>
+// ===== 初始化布局 =====
+Common.initLayout({
+    basePath: '../',
+    sidebarId: 'sidebar',
+    activeMenuId: 'transfer-apply',
+    headerId: 'header',
+    breadcrumbs: [
+        { label: '调度管理', href: '../vehicle-dispatch/dispatch-record-list.html' },
+        { label: '调度任务管理', href: '../vehicle-dispatch/dispatch-record-list.html' },
+        { label: '调度申请详情' }
+    ],
+    headerOptions: { showProject: false }
+});
+
+// ===== 模拟数据 =====
+const taskData = {
+    id: 1,
+    task_no: 'DB202606010001',
+    vehicle_count: 2,
+    role: '管理人员',
+    transfer_type: '大周转',
+    transfer_purpose: '项目流转',
+    apply_time: '2026-05-28 09:30:00',
+    from_project: '镜湖区项目',
+    to_project: '鸠江项目',
+    task_status: '待出库',
+    receiver: '张三',
+    receive_time: '2026-06-05',
+    approver: '李四',
+    creator: '王强',
+    batch_depart_time: '',
+    batch_depart_method: '',
+    vehicles: [
+        { id: 1, vehicle_no: 'V003', vin: 'LSVAU2A39EN000003', model_name: '中联清洗车', project: '镜湖区项目', outbound_status: '未出库', handover_status: '未交接', outbound_photo: '', outbound_doc: '', outbound_remark: '', depart_time: '', depart_method: '', handover_photo: '', handover_remark: '', confirmed: null },
+        { id: 2, vehicle_no: 'V010', vin: 'LSVAU2A39EN000010', model_name: '爱瑞特纯电动高压冲洗车', project: '镜湖区项目', outbound_status: '未出库', handover_status: '未交接', outbound_photo: '', outbound_doc: '', outbound_remark: '', depart_time: '', depart_method: '', handover_photo: '', handover_remark: '', confirmed: null },
+    ],
+    logs: [
+        { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+        { node: '出库审批', approver: '李四', time: '2026-05-28 14:00:00', result: '同意', type: 'completed' },
+    ]
+};
+
+// ===== 当前步骤 =====
+let currentStep = 'outbound';
+let expandedVehicleId = null;
+
+// ===== 初始化 =====
+function init() {
+    const params = new URLSearchParams(window.location.search);
+    const statusParam = params.get('status');
+    const stepParam = params.get('step');
+    if (statusParam) {
+        taskData.task_status = statusParam;
+        if (statusParam === '已提交') {
+            currentStep = 'apply';
+            taskData.logs = [
+                { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+            ];
+        } else if (statusParam === '已撤回') {
+            currentStep = 'apply';
+            taskData.logs = [
+                { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+                { node: '撤回申请', approver: '王强', time: '2026-05-28 12:00:00', result: '已撤回', type: 'rejected' },
+            ];
+        } else if (statusParam === '出库审批退回') {
+            currentStep = 'apply';
+            taskData.logs = [
+                { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+                { node: '出库审批', approver: '李四', time: '2026-05-28 14:00:00', result: '不同意', type: 'rejected' },
+            ];
+        } else if (statusParam === '待出库') {
+            currentStep = 'outbound';
+            taskData.logs = [
+                { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+                { node: '出库审批', approver: '李四', time: '2026-05-28 14:00:00', result: '同意', type: 'completed' },
+            ];
+        } else if (statusParam === '已出库') {
+            currentStep = 'outbound';
+            taskData.vehicles.forEach(v => { v.outbound_status = '已出库'; });
+            taskData.batch_depart_time = '2026-05-30';
+            taskData.batch_depart_method = '物流运输';
+            taskData.logs = [
+                { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+                { node: '出库审批', approver: '李四', time: '2026-05-28 14:00:00', result: '同意', type: 'completed' },
+                { node: '确认出库', approver: '李四', time: '2026-05-30 10:00:00', result: '出库成功', type: 'completed' },
+            ];
+        } else if (statusParam === '待交接') {
+            currentStep = 'handover';
+            taskData.vehicles.forEach(v => { v.outbound_status = '已出库'; });
+            taskData.batch_depart_time = '2026-05-30';
+            taskData.batch_depart_method = '物流运输';
+            taskData.logs = [
+                { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+                { node: '出库审批', approver: '李四', time: '2026-05-28 14:00:00', result: '同意', type: 'completed' },
+                { node: '确认出库', approver: '李四', time: '2026-05-30 10:00:00', result: '出库成功', type: 'completed' },
+                { node: '交接审批', approver: '张三', time: '2026-05-30 16:00:00', result: '同意', type: 'completed' },
+            ];
+        } else if (statusParam === '已完成') {
+            currentStep = 'apply';
+            taskData.vehicles.forEach(v => { v.outbound_status = '已出库'; v.handover_status = '已交接'; v.confirmed = true; });
+            taskData.batch_depart_time = '2026-05-30';
+            taskData.batch_depart_method = '物流运输';
+            taskData.logs = [
+                { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+                { node: '出库审批', approver: '李四', time: '2026-05-28 14:00:00', result: '同意', type: 'completed' },
+                { node: '确认出库', approver: '李四', time: '2026-05-30 10:00:00', result: '出库成功', type: 'completed' },
+                { node: '交接审批', approver: '张三', time: '2026-05-30 16:00:00', result: '同意', type: 'completed' },
+                { node: '交接完成', approver: '张三', time: '2026-05-31 10:00:00', result: '任务结束', type: 'completed' },
+            ];
+        } else if (statusParam === '已关闭') {
+            currentStep = 'apply';
+            taskData.vehicles.forEach(v => { v.outbound_status = '已出库'; });
+            taskData.batch_depart_time = '2026-05-30';
+            taskData.batch_depart_method = '物流运输';
+            taskData.logs = [
+                { node: '调度申请提交', approver: '王强', time: '2026-05-28 09:30:00', result: '提交成功', type: 'completed' },
+                { node: '出库审批', approver: '李四', time: '2026-05-28 14:00:00', result: '同意', type: 'completed' },
+                { node: '确认出库', approver: '李四', time: '2026-05-30 10:00:00', result: '出库成功', type: 'completed' },
+                { node: '交接审批', approver: '张三', time: '2026-05-30 16:00:00', result: '不同意-流程关闭', type: 'rejected' },
+            ];
+        }
+    } else {
+        // 无URL参数时，根据状态默认选中步骤
+        const s = taskData.task_status;
+        if (s === '已提交' || s === '已撤回' || s === '出库审批退回') currentStep = 'apply';
+        else if (s === '待出库' || s === '已出库') currentStep = 'outbound';
+        else if (s === '待交接') currentStep = 'handover';
+        else currentStep = 'apply';
+    }
+    if (stepParam) currentStep = stepParam;
+    updateStepBar();
+    renderLogs();
+    switchStep(currentStep);
+}
+
+// ===== 更新步骤条状态 =====
+function updateStepBar() {
+    const status = taskData.task_status;
+    const stepApply = document.querySelector('[data-step="apply"]');
+    const stepOutbound = document.querySelector('[data-step="outbound"]');
+    const stepHandover = document.querySelector('[data-step="handover"]');
+    const line1 = document.getElementById('line1');
+    const line2 = document.getElementById('line2');
+
+    stepApply.className = 'step-item completed';
+
+    if (status === '已提交' || status === '已撤回' || status === '出库审批退回') {
+        stepOutbound.className = 'step-item disabled';
+        stepHandover.className = 'step-item disabled';
+        line1.className = 'step-line';
+        line2.className = 'step-line';
+    } else if (status === '待出库') {
+        stepOutbound.className = 'step-item active';
+        stepHandover.className = 'step-item disabled';
+        line1.className = 'step-line completed';
+        line2.className = 'step-line';
+    } else if (status === '已出库') {
+        stepOutbound.className = 'step-item completed';
+        stepHandover.className = 'step-item disabled';
+        line1.className = 'step-line completed';
+        line2.className = 'step-line';
+    } else if (status === '待交接') {
+        stepOutbound.className = 'step-item completed';
+        stepHandover.className = 'step-item active';
+        line1.className = 'step-line completed';
+        line2.className = 'step-line completed';
+    } else if (status === '已完成') {
+        stepOutbound.className = 'step-item completed';
+        stepHandover.className = 'step-item completed';
+        line1.className = 'step-line completed';
+        line2.className = 'step-line completed';
+    } else if (status === '已关闭') {
+        stepOutbound.className = 'step-item completed';
+        stepHandover.className = 'step-item closed';
+        line1.className = 'step-line completed';
+        line2.className = 'step-line closed';
+    }
+
+    // 恢复选中态
+    document.querySelectorAll('.step-item').forEach(el => {
+        if (!el.classList.contains('disabled')) {
+            el.classList.toggle('selected', el.dataset.step === currentStep);
+        }
+    });
+}
+
+// ===== 切换步骤 =====
+function switchStep(step) {
+    const stepEl = document.querySelector(`[data-step="${step}"]`);
+    if (stepEl.classList.contains('disabled')) return;
+    currentStep = step;
+    document.querySelectorAll('.step-item').forEach(el => el.classList.remove('selected'));
+    stepEl.classList.add('selected');
+
+    const content = document.getElementById('detailContent');
+    content.innerHTML = '';
+
+    if (step === 'apply') renderApplyStep(content);
+    else if (step === 'outbound') renderOutboundStep(content);
+    else if (step === 'handover') renderHandoverStep(content);
+
+    renderFooter();
+}
+
+// ===== 调度申请步骤 =====
+function renderApplyStep(content) {
+    const isEdit = taskData.task_status === '已撤回' || taskData.task_status === '出库审批退回';
+    content.innerHTML = `
+        <div class="detail-section">
+            <div class="detail-section-title">申请信息</div>
+            <div class="detail-form">
+                <div class="detail-form-item"><label>任务编号</label><div class="value">${taskData.task_no}</div></div>
+                <div class="detail-form-item"><label>申请人</label><div class="value">${taskData.creator}</div></div>
+                <div class="detail-form-item"><label>用户角色</label>${isEdit ? `<input type="text" value="${taskData.role}">` : `<div class="value">${taskData.role}</div>`}</div>
+                <div class="detail-form-item"><label>周转方式</label>${isEdit ? `<input type="text" value="${taskData.transfer_type}">` : `<div class="value">${taskData.transfer_type}</div>`}</div>
+                <div class="detail-form-item"><label>周转用途</label><div class="value">${taskData.transfer_purpose}</div></div>
+                <div class="detail-form-item"><label>申请时间</label><div class="value">${taskData.apply_time}</div></div>
+                <div class="detail-form-item"><label>流转前项目</label><div class="value">${taskData.from_project}</div></div>
+                <div class="detail-form-item"><label>流转后项目</label>${isEdit ? `<input type="text" value="${taskData.to_project}">` : `<div class="value">${taskData.to_project}</div>`}</div>
+                <div class="detail-form-item"><label>接收人</label>${isEdit ? `<input type="text" value="${taskData.receiver}">` : `<div class="value">${taskData.receiver}</div>`}</div>
+                <div class="detail-form-item"><label>预计接收时间</label>${isEdit ? `<input type="date" value="${taskData.receive_time}">` : `<div class="value">${taskData.receive_time}</div>`}</div>
+                <div class="detail-form-item"><label>审批人</label>${isEdit ? `<input type="text" value="${taskData.approver}">` : `<div class="value">${taskData.approver}</div>`}</div>
+                <div class="detail-form-item"><label>任务状态</label><div class="value"><span class="status-tag-inline blue">${taskData.task_status}</span></div></div>
+            </div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">车辆清单</div>
+            <table class="vehicle-table">
+                <thead><tr><th>车辆编号</th><th>车架号</th><th>车型名称（中）</th><th>归属项目</th></tr></thead>
+                <tbody>${taskData.vehicles.map(v => `<tr><td>${v.vehicle_no}</td><td>${v.vin}</td><td>${v.model_name}</td><td>${v.project}</td></tr>`).join('')}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+// ===== 车辆出库步骤（批次级发车信息 + 单车级表单） =====
+function renderOutboundStep(content) {
+    const isEditable = taskData.task_status === '待出库';
+    const allOutbound = taskData.vehicles.every(v => v.outbound_status === '已出库');
+
+    let html = `
+        <div class="detail-section">
+            <div class="detail-section-title">批次发车信息</div>
+            <div class="detail-form">
+                <div class="detail-form-item">
+                    <label><span class="required" style="color:var(--error)">*</span>发车时间</label>
+                    ${isEditable
+                        ? `<input type="date" id="batch_depart_time" value="${taskData.batch_depart_time || ''}">`
+                        : `<div class="value">${taskData.batch_depart_time || '—'}</div>`
+                    }
+                </div>
+                <div class="detail-form-item">
+                    <label><span class="required" style="color:var(--error)">*</span>发车方式</label>
+                    ${isEditable
+                        ? `<input type="text" id="batch_depart_method" value="${taskData.batch_depart_method || ''}" placeholder="请输入发车方式">`
+                        : `<div class="value">${taskData.batch_depart_method || '—'}</div>`
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">车辆出库确认</div>
+            <table class="vehicle-table">
+                <thead>
+                    <tr>
+                        <th>车辆编号</th>
+                        <th>车架号</th>
+                        <th>车型名称（中）</th>
+                        <th>出库状态</th>
+                        <th style="width:120px;text-align:center">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    taskData.vehicles.forEach(v => {
+        const statusClass = v.outbound_status === '已出库' ? 'green' : 'blue';
+        html += `
+            <tr>
+                <td>${v.vehicle_no}</td>
+                <td>${v.vin}</td>
+                <td>${v.model_name}</td>
+                <td><span class="status-tag-inline ${statusClass}">${v.outbound_status}</span></td>
+                <td style="text-align:center">
+                    ${isEditable ? `<a class="action-link" onclick="toggleOutboundForm(${v.id})">${expandedVehicleId === v.id ? '收起' : '出库确认'}</a>` : '—'}
+                </td>
+            </tr>
+        `;
+        if (isEditable && expandedVehicleId === v.id) {
+            html += `
+                <tr>
+                    <td colspan="5" style="padding:0">
+                        <div class="single-form-row">
+                            <div class="single-form-grid">
+                                <div class="single-form-item">
+                                    <label><span class="required">*</span>移出前车辆照片</label>
+                                    <div class="upload-placeholder">+ 点击上传照片</div>
+                                </div>
+                                <div class="single-form-item">
+                                    <label><span class="required">*</span>车辆出库单</label>
+                                    <div class="upload-placeholder">+ 点击上传附件</div>
+                                </div>
+                                <div class="single-form-item">
+                                    <label>说明</label>
+                                    <textarea id="o_remark_${v.id}" placeholder="请输入说明">${v.outbound_remark || ''}</textarea>
+                                </div>
+                            </div>
+                            <div class="single-form-actions">
+                                <button class="btn" onclick="toggleOutboundForm(${v.id})">取消</button>
+                                <button class="btn btn-primary" onclick="saveOutbound(${v.id})">保存</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+    html += `</tbody></table></div>`;
+    content.innerHTML = html;
+}
+
+// ===== 车辆交接步骤 =====
+function renderHandoverStep(content) {
+    const isEditable = taskData.task_status === '待交接';
+
+    let html = `
+        <div class="detail-section">
+            <div class="detail-section-title">车辆交接确认</div>
+            <table class="vehicle-table">
+                <thead>
+                    <tr>
+                        <th>车辆编号</th>
+                        <th>车架号</th>
+                        <th>车型名称（中）</th>
+                        <th>交接状态</th>
+                        <th style="width:120px;text-align:center">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    taskData.vehicles.forEach(v => {
+        const statusClass = v.handover_status === '已交接' ? 'green' : v.handover_status === '拒绝接收' ? 'red' : 'blue';
+        html += `
+            <tr>
+                <td>${v.vehicle_no}</td>
+                <td>${v.vin}</td>
+                <td>${v.model_name}</td>
+                <td><span class="status-tag-inline ${statusClass}">${v.handover_status}</span></td>
+                <td style="text-align:center">
+                    ${isEditable ? `<a class="action-link" onclick="toggleHandoverForm(${v.id})">${expandedVehicleId === v.id ? '收起' : '交接确认'}</a>` : '—'}
+                </td>
+            </tr>
+        `;
+        if (isEditable && expandedVehicleId === v.id) {
+            html += `
+                <tr>
+                    <td colspan="5" style="padding:0">
+                        <div class="single-form-row">
+                            <div class="single-form-grid">
+                                <div class="single-form-item">
+                                    <label><span class="required">*</span>接收时车辆照片</label>
+                                    <div class="upload-placeholder">+ 点击上传照片</div>
+                                </div>
+                                <div class="single-form-item">
+                                    <label>说明</label>
+                                    <textarea id="h_remark_${v.id}" placeholder="请输入说明">${v.handover_remark || ''}</textarea>
+                                </div>
+                                <div class="single-form-item">
+                                    <label><span class="required">*</span>是否确认接收</label>
+                                    <select id="h_confirmed_${v.id}">
+                                        <option value="" ${v.confirmed === null ? 'selected' : ''}>请选择</option>
+                                        <option value="yes" ${v.confirmed === true ? 'selected' : ''}>是</option>
+                                        <option value="no" ${v.confirmed === false ? 'selected' : ''}>否</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="single-form-actions">
+                                <button class="btn" onclick="toggleHandoverForm(${v.id})">取消</button>
+                                <button class="btn btn-primary" onclick="saveHandover(${v.id})">保存</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+    html += `</tbody></table></div>`;
+    content.innerHTML = html;
+}
+
+// ===== 渲染流程日志 =====
+function renderLogs() {
+    const container = document.getElementById('logList');
+    container.innerHTML = taskData.logs.map(log => `
+        <div class="log-item ${log.type}">
+            <div class="log-dot"></div>
+            <div class="log-title">${log.node}</div>
+            <div class="log-meta">
+                <div>审批人：${log.approver}</div>
+                <div>审批时间：${log.time}</div>
+                <div>审批结果：${log.result}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ===== 底部操作栏（始终由任务状态决定） =====
+function renderFooter() {
+    const footer = document.getElementById('detailFooter');
+    const status = taskData.task_status;
+
+    if (status === '已提交') {
+        footer.innerHTML = `
+            <div class="approve-inline" style="flex:1;margin-right:16px">
+                <label>审批意见（可选）</label>
+                <textarea id="oa_comment_detail" placeholder="请输入审批意见"></textarea>
+            </div>
+            <button class="btn" onclick="doOutboundApproveFromDetail(false)">不同意出库</button>
+            <button class="btn btn-primary" onclick="doOutboundApproveFromDetail(true)">同意出库</button>
+        `;
+    } else if (status === '已撤回' || status === '出库审批退回') {
+        footer.innerHTML = `
+            <button class="btn" onclick="window.history.back()">关闭</button>
+            <button class="btn btn-primary" onclick="submitReapply()">再次提交</button>
+        `;
+    } else if (status === '待出库') {
+        const allOutbound = taskData.vehicles.every(v => v.outbound_status === '已出库');
+        const batchFieldsFilled = taskData.batch_depart_time && taskData.batch_depart_method;
+        const canConfirm = allOutbound && batchFieldsFilled;
+        const btnDisabled = !canConfirm ? 'disabled' : '';
+        const btnTitle = !canConfirm ? 'title="请完成所有车辆的出库确认及批次发车信息填写"' : '';
+        footer.innerHTML = `
+            <button class="btn" onclick="window.history.back()">关闭</button>
+            <button class="btn btn-primary" onclick="confirmOutboundFromDetail()" ${btnDisabled} ${btnTitle}>确认出库</button>
+        `;
+    } else if (status === '已出库') {
+        footer.innerHTML = `
+            <div class="approve-inline" style="flex:1;margin-right:16px">
+                <label>审批意见（可选）</label>
+                <textarea id="ha_comment_detail" placeholder="请输入审批意见"></textarea>
+            </div>
+            <button class="btn" onclick="doHandoverApproveFromDetail(false)">不同意交接</button>
+            <button class="btn btn-primary" onclick="doHandoverApproveFromDetail(true)">同意交接</button>
+        `;
+    } else if (status === '待交接') {
+        const allConfirmed = taskData.vehicles.every(v => v.handover_status !== '未交接');
+        const btnDisabled = !allConfirmed ? 'disabled' : '';
+        const btnTitle = !allConfirmed ? 'title="请完成所有车辆的交接确认"' : '';
+        footer.innerHTML = `
+            <button class="btn" onclick="window.history.back()">关闭</button>
+            <button class="btn btn-primary" onclick="endTask()" ${btnDisabled} ${btnTitle}>任务结束</button>
+        `;
+    } else {
+        // 已完成、已关闭等
+        footer.innerHTML = `<button class="btn" onclick="window.history.back()">关闭</button>`;
+    }
+}
+
+// ===== 操作函数 =====
+function toggleOutboundForm(vehicleId) {
+    expandedVehicleId = expandedVehicleId === vehicleId ? null : vehicleId;
+    switchStep('outbound');
+}
+
+function saveOutbound(vehicleId) {
+    const remark = document.getElementById(`o_remark_${vehicleId}`).value;
+    const vehicle = taskData.vehicles.find(v => v.id === vehicleId);
+    if (vehicle) {
+        vehicle.outbound_remark = remark;
+        vehicle.outbound_status = '已出库';
+    }
+    expandedVehicleId = null;
+    Common.showToast('保存成功', 'success');
+    switchStep('outbound');
+}
+
+function confirmOutboundFromDetail() {
+    const batchDepartTime = document.getElementById('batch_depart_time').value;
+    const batchDepartMethod = document.getElementById('batch_depart_method').value;
+    if (!batchDepartTime) { Common.showToast('发车时间不能为空', 'warning'); return; }
+    if (!batchDepartMethod) { Common.showToast('发车方式不能为空', 'warning'); return; }
+    const allOutbound = taskData.vehicles.every(v => v.outbound_status === '已出库');
+    if (!allOutbound) { Common.showToast('请完成所有车辆的出库确认', 'warning'); return; }
+    taskData.batch_depart_time = batchDepartTime;
+    taskData.batch_depart_method = batchDepartMethod;
+    taskData.task_status = '已出库';
+    taskData.logs.push({ node: '确认出库', approver: '李四', time: '2026-05-30 10:00:00', result: '出库成功', type: 'completed' });
+    updateStepBar();
+    renderLogs();
+    Common.showToast('出库成功', 'success');
+    switchStep('outbound');
+}
+
+function doOutboundApproveFromDetail(agree) {
+    taskData.task_status = agree ? '待出库' : '出库审批退回';
+    taskData.logs.push({
+        node: '出库审批', approver: '李四',
+        time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        result: agree ? '同意' : '不同意', type: agree ? 'completed' : 'rejected'
+    });
+    updateStepBar();
+    renderLogs();
+    Common.showToast(agree ? '审批通过' : '已退回', agree ? 'success' : 'warning');
+    switchStep('outbound');
+}
+
+function toggleHandoverForm(vehicleId) {
+    expandedVehicleId = expandedVehicleId === vehicleId ? null : vehicleId;
+    switchStep('handover');
+}
+
+function saveHandover(vehicleId) {
+    const confirmed = document.getElementById(`h_confirmed_${vehicleId}`).value;
+    const remark = document.getElementById(`h_remark_${vehicleId}`).value;
+    if (!confirmed) { Common.showToast('请选择是否确认接收', 'warning'); return; }
+    const vehicle = taskData.vehicles.find(v => v.id === vehicleId);
+    if (vehicle) {
+        vehicle.confirmed = confirmed === 'yes';
+        vehicle.handover_status = confirmed === 'yes' ? '已交接' : '拒绝接收';
+        vehicle.handover_remark = remark;
+    }
+    expandedVehicleId = null;
+    Common.showToast('保存成功', 'success');
+    switchStep('handover');
+}
+
+function endTask() {
+    const allConfirmed = taskData.vehicles.every(v => v.handover_status !== '未交接');
+    if (!allConfirmed) { Common.showToast('请完成所有车辆的交接确认', 'warning'); return; }
+    taskData.task_status = '已完成';
+    taskData.logs.push({ node: '交接完成', approver: '张三', time: '2026-05-31 10:00:00', result: '任务结束', type: 'completed' });
+    updateStepBar();
+    renderLogs();
+    Common.showToast('任务已结束', 'success');
+    switchStep('handover');
+}
+
+function doHandoverApproveFromDetail(agree) {
+    taskData.task_status = agree ? '待交接' : '已关闭';
+    taskData.logs.push({
+        node: '交接审批', approver: '张三',
+        time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        result: agree ? '同意' : '不同意-流程关闭', type: agree ? 'completed' : 'rejected'
+    });
+    updateStepBar();
+    renderLogs();
+    Common.showToast(agree ? '审批通过' : '流程已关闭', agree ? 'success' : 'warning');
+    switchStep('handover');
+}
+
+function withdrawTask() {
+    if (confirm('确定要撤回该调度申请吗？')) {
+        taskData.task_status = '已撤回';
+        taskData.logs.push({ node: '撤回申请', approver: '王强', time: '2026-05-28 12:00:00', result: '已撤回', type: 'rejected' });
+        updateStepBar();
+        renderLogs();
+        Common.showToast('撤回成功', 'success');
+        switchStep('apply');
+    }
+}
+
+function cancelEdit() {
+    switchStep('apply');
+}
+
+function submitReapply() {
+    taskData.task_status = '已提交';
+    taskData.logs.push({ node: '再次提交', approver: '王强', time: '2026-05-28 15:00:00', result: '提交成功', type: 'completed' });
+    updateStepBar();
+    renderLogs();
+    Common.showToast('提交成功', 'success');
+    switchStep('apply');
+}
+
+// ===== 启动 =====
+init();
+</script>
+</body>
+</html>
