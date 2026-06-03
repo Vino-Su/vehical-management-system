@@ -301,6 +301,165 @@
   position: absolute; top: 20px; right: 30px; font-size: 32px;
   color: #fff; cursor: pointer; background: none; border: none;
 }
+
+/* === BOM清单 Tab === */
+.bom-stat-bar {
+  display: flex; align-items: center; gap: 24px;
+  padding: 12px 20px; margin-bottom: 16px;
+  background: #fafafa; border-radius: var(--radius); border: 1px solid var(--border-color);
+  font-size: 14px; color: var(--text-secondary);
+}
+.bom-stat-bar .stat-item { display: flex; align-items: center; gap: 6px; }
+.bom-stat-bar .stat-value { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.bom-stat-bar .stat-link { color: var(--primary); cursor: pointer; font-weight: 600; }
+.bom-stat-bar .stat-link:hover { text-decoration: underline; }
+.bom-stat-bar .stat-label { color: var(--text-secondary); }
+.bom-stat-bar .stat-sep { color: var(--border-color); }
+
+.bom-view-tabs {
+  display: flex; gap: 0; margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.bom-view-tab {
+  padding: 0 16px; height: 36px; line-height: 36px;
+  font-size: 14px; color: var(--text-secondary); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all .2s; user-select: none;
+}
+.bom-view-tab:hover { color: var(--primary); }
+.bom-view-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+.bom-search {
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
+  margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);
+}
+.bom-search .filter-item { display: flex; flex-direction: column; gap: 4px; }
+.bom-search .filter-item label { font-size: 14px; color: var(--text-secondary); }
+.bom-search .filter-item input,
+.bom-search .filter-item select {
+  height: 32px; padding: 0 12px; border: 1px solid var(--border-input); border-radius: var(--radius);
+  font-size: 14px; color: var(--text-primary); background: var(--bg-container); outline: none; font-family: inherit;
+}
+.bom-search .filter-item input { width: 200px; }
+.bom-search .filter-item select { width: 160px; }
+.bom-search .filter-item input:focus,
+.bom-search .filter-item select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1); }
+.bom-search .filter-item input::placeholder { color: var(--text-disabled); }
+.bom-search .filter-actions { display: flex; gap: 8px; margin-left: auto; align-self: flex-end; }
+
+.bom-table-wrapper {
+  overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius);
+}
+.bom-table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+.bom-table thead th {
+  background: #fafafa; color: var(--text-secondary); font-weight: 600;
+  font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color);
+  white-space: nowrap; position: sticky; top: 0; z-index: 1;
+}
+.bom-table tbody td {
+  padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.bom-table tbody tr:hover { background: #f5f5f5; }
+.bom-table .level-indent-1 { padding-left: 2em; }
+.bom-table .level-indent-2 { padding-left: 4em; }
+.bom-table .level-indent-3 { padding-left: 6em; }
+.bom-change-icon { color: var(--primary); cursor: pointer; font-size: 16px; }
+.bom-change-icon:hover { text-decoration: underline; }
+.bom-no-change { color: var(--text-disabled); }
+
+/* 列设置面板 */
+.col-setting-wrap { display: inline-block; }
+.col-setting-panel {
+  position: absolute; right: 0; top: 40px; z-index: 100;
+  width: 220px; background: var(--bg-container); border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12); border: 1px solid var(--border-color);
+  display: none; flex-direction: column;
+}
+.col-setting-panel.show { display: flex; }
+.col-setting-title {
+  padding: 10px 16px; font-size: 14px; font-weight: 600;
+  border-bottom: 1px solid var(--border-color); color: var(--text-primary);
+}
+.col-setting-list {
+  padding: 8px 12px; max-height: 280px; overflow-y: auto;
+}
+.col-setting-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 4px; font-size: 13px; color: var(--text-primary); cursor: pointer;
+}
+.col-setting-item input[type="checkbox"] { accent-color: var(--primary); }
+.col-setting-item.disabled { color: var(--text-disabled); cursor: not-allowed; }
+.col-setting-item.disabled input[type="checkbox"] { pointer-events: none; }
+.col-setting-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 10px 16px; border-top: 1px solid var(--border-color);
+}
+.btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+
+.bom-change-stats {
+  display: flex; gap: 16px; padding: 12px 0; font-size: 13px; color: var(--text-secondary);
+  border-top: 1px solid var(--border-color); margin-top: 12px;
+}
+.bom-change-stats .cs-value { font-weight: 600; color: var(--text-primary); margin: 0 2px; }
+.bom-change-stats .cs-sep { color: var(--border-color); margin: 0 4px; }
+
+/* === 零部件变更时间线弹窗 === */
+.bom-timeline-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 2000;
+  display: none; align-items: center; justify-content: center;
+}
+.bom-timeline-overlay.show { display: flex; }
+.bom-timeline-box {
+  width: 640px; max-width: 90vw; max-height: 70vh;
+  background: var(--bg-container); border-radius: var(--radius-lg);
+  display: flex; flex-direction: column; box-shadow: var(--shadow-md);
+}
+.bom-timeline-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+}
+.bom-timeline-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
+.bom-timeline-header .close-btn { font-size: 20px; color: var(--text-secondary); cursor: pointer; background: none; border: none; }
+.bom-timeline-header .close-btn:hover { color: var(--text-primary); }
+.bom-timeline-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.bom-timeline-empty-hint {
+  font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;
+  padding: 8px 12px; background: #f6f6f6; border-radius: var(--radius);
+}
+.bom-timeline-item {
+  position: relative; padding: 0 0 24px 24px; border-left: 2px solid var(--border-color);
+}
+.bom-timeline-item:last-child { padding-bottom: 0; border-left-color: transparent; }
+.bom-timeline-dot {
+  position: absolute; left: -7px; top: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--primary); border: 2px solid #fff;
+}
+.bom-timeline-item.type-factory .bom-timeline-dot { background: var(--text-disabled); }
+.bom-timeline-node-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.bom-timeline-time { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.bom-timeline-tag {
+  display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; line-height: 20px;
+}
+.bom-timeline-tag.tag-aftermarket { background: #e6f4ff; color: #1677ff; }
+.bom-timeline-tag.tag-factory { background: #f0f0f0; color: #8c8c8c; }
+.bom-timeline-compare { margin-bottom: 8px; }
+.bom-timeline-compare-row {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.8;
+}
+.bom-timeline-compare-row .cmp-label { color: var(--text-secondary); min-width: 56px; text-align: right; flex-shrink: 0; }
+.bom-timeline-compare-row .cmp-before { color: var(--text-disabled); }
+.bom-timeline-compare-row .cmp-arrow { color: var(--text-disabled); }
+.bom-timeline-compare-row .cmp-after { color: var(--text-primary); font-weight: 500; }
+.bom-timeline-compare-row .cmp-single { color: var(--text-primary); }
+.bom-timeline-footer-info { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+.bom-timeline-footer-info .work-order-link { color: var(--primary); cursor: pointer; }
+.bom-timeline-footer-info .work-order-link:hover { text-decoration: underline; }
+.bom-timeline-footer {
+  display: flex; align-items: center; justify-content: flex-end;
+  padding: 12px 24px; border-top: 1px solid var(--border-color); flex-shrink: 0;
+}
 </style>
 </head>
 <body>
@@ -323,6 +482,7 @@
         <div class="tab-bar" id="tabBar">
           <div class="tab-item active" data-tab="basic" onclick="switchTab('basic')">基础信息</div>
           <div class="tab-item" data-tab="transfer" onclick="switchTab('transfer')">调度信息</div>
+          <div class="tab-item" data-tab="bom" id="bomTabItem" onclick="switchTab('bom')" style="display:none">BOM清单</div>
           <div class="tab-item disabled" title="暂未开放">维保信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item disabled" title="暂未开放">合规信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item disabled" title="暂未开放">风险信息<span class="tab-badge">暂未开放</span></div>
@@ -412,6 +572,157 @@
                 <option value="50">50条/页</option>
                 <option value="100">100条/页</option>
               </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content: BOM清单 -->
+        <div class="tab-content" id="tab-bom" style="display:none">
+          <!-- 概览统计条 -->
+          <div class="bom-stat-bar">
+            <div class="stat-item"><span class="stat-label">📦 总件数</span><span class="stat-value" id="bomTotalCount">—</span></div>
+            <div class="stat-item"><span class="stat-label">🔄 已变更</span><span class="stat-link" id="bomChangedCount" onclick="filterBomChanged()">—</span></div>
+            <div class="stat-item"><span class="stat-label">🕐 出厂BOM同步时间</span><span class="stat-value" id="bomSyncTime">—</span><span style="font-size:12px;color:var(--text-disabled);margin-left:4px">（出厂基准）</span></div>
+          </div>
+
+          <!-- 视图切换 -->
+          <div class="bom-view-tabs">
+            <div class="bom-view-tab active" data-bomview="current" onclick="switchBomView('current')">当前BOM</div>
+            <div class="bom-view-tab" data-bomview="history" onclick="switchBomView('history')">变更记录</div>
+          </div>
+
+          <!-- 当前BOM视图 -->
+          <div id="bomCurrentView">
+            <div class="bom-search">
+              <div class="filter-item">
+                <label>件号/名字</label>
+                <input type="text" id="bom_keyword" placeholder="请输入件号或名字">
+              </div>
+              <div class="filter-item">
+                <label>供应商</label>
+                <input type="text" id="bom_supplier" placeholder="请输入供应商">
+              </div>
+              <div class="filter-item">
+                <label>级别</label>
+                <select id="bom_level">
+                  <option value="">全部</option>
+                  <option>L1</option><option>L2</option><option>L3</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>变更状态</label>
+                <select id="bom_change_status">
+                  <option value="">全部</option>
+                  <option value="changed">仅已变更</option>
+                  <option value="unchanged">仅未变更</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" onclick="resetBomSearch()">重置</button>
+                <button class="btn btn-primary" onclick="searchBom()">查询</button>
+              </div>
+            </div>
+            <div class="sub-action-bar">
+              <button class="btn" onclick="exportBom()"><span class="btn-icon">⤓</span>导出</button>
+              <button class="btn" onclick="refreshBom()"><span class="btn-icon">↻</span>手动刷新</button>
+              <div class="col-setting-wrap" style="position:relative;margin-left:auto">
+                <button class="btn" onclick="toggleBomColSetting()"><span class="btn-icon">⛀</span>列设置</button>
+                <div class="col-setting-panel" id="bomColSettingPanel">
+                  <div class="col-setting-title">列展示设置</div>
+                  <div class="col-setting-list" id="bomColSettingList"></div>
+                  <div class="col-setting-actions">
+                    <button class="btn btn-sm" onclick="resetBomColSetting()">恢复默认</button>
+                    <button class="btn btn-primary btn-sm" onclick="applyBomColSetting()">确定</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bom-table-wrapper">
+              <table class="bom-table">
+                <thead id="bomTableHead">
+                  <tr></tr>
+                </thead>
+                <tbody id="bomTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination-area">
+              <div class="pagination-info">共 <strong id="bomTotal">0</strong> 条记录</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="pagination" id="bomPagination"></div>
+                <select class="page-size-select" id="bomPageSizeSelect" onchange="changeBomPageSize()">
+                  <option value="50" selected>50条/页</option>
+                  <option value="100">100条/页</option>
+                  <option value="200">200条/页</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 变更记录视图 -->
+          <div id="bomHistoryView" style="display:none">
+            <div class="bom-search">
+              <div class="filter-item">
+                <label>变更时间范围</label>
+                <div class="date-range">
+                  <input type="date" id="bh_time_start" style="width:150px">
+                  <span class="sep">~</span>
+                  <input type="date" id="bh_time_end" style="width:150px">
+                </div>
+              </div>
+              <div class="filter-item">
+                <label>件号/名字</label>
+                <input type="text" id="bh_keyword" placeholder="请输入件号或名字">
+              </div>
+              <div class="filter-item">
+                <label>工单号</label>
+                <input type="text" id="bh_workorder" placeholder="请输入工单号">
+              </div>
+              <div class="filter-item">
+                <label>变更类型</label>
+                <select id="bh_change_type">
+                  <option value="">全部</option>
+                  <option value="更换">更换</option>
+                  <option value="新增">新增</option>
+                  <option value="移除">移除</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn" onclick="resetBomHistorySearch()">重置</button>
+                <button class="btn btn-primary" onclick="searchBomHistory()">查询</button>
+              </div>
+            </div>
+            <div class="sub-action-bar">
+              <button class="btn" onclick="exportBomHistory()"><span class="btn-icon">⤓</span>导出</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:120px">变更时间</th>
+                    <th style="width:130px">件号</th>
+                    <th style="width:150px">名字</th>
+                    <th style="width:80px;text-align:center">变更类型</th>
+                    <th style="width:180px">变更前信息</th>
+                    <th style="width:180px">变更后信息</th>
+                    <th style="width:160px">工单号</th>
+                    <th style="width:140px">变更原因</th>
+                  </tr>
+                </thead>
+                <tbody id="bomHistoryTableBody"></tbody>
+              </table>
+            </div>
+            <div class="bom-change-stats" id="bomChangeStats"></div>
+            <div class="pagination-area">
+              <div class="pagination-info">共 <strong id="bhTotalCount">0</strong> 条记录</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="pagination" id="bhPagination"></div>
+                <select class="page-size-select" id="bhPageSizeSelect" onchange="changeBhPageSize()">
+                  <option value="20" selected>20条/页</option>
+                  <option value="10">10条/页</option>
+                  <option value="50">50条/页</option>
+                  <option value="100">100条/页</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -537,7 +848,8 @@ function switchTab(tab) {
   if (contentEl) contentEl.style.display = '';
   if (tab === 'transfer') renderTransferTable();
   if (tab === 'changelog') renderLogTable();
-  // 编辑按钮仅在基础信息查看态显示
+  if (tab === 'bom') renderBomTab();
+  // 编辑按钮仅在基础信息查看态显示（BOM清单为只读）
   const editBtn = document.getElementById('editBtn');
   if (editBtn) editBtn.style.display = (tab === 'basic' && !isEditing) ? '' : 'none';
 }
@@ -968,6 +1280,365 @@ function resetTransferSearch() {
 }
 function exportTransfer() { Common.showToast('导出成功','success'); }
 
+// ===== BOM清单 =====
+
+// BOM模拟数据 — 出厂BOM
+const bomOriginalData = [
+  { level:'L1', part_no:'A001', part_name:'底盘总成', material:'—', specification:'DF-C850', quantity:1, unit:'套', supplier:'东风汽车底盘有限公司', material_category:'底盘类', purchase_option:'外购', part_category:'总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'总装车间', has_change:false },
+  { level:'L2', part_no:'A001-01', part_name:'驱动电机', material:'—', specification:'CATL-200', quantity:1, unit:'台', supplier:'宁德时代', material_category:'动力类', purchase_option:'外购', part_category:'分总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'总装车间', has_change:true },
+  { level:'L2', part_no:'A001-02', part_name:'减速器', material:'合金钢', specification:'RS-380A', quantity:1, unit:'台', supplier:'精进电动', material_category:'传动类', purchase_option:'外购', part_category:'分总成', trace_category:'重要件', manufacturing_strategy:'外购', workshop:'总装车间', has_change:false },
+  { level:'L2', part_no:'A001-03', part_name:'驱动桥', material:'合金钢', specification:'DQ-120', quantity:1, unit:'根', supplier:'东风德纳', material_category:'传动类', purchase_option:'外购', part_category:'分总成', trace_category:'重要件', manufacturing_strategy:'外购', workshop:'总装车间', has_change:false },
+  { level:'L3', part_no:'A001-0101', part_name:'电机控制器', material:'—', specification:'MC-200A', quantity:1, unit:'个', supplier:'苏州汇川', material_category:'电控类', purchase_option:'外购', part_category:'零件', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'电装车间', has_change:true },
+  { level:'L3', part_no:'A001-0102', part_name:'电机散热器', material:'铝合金', specification:'HS-200', quantity:1, unit:'个', supplier:'三花智控', material_category:'散热类', purchase_option:'外购', part_category:'零件', trace_category:'一般件', manufacturing_strategy:'外购', workshop:'电装车间', has_change:false },
+  { level:'L1', part_no:'A002', part_name:'上装总成', material:'—', specification:'SZ-3500', quantity:1, unit:'套', supplier:'自研', material_category:'上装类', purchase_option:'自制', part_category:'总成', trace_category:'关键件', manufacturing_strategy:'自制', workshop:'上装车间', has_change:false },
+  { level:'L2', part_no:'A002-01', part_name:'风机总成', material:'—', specification:'CLK-5.5', quantity:1, unit:'台', supplier:'中联环境', material_category:'风机类', purchase_option:'外购', part_category:'分总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'上装车间', has_change:false },
+  { level:'L2', part_no:'A002-02', part_name:'高压水泵', material:'不锈钢', specification:'BHD-25', quantity:1, unit:'台', supplier:'杭州伯昂', material_category:'泵类', purchase_option:'外购', part_category:'分总成', trace_category:'重要件', manufacturing_strategy:'外购', workshop:'上装车间', has_change:true },
+  { level:'L2', part_no:'A002-03', part_name:'低压水泵', material:'不锈钢', specification:'BHD-10', quantity:1, unit:'台', supplier:'杭州伯昂', material_category:'泵类', purchase_option:'外购', part_category:'分总成', trace_category:'一般件', manufacturing_strategy:'外购', workshop:'上装车间', has_change:false },
+  { level:'L2', part_no:'A002-04', part_name:'垃圾箱总成', material:'不锈钢', specification:'LJX-3000', quantity:1, unit:'个', supplier:'自研', material_category:'箱体类', purchase_option:'自制', part_category:'分总成', trace_category:'重要件', manufacturing_strategy:'自制', workshop:'上装车间', has_change:false },
+  { level:'L1', part_no:'A003', part_name:'动力电池总成', material:'—', specification:'380V/200Ah', quantity:1, unit:'组', supplier:'宁德时代', material_category:'电池类', purchase_option:'外购', part_category:'总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'总装车间', has_change:false },
+  { level:'L2', part_no:'A003-01', part_name:'电池模组', material:'三元锂', specification:'72S4P', quantity:8, unit:'组', supplier:'宁德时代', material_category:'电池类', purchase_option:'外购', part_category:'分总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'电池车间', has_change:false },
+  { level:'L2', part_no:'A003-02', part_name:'BMS管理系统', material:'—', specification:'BMS-380', quantity:1, unit:'个', supplier:'宁波均胜', material_category:'电控类', purchase_option:'外购', part_category:'分总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'电装车间', has_change:false },
+  { level:'L1', part_no:'A004', part_name:'线控底盘系统', material:'—', specification:'XC-V2', quantity:1, unit:'套', supplier:'自研', material_category:'底盘类', purchase_option:'自制', part_category:'总成', trace_category:'关键件', manufacturing_strategy:'自制', workshop:'智驾车间', has_change:false },
+  { level:'L2', part_no:'A004-01', part_name:'线控转向', material:'—', specification:'EPS-80', quantity:1, unit:'套', supplier:'博世华域', material_category:'转向类', purchase_option:'外购', part_category:'分总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'智驾车间', has_change:false },
+  { level:'L2', part_no:'A004-02', part_name:'线控制动', material:'—', specification:'EHB-100', quantity:1, unit:'套', supplier:'拿森电子', material_category:'制动类', purchase_option:'外购', part_category:'分总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'智驾车间', has_change:false },
+  { level:'L1', part_no:'A005', part_name:'智能驾驶系统', material:'—', specification:'AD-V3', quantity:1, unit:'套', supplier:'自研', material_category:'智驾类', purchase_option:'自制', part_category:'总成', trace_category:'关键件', manufacturing_strategy:'自制', workshop:'智驾车间', has_change:false },
+  { level:'L2', part_no:'A005-01', part_name:'激光雷达', material:'—', specification:'RS-LiDAR-16', quantity:2, unit:'个', supplier:'速腾聚创', material_category:'传感器类', purchase_option:'外购', part_category:'分总成', trace_category:'关键件', manufacturing_strategy:'外购', workshop:'智驾车间', has_change:false },
+  { level:'L2', part_no:'A005-02', part_name:'计算平台', material:'—', specification:'DCU-Orin', quantity:1, unit:'个', supplier:'自研', material_category:'计算类', purchase_option:'自制', part_category:'分总成', trace_category:'关键件', manufacturing_strategy:'自制', workshop:'智驾车间', has_change:false },
+];
+
+// BOM列配置
+const bomAllColumns = [
+  { key:'level',               label:'级别',       width:'80px',  default:true,  locked:true },
+  { key:'part_no',             label:'件号',       width:'140px', default:true,  locked:true },
+  { key:'part_name',           label:'名字',       width:'180px', default:true,  locked:true },
+  { key:'material',            label:'材料',       width:'100px', default:false },
+  { key:'specification',       label:'规格型号',    width:'120px', default:true },
+  { key:'quantity',            label:'用量',       width:'60px',  default:true },
+  { key:'unit',                label:'单位',       width:'50px',  default:true },
+  { key:'supplier',           label:'供应商',     width:'140px', default:true },
+  { key:'material_category',  label:'物料分类',    width:'100px', default:true },
+  { key:'purchase_option',    label:'采购选项',    width:'100px', default:false },
+  { key:'part_category',      label:'零件分类',    width:'100px', default:false },
+  { key:'trace_category',     label:'追溯分类',    width:'100px', default:false },
+  { key:'manufacturing_strategy', label:'零件制造策略', width:'140px', default:false },
+  { key:'workshop',           label:'生产车间',    width:'120px', default:false },
+  { key:'change_status',      label:'变更',       width:'70px',  default:true,  locked:true },
+];
+let bomVisibleCols = bomAllColumns.filter(c => c.default).map(c => c.key);
+
+function toggleBomColSetting() {
+  const panel = document.getElementById('bomColSettingPanel');
+  if (panel.classList.contains('show')) { panel.classList.remove('show'); return; }
+  // 渲染列设置列表
+  const listEl = document.getElementById('bomColSettingList');
+  listEl.innerHTML = bomAllColumns.map(c => {
+    const checked = bomVisibleCols.includes(c.key);
+    const disabled = c.locked ? 'disabled checked' : (checked ? 'checked' : '');
+    const itemClass = c.locked ? 'col-setting-item disabled' : 'col-setting-item';
+    return '<label class="' + itemClass + '"><input type="checkbox" data-col="' + c.key + '" ' + disabled + '>' + c.label + '</label>';
+  }).join('');
+  panel.classList.add('show');
+}
+function applyBomColSetting() {
+  const checks = document.querySelectorAll('#bomColSettingList input[type="checkbox"]');
+  bomVisibleCols = [];
+  checks.forEach(cb => { if (cb.checked) bomVisibleCols.push(cb.dataset.col); });
+  document.getElementById('bomColSettingPanel').classList.remove('show');
+  bomPage = 1;
+  renderBomTable();
+}
+function resetBomColSetting() {
+  bomVisibleCols = bomAllColumns.filter(c => c.default).map(c => c.key);
+  document.getElementById('bomColSettingPanel').classList.remove('show');
+  bomPage = 1;
+  renderBomTable();
+}
+// 点击其他区域关闭列设置
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('bomColSettingPanel');
+  if (!panel) return;
+  const wrap = panel.closest('.col-setting-wrap');
+  if (wrap && !wrap.contains(e.target)) panel.classList.remove('show');
+});
+
+// BOM变更记录数据（售后系统推送）
+const bomChangeData = [
+  { change_time:'2026-05-18', part_no:'A001-01', part_name:'驱动电机', change_type:'更换', before_part_no:'CATL-200', before_supplier:'宁德时代', before_spec:'380V/200Ah', after_part_no:'CATL-200B', after_supplier:'宁德时代', after_spec:'380V/200Ah(改进型)', work_order_no:'WX202605180032', change_reason:'电机异响' },
+  { change_time:'2026-04-02', part_no:'A001-0101', part_name:'电机控制器', change_type:'更换', before_part_no:'MC-200A', before_supplier:'苏州汇川', before_spec:'MC-200A', after_part_no:'MC-200B', after_supplier:'苏州汇川', after_spec:'MC-200B(升级版)', work_order_no:'WX202604020015', change_reason:'控制器故障' },
+  { change_time:'2026-02-20', part_no:'A002-02', part_name:'高压水泵', change_type:'更换', before_part_no:'BHD-25', before_supplier:'杭州伯昂', before_spec:'BHD-25', after_part_no:'BHD-25Pro', after_supplier:'杭州伯昂', after_spec:'BHD-25Pro(增强型)', work_order_no:'WX202602200008', change_reason:'水压不足' },
+];
+
+// 合并后的当前BOM数据（出厂底表 + 售后变更覆盖）
+function getMergedBomData() {
+  return bomOriginalData.map(item => {
+    const changes = bomChangeData.filter(c => c.part_no === item.part_no);
+    const latestChange = changes.length > 0 ? changes[changes.length - 1] : null;
+    if (latestChange) {
+      return { ...item, has_change: true, current_spec: latestChange.after_spec, current_supplier: latestChange.after_supplier };
+    }
+    return { ...item, current_spec: item.specification, current_supplier: item.supplier };
+  });
+}
+
+let bomPage = 1, bomPageSize = 50, bomFilteredData = getMergedBomData();
+let bomHistoryPage = 1, bomHistoryPageSize = 20;
+let bomHistoryFilteredData = [...bomChangeData];
+
+// 初始化BOM Tab
+function initBomTab() {
+  // 显示BOM Tab标签
+  if (vehicleData.asset_source === '自研') {
+    document.getElementById('bomTabItem').style.display = '';
+  }
+}
+
+// 渲染BOM Tab
+function renderBomTab() {
+  // 更新统计条
+  const merged = getMergedBomData();
+  const changedCount = merged.filter(i => i.has_change).length;
+  document.getElementById('bomTotalCount').textContent = merged.length;
+  document.getElementById('bomChangedCount').textContent = changedCount;
+  document.getElementById('bomSyncTime').textContent = '2025-03-15 14:30';
+
+  renderBomTable();
+  renderBomHistoryTable();
+}
+
+// 视图切换
+function switchBomView(view) {
+  document.querySelectorAll('.bom-view-tab').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.bom-view-tab[data-bomview="${view}"]`).classList.add('active');
+  document.getElementById('bomCurrentView').style.display = view === 'current' ? '' : 'none';
+  document.getElementById('bomHistoryView').style.display = view === 'history' ? '' : 'none';
+}
+
+// 当前BOM - 搜索
+function searchBom() {
+  const keyword = document.getElementById('bom_keyword').value.toLowerCase();
+  const supplier = document.getElementById('bom_supplier').value.toLowerCase();
+  const level = document.getElementById('bom_level').value;
+  const changeStatus = document.getElementById('bom_change_status').value;
+  const merged = getMergedBomData();
+  bomFilteredData = merged.filter(item => {
+    if (keyword && !(item.part_no.toLowerCase().includes(keyword) || item.part_name.toLowerCase().includes(keyword))) return false;
+    if (supplier && !item.current_supplier.toLowerCase().includes(supplier)) return false;
+    if (level && !item.level.startsWith(level)) return false;
+    if (changeStatus === 'changed' && !item.has_change) return false;
+    if (changeStatus === 'unchanged' && item.has_change) return false;
+    return true;
+  });
+  bomPage = 1;
+  renderBomTable();
+}
+function resetBomSearch() {
+  document.getElementById('bom_keyword').value = '';
+  document.getElementById('bom_supplier').value = '';
+  document.getElementById('bom_level').value = '';
+  document.getElementById('bom_change_status').value = '';
+  bomFilteredData = getMergedBomData();
+  bomPage = 1;
+  renderBomTable();
+}
+function filterBomChanged() {
+  switchBomView('current');
+  document.getElementById('bom_change_status').value = 'changed';
+  searchBom();
+}
+function exportBom() { Common.showToast('导出成功：BOM清单_' + vehicleData.vin + '_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.xlsx','success'); }
+function refreshBom() { Common.showToast('刷新成功，已拉取最新售后变更数据','success'); renderBomTab(); }
+
+// 当前BOM - 表格渲染
+function renderBomTable() {
+  // 根据可见列动态生成表头
+  const visibleCols = bomAllColumns.filter(c => bomVisibleCols.includes(c.key));
+  const thead = document.getElementById('bomTableHead');
+  thead.innerHTML = '<tr>' + visibleCols.map(c => {
+    const align = c.key === 'change_status' ? 'text-align:center' : '';
+    return '<th style="width:' + c.width + ';' + align + '">' + c.label + '</th>';
+  }).join('') + '</tr>';
+
+  const tbody = document.getElementById('bomTableBody');
+  const start = (bomPage - 1) * bomPageSize;
+  const pageData = bomFilteredData.slice(start, start + bomPageSize);
+  const levelIndent = { 'L1': '', 'L2': 'level-indent-1', 'L3': 'level-indent-2' };
+
+  // 字段值映射
+  const colRender = {
+    level: (item, indent) => '<td class="' + indent + '">' + item.level + '</td>',
+    part_no: (item) => '<td>' + item.part_no + '</td>',
+    part_name: (item) => '<td>' + item.part_name + '</td>',
+    material: (item) => '<td>' + (item.material || '—') + '</td>',
+    specification: (item) => '<td>' + item.current_spec + '</td>',
+    quantity: (item) => '<td>' + item.quantity + '</td>',
+    unit: (item) => '<td>' + item.unit + '</td>',
+    supplier: (item) => '<td>' + item.current_supplier + '</td>',
+    material_category: (item) => '<td>' + (item.material_category || '—') + '</td>',
+    purchase_option: (item) => '<td>' + (item.purchase_option || '—') + '</td>',
+    part_category: (item) => '<td>' + (item.part_category || '—') + '</td>',
+    trace_category: (item) => '<td>' + (item.trace_category || '—') + '</td>',
+    manufacturing_strategy: (item) => '<td>' + (item.manufacturing_strategy || '—') + '</td>',
+    workshop: (item) => '<td>' + (item.workshop || '—') + '</td>',
+    change_status: (item) => {
+      const icon = item.has_change
+        ? '<span class="bom-change-icon" onclick="openBomTimeline(\'' + item.part_no + '\')">🔄</span>'
+        : '<span class="bom-no-change">—</span>';
+      return '<td style="text-align:center">' + icon + '</td>';
+    }
+  };
+
+  tbody.innerHTML = pageData.map(item => {
+    const indent = levelIndent[item.level.charAt(0)+item.level.charAt(1)] || '';
+    return '<tr>' + visibleCols.map(c => colRender[c.key](item, indent)).join('') + '</tr>';
+  }).join('');
+
+  // 动态计算min-width
+  const table = document.querySelector('.bom-table');
+  const totalMinWidth = visibleCols.reduce((sum, c) => sum + parseInt(c.width), 0);
+  table.style.minWidth = totalMinWidth + 'px';
+
+  Common.renderPagination({
+    total: bomFilteredData.length, currentPage: bomPage, pageSize: bomPageSize,
+    containerId: 'bomPagination', infoId: 'bomTotal',
+    onPageChange: p => { bomPage = p; renderBomTable(); }
+  });
+}
+function changeBomPageSize() {
+  bomPageSize = parseInt(document.getElementById('bomPageSizeSelect').value);
+  bomPage = 1; renderBomTable();
+}
+
+// 变更记录 - 搜索
+function searchBomHistory() {
+  const timeStart = document.getElementById('bh_time_start').value;
+  const timeEnd = document.getElementById('bh_time_end').value;
+  const keyword = document.getElementById('bh_keyword').value.toLowerCase();
+  const workorder = document.getElementById('bh_workorder').value.toLowerCase();
+  const changeType = document.getElementById('bh_change_type').value;
+  bomHistoryFilteredData = bomChangeData.filter(item => {
+    if (timeStart && item.change_time < timeStart) return false;
+    if (timeEnd && item.change_time > timeEnd) return false;
+    if (keyword && !(item.part_no.toLowerCase().includes(keyword) || item.part_name.toLowerCase().includes(keyword))) return false;
+    if (workorder && !item.work_order_no.toLowerCase().includes(workorder)) return false;
+    if (changeType && item.change_type !== changeType) return false;
+    return true;
+  });
+  bomHistoryPage = 1;
+  renderBomHistoryTable();
+}
+function resetBomHistorySearch() {
+  ['bh_time_start','bh_time_end','bh_keyword','bh_workorder'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('bh_change_type').value = '';
+  bomHistoryFilteredData = [...bomChangeData];
+  bomHistoryPage = 1;
+  renderBomHistoryTable();
+}
+function exportBomHistory() { Common.showToast('导出成功：零部件变更记录_' + vehicleData.vin + '_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.xlsx','success'); }
+
+// 变更记录 - 表格渲染
+function renderBomHistoryTable() {
+  const tbody = document.getElementById('bomHistoryTableBody');
+  const start = (bomHistoryPage - 1) * bomHistoryPageSize;
+  const pageData = bomHistoryFilteredData.slice(start, start + bomHistoryPageSize);
+  const typeColors = { '更换': 'tag-blue', '新增': 'tag-green', '移除': 'tag-red' };
+
+  tbody.innerHTML = pageData.map(item => {
+    const typeTag = '<span class="tag ' + (typeColors[item.change_type]||'tag-default') + '">' + item.change_type + '</span>';
+    const beforeInfo = item.change_type === '新增' ? '—' : item.before_part_no + '(' + item.before_spec + ')';
+    const afterInfo = item.change_type === '移除' ? '—' : item.after_part_no + '(' + item.after_spec + ')';
+    return '<tr>' +
+      '<td>' + item.change_time + '</td>' +
+      '<td>' + item.part_no + '</td>' +
+      '<td>' + item.part_name + '</td>' +
+      '<td style="text-align:center">' + typeTag + '</td>' +
+      '<td>' + beforeInfo + '</td>' +
+      '<td>' + afterInfo + '</td>' +
+      '<td><span style="color:var(--primary);cursor:pointer">' + item.work_order_no + '</span></td>' +
+      '<td>' + (item.change_reason || '—') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  // 统计
+  const stats = { total: bomHistoryFilteredData.length, replace: 0, add: 0, remove: 0 };
+  bomHistoryFilteredData.forEach(i => { if(i.change_type==='更换') stats.replace++; if(i.change_type==='新增') stats.add++; if(i.change_type==='移除') stats.remove++; });
+  document.getElementById('bomChangeStats').innerHTML =
+    '累计变更 <span class="cs-value">' + stats.total + '</span> 件' +
+    '<span class="cs-sep">│</span>更换 <span class="cs-value">' + stats.replace + '</span> 件' +
+    '<span class="cs-sep">│</span>新增 <span class="cs-value">' + stats.add + '</span> 件' +
+    '<span class="cs-sep">│</span>移除 <span class="cs-value">' + stats.remove + '</span> 件';
+
+  Common.renderPagination({
+    total: bomHistoryFilteredData.length, currentPage: bomHistoryPage, pageSize: bomHistoryPageSize,
+    containerId: 'bhPagination', infoId: 'bhTotalCount',
+    onPageChange: p => { bomHistoryPage = p; renderBomHistoryTable(); }
+  });
+}
+function changeBhPageSize() {
+  bomHistoryPageSize = parseInt(document.getElementById('bhPageSizeSelect').value);
+  bomHistoryPage = 1; renderBomHistoryTable();
+}
+
+// ===== 零部件变更时间线弹窗 =====
+function openBomTimeline(partNo) {
+  // 查找出厂BOM信息
+  const originalItem = bomOriginalData.find(i => i.part_no === partNo);
+  if (!originalItem) return;
+  // 查找售后变更记录
+  const changes = bomChangeData.filter(c => c.part_no === partNo);
+
+  // 弹窗标题
+  document.getElementById('bomTimelineTitle').textContent = partNo + ' ' + originalItem.part_name + ' · 变更记录';
+
+  // 构建时间线HTML
+  let html = '';
+  if (changes.length === 0) {
+    html += '<div class="bom-timeline-empty-hint">该零部件尚未发生售后变更</div>';
+  }
+
+  // 售后变更记录（时间倒序）
+  changes.forEach(change => {
+    html += '<div class="bom-timeline-item">' +
+      '<div class="bom-timeline-dot"></div>' +
+      '<div class="bom-timeline-node-head">' +
+        '<span class="bom-timeline-time">' + change.change_time + '</span>' +
+        '<span class="bom-timeline-tag tag-aftermarket">售后更换</span>' +
+      '</div>' +
+      '<div class="bom-timeline-compare">' +
+        '<div class="bom-timeline-compare-row"><span class="cmp-label">件号:</span><span class="cmp-before">' + change.before_part_no + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_part_no + '</span></div>' +
+        '<div class="bom-timeline-compare-row"><span class="cmp-label">供应商:</span><span class="cmp-before">' + change.before_supplier + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_supplier + '</span></div>' +
+        '<div class="bom-timeline-compare-row"><span class="cmp-label">规格:</span><span class="cmp-before">' + change.before_spec + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_spec + '</span></div>' +
+      '</div>' +
+      '<div class="bom-timeline-footer-info">' +
+        '工单号: <span class="work-order-link">' + change.work_order_no + '</span><br>' +
+        '变更原因: ' + change.change_reason +
+      '</div>' +
+    '</div>';
+  });
+
+  // 出厂装机记录（始终在最后）
+  html += '<div class="bom-timeline-item type-factory">' +
+    '<div class="bom-timeline-dot"></div>' +
+    '<div class="bom-timeline-node-head">' +
+      '<span class="bom-timeline-time">2025-03-15</span>' +
+      '<span class="bom-timeline-tag tag-factory">出厂装机</span>' +
+    '</div>' +
+    '<div class="bom-timeline-compare">' +
+      '<div class="bom-timeline-compare-row"><span class="cmp-label">件号:</span><span class="cmp-single">' + originalItem.specification + '</span></div>' +
+      '<div class="bom-timeline-compare-row"><span class="cmp-label">供应商:</span><span class="cmp-single">' + originalItem.supplier + '</span></div>' +
+      '<div class="bom-timeline-compare-row"><span class="cmp-label">规格:</span><span class="cmp-single">' + originalItem.specification + '</span></div>' +
+    '</div>' +
+  '</div>';
+
+  document.getElementById('bomTimelineBody').innerHTML = html;
+  document.getElementById('bomTimelineOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBomTimeline() {
+  document.getElementById('bomTimelineOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
 // ===== 变更日志 =====
 const logData = [
   { type:'修改', field:'车辆状态', before:'待分配', after:'在库-正常使用', user:'王强', time:'2025-03-15 10:30:00', source:'Web端' },
@@ -1018,6 +1689,22 @@ function exportChangelog() { Common.showToast('导出成功','success'); }
 // ===== 初始化 =====
 renderBasicView();
 renderBasicEdit();
+
+// 根据URL参数中的车辆ID解析资产来源，决定是否显示BOM清单Tab
+(function resolveVehicleSource() {
+  const vehicleListData = [
+    { id:1, asset_source:'外购' }, { id:2, asset_source:'外购' }, { id:3, asset_source:'外购' },
+    { id:4, asset_source:'自研' }, { id:5, asset_source:'外购' }, { id:6, asset_source:'自研' },
+    { id:7, asset_source:'自研' }, { id:8, asset_source:'外购' }, { id:9, asset_source:'外购' },
+    { id:10, asset_source:'外购' }, { id:11, asset_source:'外购' }, { id:12, asset_source:'外购' }
+  ];
+  const p = new URLSearchParams(window.location.search);
+  const vid = parseInt(p.get('id'));
+  const found = vehicleListData.find(v => v.id === vid);
+  if (found) vehicleData.asset_source = found.asset_source;
+  // 更新归属信息中的资产来源显示
+  initBomTab();
+})();
 
 // 检查URL参数是否为编辑模式
 const urlParams = new URLSearchParams(window.location.search);
@@ -1248,8 +1935,13 @@ function closeDispatchImgPreview() {
 
 // 键盘ESC关闭弹窗
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && document.getElementById('dispatchModalOverlay').classList.contains('show')) {
-    closeDispatchModal();
+  if (e.key === 'Escape') {
+    if (document.getElementById('dispatchModalOverlay').classList.contains('show')) {
+      closeDispatchModal();
+    }
+    if (document.getElementById('bomTimelineOverlay').classList.contains('show')) {
+      closeBomTimeline();
+    }
   }
 });
 
@@ -1281,6 +1973,20 @@ document.addEventListener('keydown', function(e) {
 <div class="dispatch-img-preview-overlay" id="dispatchImgPreview" onclick="closeDispatchImgPreview()">
   <button class="dispatch-img-preview-close">✕</button>
   <img id="dispatchImgPreviewSrc" src="" alt="预览图片">
+</div>
+
+<!-- 零部件变更时间线弹窗 -->
+<div class="bom-timeline-overlay" id="bomTimelineOverlay">
+  <div class="bom-timeline-box">
+    <div class="bom-timeline-header">
+      <h3 id="bomTimelineTitle">零部件变更记录</h3>
+      <button class="close-btn" onclick="closeBomTimeline()">✕</button>
+    </div>
+    <div class="bom-timeline-body" id="bomTimelineBody"></div>
+    <div class="bom-timeline-footer">
+      <button class="btn btn-lg" onclick="closeBomTimeline()">关闭</button>
+    </div>
+  </div>
 </div>
 </body>
 </html>

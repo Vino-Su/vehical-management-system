@@ -190,6 +190,7 @@
                 <!-- 操作栏 -->
                 <div class="action-bar">
                 <button class="btn btn-primary" id="btnAssign" onclick="openAssignModal()">车辆分配</button>
+                    <button class="btn" id="btnStatusChange" onclick="openStatusChangeModal()">状态变更</button>
                     <button class="btn btn-export" onclick="doExport()">导出</button>
                 </div>
 
@@ -257,6 +258,29 @@
         <div class="modal-footer">
             <button class="btn" onclick="closeAssignModal()">取消</button>
             <button class="btn btn-primary" onclick="doAssign()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 车辆状态变更弹窗 -->
+<div class="modal-overlay" id="statusChangeModal">
+    <div class="modal-box" style="width:700px">
+        <div class="modal-header"><h3>车辆状态变更</h3><span class="modal-close" onclick="closeStatusChangeModal()">×</span></div>
+        <div class="modal-body">
+            <div class="assign-batch">
+                <label>统一变更为：</label>
+                <select id="batchStatus" onchange="batchChangeStatus(this.value)">
+                    <option value="">请选择状态</option>
+                </select>
+            </div>
+            <table class="assign-table">
+                <thead><tr><th>车架号</th><th>网联编号</th><th>别名</th><th>当前车辆状态</th><th>变更后状态</th></tr></thead>
+                <tbody id="statusChangeTableBody"></tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeStatusChangeModal()">取消</button>
+            <button class="btn btn-primary" onclick="doStatusChange()">确定</button>
         </div>
     </div>
 </div>
@@ -507,6 +531,93 @@ function doAssign() {
     if (!allSelected) { Common.showToast('请为所有车辆选择分配至项目', 'warning'); return; }
     closeAssignModal(); Common.showToast('分配成功', 'success');
     selectedIds.clear(); renderTable();
+}
+
+// ===== 车辆状态变更弹窗 =====
+// 可选的目标状态枚举（不含"待分配"）
+const statusOptions = [
+    '在库-正常使用', '在库-闲置留用', '在库-闲置可调出',
+    '在库-维修', '在库-保养中', '在库-待报废',
+    '已报废', '已处置'
+];
+
+function openStatusChangeModal() {
+    if (selectedIds.size === 0) { Common.showToast('未选择车辆', 'warning'); return; }
+    const selectedItems = [];
+    selectedIds.forEach(id => {
+        const item = mockData.find(d => d.id === id);
+        if (item) selectedItems.push(item);
+    });
+    if (selectedItems.length === 0) return;
+
+    // 构建批量选择下拉（排除所有已选车辆当前已有的状态）
+    const currentStatuses = new Set(selectedItems.map(item => item.vehicle_status));
+    const batchSelect = document.getElementById('batchStatus');
+    batchSelect.innerHTML = '<option value="">请选择状态</option>';
+    statusOptions.forEach(s => {
+        if (!currentStatuses.has(s)) {
+            batchSelect.innerHTML += `<option value="${s}">${s}</option>`;
+        }
+    });
+
+    // 构建每行的下拉（排除该行车辆当前状态）
+    const tbody = document.getElementById('statusChangeTableBody');
+    tbody.innerHTML = '';
+    selectedItems.forEach(item => {
+        const tagCls = statusTagClass[item.vehicle_status] || 'gray';
+        const tr = document.createElement('tr');
+        // 构建排除当前状态的下拉选项
+        let selectOptions = '<option value="">请选择状态</option>';
+        statusOptions.forEach(s => {
+            if (s !== item.vehicle_status) {
+                selectOptions += `<option value="${s}">${s}</option>`;
+            }
+        });
+        tr.innerHTML = `
+            <td>${item.vin}</td>
+            <td>${item.iot_code}</td>
+            <td>${item.alias}</td>
+            <td><span class="status-tag ${tagCls}">${item.vehicle_status}</span></td>
+            <td><select class="status-change-select" data-current="${item.vehicle_status}">${selectOptions}</select></td>`;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('statusChangeModal').classList.add('active');
+}
+function closeStatusChangeModal() { document.getElementById('statusChangeModal').classList.remove('active'); }
+function batchChangeStatus(val) {
+    document.querySelectorAll('.status-change-select').forEach(sel => {
+        if (val && sel.dataset.current !== val) {
+            sel.value = val;
+        }
+    });
+}
+function doStatusChange() {
+    const selects = document.querySelectorAll('.status-change-select');
+    let allSelected = true;
+    selects.forEach(sel => { if (!sel.value) allSelected = false; });
+    if (!allSelected) { Common.showToast('请为所有车辆选择变更后状态', 'warning'); return; }
+
+    // 执行状态变更
+    selects.forEach(sel => {
+        const row = sel.closest('tr');
+        const vin = row.cells[0].textContent;
+        const newStatus = sel.value;
+        const item = mockData.find(d => d.vin === vin);
+        if (item) {
+            item.vehicle_status = newStatus;
+        }
+    });
+
+    closeStatusChangeModal();
+    // 同步更新 filteredData
+    filteredData = filteredData.map(d => {
+        const updated = mockData.find(m => m.id === d.id);
+        return updated || d;
+    });
+    selectedIds.clear();
+    renderTable();
+    Common.showToast('状态变更成功', 'success');
 }
 
 // ===== 初始化 =====

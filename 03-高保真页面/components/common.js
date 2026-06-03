@@ -10,6 +10,7 @@ const Common = {
       { label: '车辆资产管理', id: 'asset-manage', href: 'vehicle-asset/vehicle-asset-list.html' },
       { label: '车辆资产盘点', id: 'asset-inventory', href: '' },
       { label: '车辆资产信息维护', id: 'asset-maintain', href: '' },
+      { label: '车型管理', id: 'vehicle-model', href: 'vehicle-model/vehicle-model-list.html' },
     ]},
     { group: '调度管理', items: [
       { label: '可用车辆库', id: 'transfer-available', href: 'vehicle-dispatch/dispatch-vehicle-list.html' },
@@ -18,7 +19,6 @@ const Common = {
     { group: '车辆运行管理', items: [] },
     { group: '车辆退出管理', items: [] },
     { group: '系统管理', items: [
-      { label: '车型管理', id: 'vehicle-model', href: 'system-management/vehicle-model-list.html' },
       { label: '预警规则配置', id: 'alert-config', href: '' },
       { label: '维保策略管理', id: 'maintenance-strategy', href: '' },
     ]},
