@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -302,6 +302,70 @@
   color: #fff; cursor: pointer; background: none; border: none;
 }
 
+/* === 售后维保 - 概览统计条 === */
+.warranty-stat-bar {
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  padding: 14px 20px; margin-bottom: 20px;
+  background: #fafafa; border-radius: var(--radius); border: 1px solid var(--border-color);
+  font-size: 14px; color: var(--text-secondary);
+}
+.warranty-stat-bar .stat-group { display: flex; align-items: center; gap: 8px; }
+.warranty-stat-bar .stat-sep { color: var(--border-color); margin: 0 8px; }
+.warranty-stat-bar .stat-icon { font-size: 18px; }
+.warranty-stat-bar .stat-label-text { font-weight: 500; color: var(--text-primary); }
+.warranty-stat-bar .stat-date { color: var(--text-secondary); }
+.warranty-stat-bar .stat-duration { color: var(--text-secondary); font-size: 13px; }
+
+.warranty-tag {
+  display: inline-block; padding: 2px 10px; border-radius: 10px;
+  font-size: 12px; line-height: 20px; white-space: nowrap; font-weight: 500;
+}
+.warranty-tag-green { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.warranty-tag-orange { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+.warranty-tag-red { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+.warranty-tag-gray { background: #f2f3f5; color: #86909c; border: 1px solid #d9d9d9; }
+.warranty-tag-gray-dashed { background: #fafafa; color: #86909c; border: 1px dashed #c9cdd4; }
+
+/* === 售后维保 - 子Tab === */
+.sub-tab-bar {
+  display: flex; border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px; gap: 0;
+}
+.sub-tab-item {
+  padding: 0 16px; height: 36px; line-height: 36px;
+  font-size: 14px; color: var(--text-secondary); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all .2s; user-select: none;
+  position: relative;
+}
+.sub-tab-item:hover { color: var(--primary); }
+.sub-tab-item.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.sub-tab-item.disabled { color: var(--text-disabled); cursor: not-allowed; }
+.sub-tab-item.disabled:hover { color: var(--text-disabled); }
+.sub-tab-item .sub-tab-badge {
+  font-size: 11px; color: var(--text-disabled); margin-left: 4px; font-weight: 400;
+}
+
+/* === 售后维保 - 空态 === */
+.after-sales-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 0; text-align: center;
+}
+.after-sales-empty .empty-icon { font-size: 48px; margin-bottom: 16px; color: var(--text-disabled); }
+.after-sales-empty .empty-text { font-size: 14px; color: var(--text-secondary); }
+
+/* === 售后维保 - 附件显示 === */
+.file-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: #fafafa; border-radius: var(--radius);
+  border: 1px solid var(--border-color); font-size: 13px; color: var(--text-primary);
+}
+.file-item .file-icon { font-size: 16px; }
+.file-item .file-name { flex: 1; }
+.file-item .file-link { color: var(--primary); cursor: pointer; font-size: 13px; }
+.file-item .file-link:hover { text-decoration: underline; }
+.file-item .file-size { color: var(--text-secondary); font-size: 12px; }
+
+
 /* === BOM清单 Tab === */
 .bom-stat-bar {
   display: flex; align-items: center; gap: 24px;
@@ -483,7 +547,7 @@
           <div class="tab-item active" data-tab="basic" onclick="switchTab('basic')">基础信息</div>
           <div class="tab-item" data-tab="transfer" onclick="switchTab('transfer')">调度信息</div>
           <div class="tab-item" data-tab="bom" id="bomTabItem" onclick="switchTab('bom')" style="display:none">BOM清单</div>
-          <div class="tab-item disabled" title="暂未开放">维保信息<span class="tab-badge">暂未开放</span></div>
+          <div class="tab-item" data-tab="aftersales" id="aftersalesTabItem" onclick="switchTab('aftersales')">售后维保</div>
           <div class="tab-item disabled" title="暂未开放">合规信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item disabled" title="暂未开放">风险信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item disabled" title="暂未开放">费用信息<span class="tab-badge">暂未开放</span></div>
@@ -727,6 +791,32 @@
           </div>
         </div>
 
+        <!-- Tab Content: 售后维保 -->
+        <div class="tab-content" id="tab-aftersales" style="display:none">
+          <div class="warranty-stat-bar" id="warrantyStatBar"></div>
+          <div class="sub-tab-bar" id="aftersalesSubTabBar">
+            <div class="sub-tab-item active" data-subtab="warranty-info" onclick="switchAfterSalesSubTab('warranty-info')">售后信息</div>
+            <div class="sub-tab-item disabled" data-subtab="repair-info">维修信息<span class="sub-tab-badge">暂未开放</span></div>
+            <div class="sub-tab-item disabled" data-subtab="maintenance-info">保养信息<span class="sub-tab-badge">暂未开放</span></div>
+          </div>
+          <div id="subtab-warranty-info">
+            <div id="warrantyInfoViewMode"></div>
+            <div id="warrantyInfoEditMode" style="display:none"></div>
+          </div>
+          <div id="subtab-repair-info" style="display:none">
+            <div class="after-sales-empty">
+              <div class="empty-icon">🔧</div>
+              <div class="empty-text">维修记录将在对接售后系统后自动同步</div>
+            </div>
+          </div>
+          <div id="subtab-maintenance-info" style="display:none">
+            <div class="after-sales-empty">
+              <div class="empty-icon">🛠️</div>
+              <div class="empty-text">保养记录将在对接售后系统后自动同步</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Tab Content: 变更日志 -->
         <div class="tab-content" id="tab-changelog" style="display:none">
           <div class="sub-action-bar">
@@ -836,9 +926,10 @@ const statusTagMap = {
 // ===== Tab切换 =====
 let currentTab = 'basic';
 let isEditing = false;
+let currentAfterSalesSubTab = 'warranty-info';
 
 function switchTab(tab) {
-  if (isEditing && tab !== 'basic') { Common.showToast('请先保存或取消编辑', 'error'); return; }
+  if (isEditing && tab !== currentTab) { Common.showToast('请先保存或取消编辑', 'error'); return; }
   currentTab = tab;
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
@@ -849,9 +940,14 @@ function switchTab(tab) {
   if (tab === 'transfer') renderTransferTable();
   if (tab === 'changelog') renderLogTable();
   if (tab === 'bom') renderBomTab();
-  // 编辑按钮仅在基础信息查看态显示（BOM清单为只读）
+  if (tab === 'aftersales') renderAfterSalesTab();
   const editBtn = document.getElementById('editBtn');
-  if (editBtn) editBtn.style.display = (tab === 'basic' && !isEditing) ? '' : 'none';
+  if (editBtn) {
+    if (isEditing) { editBtn.style.display = 'none'; }
+    else if (tab === 'basic') { editBtn.style.display = ''; }
+    else if (tab === 'aftersales' && currentAfterSalesSubTab === 'warranty-info') { editBtn.style.display = ''; }
+    else { editBtn.style.display = 'none'; }
+  }
 }
 
 // ===== 基础信息 - 查看态 =====
@@ -1197,27 +1293,51 @@ function addEditCamImgRow() {
 // ===== 编辑态切换 =====
 function toggleEdit() {
   if (isEditing) return;
-  // 先切换到基础信息Tab（此时isEditing仍为false，switchTab可正常执行）
-  switchTab('basic');
-  isEditing = true;
-  document.getElementById('basicViewMode').style.display = 'none';
-  document.getElementById('basicEditMode').style.display = '';
-  document.getElementById('editBtn').style.display = 'none';
-  document.getElementById('editFooterBar').classList.add('show');
+  if (currentTab === 'basic') {
+    switchTab('basic');
+    isEditing = true;
+    document.getElementById('basicViewMode').style.display = 'none';
+    document.getElementById('basicEditMode').style.display = '';
+    document.getElementById('editBtn').style.display = 'none';
+    document.getElementById('editFooterBar').classList.add('show');
+  } else if (currentTab === 'aftersales' && currentAfterSalesSubTab === 'warranty-info') {
+    isEditing = true;
+    renderWarrantyInfoEdit();
+    document.getElementById('warrantyInfoViewMode').style.display = 'none';
+    document.getElementById('warrantyInfoEditMode').style.display = '';
+    document.getElementById('editBtn').style.display = 'none';
+    document.getElementById('editFooterBar').classList.add('show');
+  }
 }
 
 function cancelEdit() {
+  if (currentTab === 'basic') {
+    document.getElementById('basicViewMode').style.display = '';
+    document.getElementById('basicEditMode').style.display = 'none';
+  } else if (currentTab === 'aftersales') {
+    document.getElementById('warrantyInfoViewMode').style.display = '';
+    document.getElementById('warrantyInfoEditMode').style.display = 'none';
+  }
   isEditing = false;
-  document.getElementById('basicViewMode').style.display = '';
-  document.getElementById('basicEditMode').style.display = 'none';
   document.getElementById('editBtn').style.display = '';
   document.getElementById('editFooterBar').classList.remove('show');
 }
 
 function saveEdit() {
   Common.showToast('保存成功', 'success');
-  cancelEdit();
-  renderBasicView();
+  if (currentTab === 'aftersales') { saveAfterSalesData(); }
+  if (currentTab === 'basic') {
+    document.getElementById('basicViewMode').style.display = '';
+    document.getElementById('basicEditMode').style.display = 'none';
+  } else if (currentTab === 'aftersales') {
+    document.getElementById('warrantyInfoViewMode').style.display = '';
+    document.getElementById('warrantyInfoEditMode').style.display = 'none';
+  }
+  isEditing = false;
+  document.getElementById('editBtn').style.display = '';
+  document.getElementById('editFooterBar').classList.remove('show');
+  if (currentTab === 'basic') renderBasicView();
+  if (currentTab === 'aftersales') renderWarrantyInfoView();
 }
 
 function goBack() {
@@ -1945,6 +2065,293 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+
+    // ============================================================
+    // ===== 售后维保模块 =====
+    // ============================================================
+
+    // --- 字段渲染辅助函数（使用与基础信息一致的CSS类） ---
+    function infoField(label, value, style) {
+      const val = value || '—';
+      const sty = style ? ' style="' + style + '"' : '';
+      return '<div class="info-field"><span class="field-label">' + label + '</span><span class="field-value"' + sty + '>' + val + '</span></div>';
+    }
+
+    function editField(label, dataPath, value, type) {
+      const inputType = type || 'text';
+      return '<div class="form-item"><label>' + label + '</label><input type="' + inputType + '" data-field="' + dataPath + '" value="' + (value || '') + '"></div>';
+    }
+
+    // --- 售后维保数据 ---
+    const afterSalesData = {
+      vehicleWarranty: {
+        warrantyStartDate: '2024-03-15',
+        warrantyPeriod: '5年',
+        warrantyEndDate: '2029-03-14',
+        warrantyMileage: '15万公里',
+        remainingDays: 1033,
+        status: 'active'
+      },
+      batteryWarranty: {
+        warrantyStartDate: '2024-03-15',
+        warrantyPeriod: '8年',
+        warrantyEndDate: '2032-03-14',
+        warrantyMileage: '15万公里',
+        remainingDays: 3953,
+        status: 'active'
+      },
+      motorWarranty: {
+        warrantyStartDate: '2024-03-15',
+        warrantyPeriod: '8年',
+        warrantyEndDate: '2032-03-14',
+        warrantyMileage: '15万公里',
+        remainingDays: 3953,
+        status: 'active'
+      },
+      electronicControlWarranty: {
+        warrantyStartDate: '2024-03-15',
+        warrantyPeriod: '8年',
+        warrantyEndDate: '2032-03-14',
+        warrantyMileage: '15万公里',
+        remainingDays: 3953,
+        status: 'active'
+      },
+      serviceProvider: {
+        providerName: '比亚迪汽车售后服务（北京朝阳站）',
+        contactPerson: '李明辉',
+        contactPhone: '010-8765-4321',
+        address: '北京市朝阳区建国路88号',
+        serviceArea: '华北区',
+        serviceType: '授权服务站',
+        contractStartDate: '2024-03-15',
+        contractEndDate: '2029-03-14'
+      },
+      maintenancePlan: {
+        planName: '2025年度维保计划',
+        planCycle: '每6个月/1万公里',
+        lastMaintenanceDate: '2025-04-20',
+        nextMaintenanceDate: '2025-10-20',
+        nextMaintenanceMileage: '9,800公里',
+        planStatus: '执行中'
+      },
+      attachments: [
+        { name: '整车质保条款_V2.1.pdf', size: '2.3MB', type: 'pdf' },
+        { name: '三电质保补充协议.pdf', size: '1.1MB', type: 'pdf' },
+        { name: '售后服务合同.pdf', size: '3.5MB', type: 'pdf' },
+        { name: '2025年维保计划书.pdf', size: '856KB', type: 'pdf' }
+      ]
+    };
+
+    // --- 获取质保状态标签 ---
+    function getWarrantyStatusTag(status, remainingDays) {
+      if (status === 'expired') return '<span class="warranty-tag warranty-tag-gray">已过期</span>';
+      if (remainingDays <= 90) return '<span class="warranty-tag warranty-tag-red">即将到期</span>';
+      if (remainingDays <= 180) return '<span class="warranty-tag warranty-tag-orange">临近到期</span>';
+      return '<span class="warranty-tag warranty-tag-green">质保中</span>';
+    }
+
+    // --- 概览统计条渲染 ---
+    function renderWarrantyStatBar() {
+      const bar = document.getElementById('warrantyStatBar');
+      if (!bar) return;
+      const vw = afterSalesData.vehicleWarranty;
+      const bw = afterSalesData.batteryWarranty;
+      bar.innerHTML = '<div class="stat-group"><span class="stat-icon">\u{1F697}</span><span class="stat-label-text">整车质保</span>'
+        + getWarrantyStatusTag(vw.status, vw.remainingDays)
+        + '<span class="stat-date">' + vw.warrantyStartDate + ' ~ ' + vw.warrantyEndDate + '</span>'
+        + '<span class="stat-duration">（剩余 ' + vw.remainingDays + ' 天）</span></div>'
+        + '<span class="stat-sep">|</span>'
+        + '<div class="stat-group"><span class="stat-icon">\u{1F50B}</span><span class="stat-label-text">三电质保</span>'
+        + getWarrantyStatusTag(bw.status, bw.remainingDays)
+        + '<span class="stat-date">' + bw.warrantyStartDate + ' ~ ' + bw.warrantyEndDate + '</span>'
+        + '<span class="stat-duration">（剩余 ' + bw.remainingDays + ' 天）</span></div>';
+    }
+
+    // --- 子Tab切换 ---
+    function switchAfterSalesSubTab(subtab) {
+      if (isEditing) { Common.showToast('请先保存或取消编辑', 'error'); return; }
+      const item = document.querySelector('.sub-tab-item[data-subtab="' + subtab + '"]');
+      if (item && item.classList.contains('disabled')) return;
+      currentAfterSalesSubTab = subtab;
+      document.querySelectorAll('#aftersalesSubTabBar .sub-tab-item').forEach(function(el) { el.classList.remove('active'); });
+      if (item) item.classList.add('active');
+      document.getElementById('subtab-warranty-info').style.display = (subtab === 'warranty-info') ? '' : 'none';
+      document.getElementById('subtab-repair-info').style.display = (subtab === 'repair-info') ? '' : 'none';
+      document.getElementById('subtab-maintenance-info').style.display = (subtab === 'maintenance-info') ? '' : 'none';
+      const editBtn = document.getElementById('editBtn');
+      if (editBtn && !isEditing) {
+        editBtn.style.display = (subtab === 'warranty-info') ? '' : 'none';
+      }
+    }
+
+    // --- 售后维保Tab主渲染 ---
+    function renderAfterSalesTab() {
+      renderWarrantyStatBar();
+      renderWarrantyInfoView();
+    }
+
+    // --- 售后信息查看态渲染 ---
+    function renderWarrantyInfoView() {
+      const container = document.getElementById('warrantyInfoViewMode');
+      if (!container) return;
+      const d = afterSalesData;
+      let html = '';
+
+      // 整车质保信息
+      html += '<div class="info-section"><div class="info-section-title">\u{1F697} 整车质保信息</div><div class="info-grid">';
+      html += infoField('质保起始日期', d.vehicleWarranty.warrantyStartDate);
+      html += infoField('质保周期', d.vehicleWarranty.warrantyPeriod);
+      html += infoField('质保截止日期', d.vehicleWarranty.warrantyEndDate);
+      html += infoField('质保里程', d.vehicleWarranty.warrantyMileage);
+      html += infoField('剩余天数', d.vehicleWarranty.remainingDays + ' 天', d.vehicleWarranty.remainingDays <= 180 ? 'color:var(--danger)' : '');
+      html += infoField('质保状态', getWarrantyStatusTag(d.vehicleWarranty.status, d.vehicleWarranty.remainingDays));
+      html += '</div></div>';
+
+      // 三电质保信息
+      html += '<div class="info-section"><div class="info-section-title">\u{1F50B} 三电质保信息</div><div class="info-grid">';
+      html += infoField('电池质保起始日期', d.batteryWarranty.warrantyStartDate);
+      html += infoField('电池质保周期', d.batteryWarranty.warrantyPeriod);
+      html += infoField('电池质保截止日期', d.batteryWarranty.warrantyEndDate);
+      html += infoField('电池质保里程', d.batteryWarranty.warrantyMileage);
+      html += infoField('电机质保起始日期', d.motorWarranty.warrantyStartDate);
+      html += infoField('电机质保周期', d.motorWarranty.warrantyPeriod);
+      html += infoField('电机质保截止日期', d.motorWarranty.warrantyEndDate);
+      html += infoField('电机质保里程', d.motorWarranty.warrantyMileage);
+      html += infoField('电控质保起始日期', d.electronicControlWarranty.warrantyStartDate);
+      html += infoField('电控质保周期', d.electronicControlWarranty.warrantyPeriod);
+      html += infoField('电控质保截止日期', d.electronicControlWarranty.warrantyEndDate);
+      html += infoField('电控质保里程', d.electronicControlWarranty.warrantyMileage);
+      html += '</div></div>';
+
+      // 售后服务商信息
+      html += '<div class="info-section"><div class="info-section-title">\u{1F3E2} 售后服务商信息</div><div class="info-grid">';
+      html += infoField('服务商名称', d.serviceProvider.providerName);
+      html += infoField('联系人', d.serviceProvider.contactPerson);
+      html += infoField('联系电话', d.serviceProvider.contactPhone);
+      html += infoField('服务地址', d.serviceProvider.address);
+      html += infoField('服务区域', d.serviceProvider.serviceArea);
+      html += infoField('服务商类型', d.serviceProvider.serviceType);
+      html += infoField('合同起始日期', d.serviceProvider.contractStartDate);
+      html += infoField('合同截止日期', d.serviceProvider.contractEndDate);
+      html += '</div></div>';
+
+      // 维保计划信息
+      html += '<div class="info-section"><div class="info-section-title">\u{1F4CB} 维保计划信息</div><div class="info-grid">';
+      html += infoField('计划名称', d.maintenancePlan.planName);
+      html += infoField('计划周期', d.maintenancePlan.planCycle);
+      html += infoField('上次维保日期', d.maintenancePlan.lastMaintenanceDate);
+      html += infoField('下次维保日期', d.maintenancePlan.nextMaintenanceDate);
+      html += infoField('下次维保里程', d.maintenancePlan.nextMaintenanceMileage);
+      html += infoField('计划状态', '<span class="warranty-tag warranty-tag-green">' + d.maintenancePlan.planStatus + '</span>');
+      html += '</div></div>';
+
+      // 售后政策附件
+      html += '<div class="info-section"><div class="info-section-title">\u{1F4CE} 售后政策附件</div><div style="display:flex;flex-direction:column;gap:8px;">';
+      for (var i = 0; i < d.attachments.length; i++) {
+        var att = d.attachments[i];
+        html += '<div class="file-item"><span class="file-icon">\u{1F4C4}</span><span class="file-name">' + att.name + '</span><span class="file-size">' + att.size + '</span><span class="file-link" onclick="Common.showToast(\'下载功能开发中\',\'info\')">下载</span></div>';
+      }
+      html += '</div></div>';
+
+      container.innerHTML = html;
+    }
+
+    // --- 售后信息编辑态渲染 ---
+    function renderWarrantyInfoEdit() {
+      const container = document.getElementById('warrantyInfoEditMode');
+      if (!container) return;
+      const d = afterSalesData;
+      let html = '';
+
+      // 整车质保信息
+      html += '<div class="form-section"><div class="form-section-title">整车质保信息</div><div class="form-grid">';
+      html += editField('质保起始日期', 'vehicleWarranty.warrantyStartDate', d.vehicleWarranty.warrantyStartDate, 'date');
+      html += editField('质保周期', 'vehicleWarranty.warrantyPeriod', d.vehicleWarranty.warrantyPeriod, 'text');
+      html += editField('质保截止日期', 'vehicleWarranty.warrantyEndDate', d.vehicleWarranty.warrantyEndDate, 'date');
+      html += editField('质保里程', 'vehicleWarranty.warrantyMileage', d.vehicleWarranty.warrantyMileage, 'text');
+      html += '</div></div>';
+
+      // 三电质保信息
+      html += '<div class="form-section"><div class="form-section-title">三电质保信息</div><div class="form-grid">';
+      html += editField('电池质保起始日期', 'batteryWarranty.warrantyStartDate', d.batteryWarranty.warrantyStartDate, 'date');
+      html += editField('电池质保周期', 'batteryWarranty.warrantyPeriod', d.batteryWarranty.warrantyPeriod, 'text');
+      html += editField('电池质保截止日期', 'batteryWarranty.warrantyEndDate', d.batteryWarranty.warrantyEndDate, 'date');
+      html += editField('电池质保里程', 'batteryWarranty.warrantyMileage', d.batteryWarranty.warrantyMileage, 'text');
+      html += editField('电机质保起始日期', 'motorWarranty.warrantyStartDate', d.motorWarranty.warrantyStartDate, 'date');
+      html += editField('电机质保周期', 'motorWarranty.warrantyPeriod', d.motorWarranty.warrantyPeriod, 'text');
+      html += editField('电机质保截止日期', 'motorWarranty.warrantyEndDate', d.motorWarranty.warrantyEndDate, 'date');
+      html += editField('电机质保里程', 'motorWarranty.warrantyMileage', d.motorWarranty.warrantyMileage, 'text');
+      html += editField('电控质保起始日期', 'electronicControlWarranty.warrantyStartDate', d.electronicControlWarranty.warrantyStartDate, 'date');
+      html += editField('电控质保周期', 'electronicControlWarranty.warrantyPeriod', d.electronicControlWarranty.warrantyPeriod, 'text');
+      html += editField('电控质保截止日期', 'electronicControlWarranty.warrantyEndDate', d.electronicControlWarranty.warrantyEndDate, 'date');
+      html += editField('电控质保里程', 'electronicControlWarranty.warrantyMileage', d.electronicControlWarranty.warrantyMileage, 'text');
+      html += '</div></div>';
+
+      // 售后服务商信息
+      html += '<div class="form-section"><div class="form-section-title">售后服务商信息</div><div class="form-grid">';
+      html += editField('服务商名称', 'serviceProvider.providerName', d.serviceProvider.providerName, 'text');
+      html += editField('联系人', 'serviceProvider.contactPerson', d.serviceProvider.contactPerson, 'text');
+      html += editField('联系电话', 'serviceProvider.contactPhone', d.serviceProvider.contactPhone, 'text');
+      html += editField('服务地址', 'serviceProvider.address', d.serviceProvider.address, 'text');
+      html += editField('服务区域', 'serviceProvider.serviceArea', d.serviceProvider.serviceArea, 'text');
+      html += editField('服务商类型', 'serviceProvider.serviceType', d.serviceProvider.serviceType, 'text');
+      html += editField('合同起始日期', 'serviceProvider.contractStartDate', d.serviceProvider.contractStartDate, 'date');
+      html += editField('合同截止日期', 'serviceProvider.contractEndDate', d.serviceProvider.contractEndDate, 'date');
+      html += '</div></div>';
+
+      // 维保计划信息
+      html += '<div class="form-section"><div class="form-section-title">维保计划信息</div><div class="form-grid">';
+      html += editField('计划名称', 'maintenancePlan.planName', d.maintenancePlan.planName, 'text');
+      html += editField('计划周期', 'maintenancePlan.planCycle', d.maintenancePlan.planCycle, 'text');
+      html += editField('上次维保日期', 'maintenancePlan.lastMaintenanceDate', d.maintenancePlan.lastMaintenanceDate, 'date');
+      html += editField('下次维保日期', 'maintenancePlan.nextMaintenanceDate', d.maintenancePlan.nextMaintenanceDate, 'date');
+      html += editField('下次维保里程', 'maintenancePlan.nextMaintenanceMileage', d.maintenancePlan.nextMaintenanceMileage, 'text');
+      html += '</div></div>';
+
+      // 售后政策附件
+      html += '<div class="form-section"><div class="form-section-title">售后政策附件</div><div style="display:flex;flex-direction:column;gap:8px;">';
+      for (var i = 0; i < d.attachments.length; i++) {
+        var att = d.attachments[i];
+        html += '<div class="file-item"><span class="file-icon">\u{1F4C4}</span><span class="file-name">' + att.name + '</span><span class="file-size">' + att.size + '</span><span class="file-link" onclick="Common.showToast(\'下载功能开发中\',\'info\')">下载</span></div>';
+      }
+      html += '<div style="margin-top:8px;"><button class="btn btn-secondary" onclick="Common.showToast(\'上传功能开发中\',\'info\')" style="font-size:13px;padding:4px 12px;">+ 上传附件</button></div>';
+      html += '</div></div>';
+
+      container.innerHTML = html;
+    }
+
+    // --- 保存售后数据 ---
+    function saveAfterSalesData() {
+      const editContainer = document.getElementById('warrantyInfoEditMode');
+      if (!editContainer) return;
+      var inputs = editContainer.querySelectorAll('input[data-field]');
+      for (var i = 0; i < inputs.length; i++) {
+        setNestedValue(afterSalesData, inputs[i].dataset.field, inputs[i].value);
+      }
+      recalcRemainingDays(afterSalesData.vehicleWarranty);
+      recalcRemainingDays(afterSalesData.batteryWarranty);
+      recalcRemainingDays(afterSalesData.motorWarranty);
+      recalcRemainingDays(afterSalesData.electronicControlWarranty);
+    }
+
+    function recalcRemainingDays(obj) {
+      if (obj.warrantyEndDate) {
+        var end = new Date(obj.warrantyEndDate);
+        var now = new Date();
+        obj.remainingDays = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+        obj.status = obj.remainingDays > 0 ? 'active' : 'expired';
+      }
+    }
+
+    function setNestedValue(obj, path, value) {
+      var keys = path.split('.');
+      var current = obj;
+      for (var i = 0; i < keys.length - 1; i++) {
+        if (current[keys[i]] === undefined) current[keys[i]] = {};
+        current = current[keys[i]];
+      }
+      current[keys[keys.length - 1]] = value;
+    }
 </script>
 
 <!-- 调度历史详情弹窗 -->
