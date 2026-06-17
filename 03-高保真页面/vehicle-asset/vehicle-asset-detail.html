@@ -105,6 +105,7 @@
 /* === 变更日志操作类型标签 === */
 .log-type-modify { background: #e6f4ff; color: #1677ff; }
 .log-type-delete { background: #fff2f0; color: #ff4d4f; }
+.tag-cyan { background: #e6fffb; color: #13c2c2; }
 
 /* === 编辑态底部操作栏 === */
 .edit-footer-bar {
@@ -913,8 +914,41 @@ const vehicleData = {
     {name:'前视摄像头',tid:'1',support_history:'是',history_quality:'80',support_perception:'是',perception_quality:'90',support_cloud:'是',cloud_quality:'85',support_vehicle:'否',vehicle_quality:'—'},
     {name:'后视摄像头',tid:'2',support_history:'是',history_quality:'75',support_perception:'否',perception_quality:'—',support_cloud:'否',cloud_quality:'—',support_vehicle:'否',vehicle_quality:'—'}
   ],
-  is_parallel: '否', max_speed: '', max_steer: ''
+  is_parallel: '否', max_speed: '', max_steer: '',
+  labels: ['l1','l7','l10']
 };
+
+// ===== 标签数据（与标签管理模块保持一致） =====
+const labelGroups = [
+    { id:'g1', name:'运营场景', type:'public', color:'blue', labels:[
+        {id:'l1',name:'早班车',color:'green'},{id:'l2',name:'夜班车',color:'blue'},{id:'l3',name:'保障车',color:'orange'}]},
+    { id:'g2', name:'重点保障', type:'public', color:'red', labels:[{id:'l4',name:'VIP保障',color:'red'}] },
+    { id:'g3', name:'车辆等级', type:'public', color:'cyan', labels:[{id:'l7',name:'A级车',color:'green'},{id:'l8',name:'B级车',color:'yellow'}] },
+    { id:'g4', name:'租赁批次', type:'public', color:'orange', labels:[{id:'l9',name:'常规租赁',color:'gray'}] },
+    { id:'g5', name:'鸠江项目专属', type:'private', color:'purple', labels:[{id:'l10',name:'测试车组',color:'purple'},{id:'l11',name:'临时调度',color:'cyan'}] },
+    { id:'g6', name:'嘉定研发专项', type:'private', color:'green', labels:[{id:'l12',name:'重点测试',color:'green'}] },
+];
+const colorMap = {
+    blue:{tag:'tag-blue'}, green:{tag:'tag-green'}, orange:{tag:'tag-orange'}, red:{tag:'tag-red'},
+    yellow:{tag:'tag-yellow'}, purple:{tag:'tag-purple'}, cyan:{tag:'tag-cyan'}, gray:{tag:'tag-default'},
+};
+// 查看态：渲染当前车辆标签
+function renderDetailTags() {
+  const ids = vehicleData.labels || [];
+  if (ids.length === 0) return '<span style="color:var(--text-disabled);">—</span>';
+  return ids.map(lid => { for (const g of labelGroups) { const l = g.labels.find(x => x.id === lid); if (l) { const c = colorMap[l.color] || colorMap.gray; return '<span class="tag ' + c.tag + '">' + l.name + '</span>'; } } return ''; }).join(' ');
+}
+// 编辑态：渲染标签选择器（按标签组分组，复选框）
+function renderDetailTagEditor() {
+  const ids = vehicleData.labels || [];
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:6px 16px;">';
+  labelGroups.forEach(g => {
+    html += '<div style="width:100%;font-size:12px;color:var(--text-secondary);margin-top:6px;">' + g.name + (g.type === 'private' ? '（私有）' : '') + '</div>';
+    g.labels.forEach(l => { const c = colorMap[l.color] || colorMap.gray; const ck = ids.includes(l.id) ? 'checked' : ''; html += '<label style="display:inline-flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;"><input type="checkbox" value="' + l.id + '" ' + ck + '><span class="tag ' + c.tag + '">' + l.name + '</span></label>'; });
+  });
+  html += '</div>';
+  return html;
+}
 
 // ===== 状态标签映射 =====
 const statusTagMap = {
@@ -1086,6 +1120,9 @@ function renderBasicView() {
       <div class="info-field"><span class="field-label">最大车速（km/h）</span><span class="field-value">${v(d.max_speed)}</span></div>
       <div class="info-field"><span class="field-label">最大转向角</span><span class="field-value">${v(d.max_steer)}</span></div>
     </div></div>
+    <div class="info-section"><div class="info-section-title">车辆标签</div><div class="info-grid cols-1">
+      <div class="info-field"><span class="field-label">当前标签</span><span class="field-value">${renderDetailTags()}</span></div>
+    </div></div>
   `;
 }
 
@@ -1238,6 +1275,9 @@ function renderBasicEdit() {
         <div class="form-item"><label>最大车速（km/h）</label><input type="number" value="${d.max_speed||''}" min="0"></div>
         <div class="form-item"><label>最大转向角</label><input type="number" value="${d.max_steer||''}" min="0"></div>
       </div></div>
+      <div class="form-section"><div class="section-title">车辆标签</div>
+        <div id="detailTagEditor" style="padding:12px 0;">${renderDetailTagEditor()}</div>
+      </div>
     </form>
   `;
 }
@@ -1327,6 +1367,9 @@ function saveEdit() {
   Common.showToast('保存成功', 'success');
   if (currentTab === 'aftersales') { saveAfterSalesData(); }
   if (currentTab === 'basic') {
+    const sel = [];
+    document.querySelectorAll('#detailTagEditor input:checked').forEach(cb => sel.push(cb.value));
+    vehicleData.labels = sel;
     document.getElementById('basicViewMode').style.display = '';
     document.getElementById('basicEditMode').style.display = 'none';
   } else if (currentTab === 'aftersales') {

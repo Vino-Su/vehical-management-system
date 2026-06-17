@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>标签管理 - 车辆管理系统</title>
+<link rel="stylesheet" href="../components/common.css">
+<style>
+/* ========== 查询筛选区 ========== */
+.search-bar {
+    background: var(--bg-container);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+}
+.search-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+.search-item { display: none; align-items: center; gap: 8px; }
+.search-item.visible { display: flex; }
+.search-item label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
+.search-item input, .search-item select {
+    height: 32px; border: 1px solid var(--border-input);
+    border-radius: var(--radius); padding: 0 12px;
+    font-size: 14px; color: var(--text-primary); outline: none;
+    min-width: 160px; transition: border-color .2s;
+}
+.search-item input:focus, .search-item select:focus { border-color: var(--primary); }
+.search-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.toggle-expand {
+    color: var(--primary); font-size: 14px; cursor: pointer;
+    user-select: none; display: flex; align-items: center; gap: 4px;
+}
+.toggle-expand:hover { color: var(--primary-hover); }
+.toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
+.toggle-expand.expanded .arrow { transform: rotate(180deg); }
+
+/* ========== 状态标签 ========== */
+.status-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; line-height: 20px; white-space: nowrap; }
+.status-tag.green { background: #f6ffed; color: #52c41a; }
+.status-tag.blue { background: #e6f4ff; color: #1677ff; }
+.status-tag.orange { background: #fff7e6; color: #fa8c16; }
+.status-tag.red { background: #fff2f0; color: #ff4d4f; }
+.status-tag.yellow { background: #fffbe6; color: #d4b106; }
+.status-tag.gray { background: #f2f3f5; color: #86909c; }
+.status-tag.purple { background: #f5e8ff; color: #722ed1; }
+
+/* 补充青色标签（common.css 未含） */
+.tag-cyan { background: #e6fffb; color: #13c2c2; }
+
+/* ========== 操作链接 ========== */
+.action-link { color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: none; }
+.action-link:hover { color: var(--primary-hover); }
+.action-link + .action-link { margin-left: 12px; }
+.action-link.danger { color: var(--error); }
+
+/* ========== 左右分栏布局 ========== */
+.tag-page-layout { display: flex; gap: 16px; align-items: stretch; }
+
+/* 左栏：标签树 */
+.tag-tree-panel {
+    width: 340px; flex-shrink: 0;
+    background: var(--bg-container); border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg); overflow: hidden;
+    display: flex; flex-direction: column;
+}
+.tag-tree-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: #fafafa;
+}
+.tag-tree-panel-header h4 { font-size: 14px; font-weight: 600; margin: 0; color: var(--text-primary); }
+.tag-tree-body { max-height: 560px; overflow-y: auto; }
+.tree-section-title { padding: 10px 16px 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); letter-spacing: .5px; }
+.tree-group-row, .tree-label-row { transition: background .2s; }
+.tree-group-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 16px; cursor: pointer;
+}
+.tree-group-row:hover { background: var(--bg-hover); }
+.tree-group-row.active { background: #e6f4ff; }
+.tree-arrow { width: 14px; font-size: 10px; color: var(--text-secondary); transition: transform .2s; text-align: center; flex-shrink: 0; }
+.tree-group.expanded > .tree-group-row .tree-arrow { transform: rotate(90deg); }
+.tree-group-icon { font-size: 14px; flex-shrink: 0; }
+.tree-group-name { font-size: 14px; font-weight: 500; color: var(--text-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-type-badge { font-size: 11px; padding: 0 6px; border-radius: 8px; line-height: 16px; white-space: nowrap; flex-shrink: 0; }
+.tree-type-badge.public { background: #e6f4ff; color: #1677ff; }
+.tree-type-badge.private { background: #f5e8ff; color: #722ed1; }
+.tree-count { font-size: 12px; color: var(--text-secondary); white-space: nowrap; flex-shrink: 0; }
+.tree-actions { display: none; gap: 8px; flex-shrink: 0; }
+.tree-group-row:hover .tree-actions, .tree-label-row:hover .tree-actions { display: flex; }
+.tree-actions a { font-size: 12px; color: var(--primary); cursor: pointer; white-space: nowrap; }
+.tree-actions a:hover { color: var(--primary-hover); }
+.tree-actions a.danger { color: var(--error); }
+.tree-labels { display: none; }
+.tree-group.expanded > .tree-labels { display: block; }
+.tree-label-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px 8px 46px; cursor: pointer;
+}
+.tree-label-row:hover { background: var(--bg-hover); }
+.tree-label-row.active { background: #e6f4ff; }
+.color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tree-label-name { font-size: 13px; color: var(--text-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 右栏：车辆列表 */
+.tag-vehicle-panel {
+    flex: 1; min-width: 0;
+    background: var(--bg-container); border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg); padding: 16px 20px;
+}
+.panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.panel-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.panel-title .crumb { color: var(--text-secondary); font-weight: 400; font-size: 13px; margin-left: 4px; }
+.panel-actions { display: flex; gap: 8px; margin-left: auto; }
+.panel-search { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 16px; }
+.panel-search .si { display: flex; align-items: center; gap: 8px; }
+.panel-search .si label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
+.panel-search .si input, .panel-search .si select {
+    height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+    padding: 0 12px; font-size: 14px; color: var(--text-primary); outline: none; min-width: 150px;
+}
+.panel-search .si input:focus, .panel-search .si select:focus { border-color: var(--primary); }
+
+/* 操作栏 */
+.sub-action-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.panel-action-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.panel-action-bar .selected-tip { font-size: 13px; color: var(--text-secondary); margin-left: 4px; }
+.panel-action-bar .btn-export { margin-left: auto; }
+/* 标签树面板头部 */
+.tp-header-left { display: flex; align-items: baseline; gap: 8px; }
+.tp-stat { font-size: 12px; color: var(--text-secondary); }
+.tp-add-btn { height: 28px; padding: 0 12px; font-size: 13px; }
+.tp-subtip { padding: 8px 16px; font-size: 12px; color: var(--text-secondary); background: #fafafa; border-bottom: 1px solid var(--border-color); line-height: 1.6; }
+
+/* 标签列展示 */
+.cell-tags { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.cell-tags .more { font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+
+/* 颜色选择器 */
+.color-picker { display: flex; gap: 12px; flex-wrap: wrap; }
+.color-option {
+    width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+    position: relative; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border-color);
+}
+.color-option:hover { box-shadow: 0 0 0 1px var(--primary); }
+.color-option.selected { box-shadow: 0 0 0 2px var(--primary); }
+.color-option.selected::after {
+    content: '✓'; position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700;
+}
+
+/* 表单弹窗字段 */
+.form-row { display: flex; align-items: flex-start; margin-bottom: 18px; }
+.form-row .form-label { width: 100px; flex-shrink: 0; text-align: right; padding-right: 12px; font-size: 14px; color: var(--text-primary); line-height: 32px; }
+.form-row .form-label .req { color: var(--error); margin-right: 2px; }
+.form-row .form-control { flex: 1; }
+.form-row input[type="text"], .form-row input[type="number"], .form-row textarea, .form-row select {
+    width: 100%; height: 32px; border: 1px solid var(--border-input);
+    border-radius: var(--radius); padding: 0 12px; font-size: 14px; color: var(--text-primary); outline: none;
+    transition: border-color .2s;
+}
+.form-row textarea { height: auto; padding: 8px 12px; line-height: 1.5; resize: vertical; min-height: 64px; }
+.form-row input:focus, .form-row textarea:focus, .form-row select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1); }
+.radio-group { display: flex; gap: 24px; line-height: 32px; }
+.radio-group label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+.field-error { color: var(--error); font-size: 12px; margin-top: 4px; }
+
+/* 移入车辆弹窗 */
+.import-search { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.import-search input, .import-search select {
+    height: 30px; border: 1px solid var(--border-input); border-radius: var(--radius);
+    padding: 0 8px; font-size: 13px; outline: none;
+}
+.import-search input { width: 170px; }
+.import-search select { width: 130px; }
+.import-summary { font-size: 13px; color: var(--text-secondary); margin: 8px 0 12px; }
+.import-table-wrap { max-height: 360px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius); }
+.import-table { width: 100%; border-collapse: collapse; }
+.import-table thead th {
+    position: sticky; top: 0; background: #fafafa; color: var(--text-secondary); font-weight: 600;
+    font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap;
+}
+.import-table tbody td { color: var(--text-primary); font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--border-color); }
+.import-table tbody tr.added { color: var(--text-disabled); }
+.import-table tbody tr.added td { color: var(--text-disabled); }
+.added-mark { font-size: 11px; color: var(--text-disabled); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 6px; line-height: 16px; }
+
+/* 空态 */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 0; text-align: center; color: var(--text-secondary); }
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state .empty-text { font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+        <div id="header"></div>
+        <div class="content">
+            <div class="page-container" style="padding:0;background:transparent;box-shadow:none;">
+                <!-- 查询筛选区 -->
+                <div class="search-bar">
+                    <div class="search-row" id="searchRow">
+                        <div class="search-item visible">
+                            <label>标签组名称</label>
+                            <input type="text" id="s_name" placeholder="请输入标签组/子标签名称">
+                        </div>
+                        <div class="search-item visible">
+                            <label>标签类型</label>
+                            <select id="s_type">
+                                <option value="">全部</option>
+                                <option value="public">公有</option>
+                                <option value="private">私有</option>
+                            </select>
+                        </div>
+                        <div class="search-item visible">
+                            <label>所属项目</label>
+                            <select id="s_project">
+                                <option value="">全部</option>
+                                <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                            </select>
+                        </div>
+                        <div class="search-item visible">
+                            <label>颜色</label>
+                            <select id="s_color">
+                                <option value="">全部</option>
+                                <option value="blue">蓝</option><option value="green">绿</option><option value="orange">橙</option><option value="red">红</option><option value="yellow">黄</option><option value="purple">紫</option><option value="cyan">青</option><option value="gray">灰</option>
+                            </select>
+                        </div>
+                        <div class="search-actions">
+                            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+                            <button class="btn" onclick="doReset()">重置</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 左右分栏 -->
+                <div class="tag-page-layout">
+                    <!-- 左栏：标签树 -->
+                    <div class="tag-tree-panel">
+                        <div class="tag-tree-panel-header">
+                            <div class="tp-header-left">
+                                <h4>标签结构</h4>
+                                <span class="tp-stat" id="treeStat">共 0 组</span>
+                            </div>
+                            <button class="btn btn-primary tp-add-btn" onclick="openGroupModal()">+ 新建标签组</button>
+                        </div>
+                        <div class="tp-subtip">标签用于对车辆自定义分组归类，不影响车辆状态与归属项目等业务字段。</div>
+                        <div class="tag-tree-body" id="treeBody"></div>
+                    </div>
+
+                    <!-- 右栏：车辆列表 -->
+                    <div class="tag-vehicle-panel">
+                        <div class="panel-header">
+                            <div class="panel-title" id="panelTitle">请选择左侧标签</div>
+                        </div>
+                        <div id="panelContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新建/编辑标签组弹窗 -->
+<div class="modal-overlay" id="groupModal">
+    <div class="modal-box" style="width:600px">
+        <div class="modal-header"><h3 id="groupModalTitle">新建标签组</h3><span class="modal-close" onclick="closeGroupModal()">×</span></div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-label"><span class="req">*</span>标签组名称</div>
+                <div class="form-control">
+                    <input type="text" id="g_name" maxlength="20" placeholder="请输入标签组名称（最多20字）">
+                    <div class="field-error" id="g_name_err" style="display:none;"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-label"><span class="req">*</span>标签类型</div>
+                <div class="form-control">
+                    <div class="radio-group">
+                        <label><input type="radio" name="g_type" value="public" checked onchange="onTypeChange()"> 公有（全局共享）</label>
+                        <label><input type="radio" name="g_type" value="private" onchange="onTypeChange()"> 私有（项目内可见）</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row" id="g_project_row" style="display:none;">
+                <div class="form-label"><span class="req">*</span>所属项目</div>
+                <div class="form-control">
+                    <select id="g_project">
+                        <option value="">请选择项目</option>
+                        <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                    </select>
+                    <div class="field-error" id="g_project_err" style="display:none;"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-label">颜色</div>
+                <div class="form-control">
+                    <div class="color-picker" id="g_colorPicker"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-label">排序</div>
+                <div class="form-control">
+                    <input type="number" id="g_sort" min="0" value="0" placeholder="数值越小越靠前">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-label">说明</div>
+                <div class="form-control">
+                    <textarea id="g_remark" maxlength="200" placeholder="请输入标签组用途说明（最多200字）"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeGroupModal()">取消</button>
+            <button class="btn btn-primary" onclick="saveGroup()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 新建/编辑子标签弹窗 -->
+<div class="modal-overlay" id="labelModal">
+    <div class="modal-box" style="width:500px">
+        <div class="modal-header"><h3 id="labelModalTitle">新建子标签</h3><span class="modal-close" onclick="closeLabelModal()">×</span></div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-label">所属标签组</div>
+                <div class="form-control">
+                    <select id="l_group">
+                        <option value="">请选择标签组</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-label"><span class="req">*</span>子标签名称</div>
+                <div class="form-control">
+                    <input type="text" id="l_name" maxlength="20" placeholder="请输入子标签名称（最多20字）">
+                    <div class="field-error" id="l_name_err" style="display:none;"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-label">颜色</div>
+                <div class="form-control">
+                    <div class="color-picker" id="l_colorPicker"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-label">排序</div>
+                <div class="form-control">
+                    <input type="number" id="l_sort" min="0" value="0" placeholder="数值越小越靠前">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-label">说明</div>
+                <div class="form-control">
+                    <textarea id="l_remark" maxlength="200" placeholder="请输入子标签说明（最多200字）"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeLabelModal()">取消</button>
+            <button class="btn btn-primary" onclick="saveLabel()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 移入车辆弹窗 -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal-box" style="width:800px">
+        <div class="modal-header"><h3 id="importModalTitle">移入车辆</h3><span class="modal-close" onclick="closeImportModal()">×</span></div>
+        <div class="modal-body">
+            <div class="import-search">
+                <input type="text" id="imp_vin" placeholder="车架号">
+                <input type="text" id="imp_model" placeholder="车型名称">
+                <input type="text" id="imp_plate" placeholder="车牌号">
+                <select id="imp_project">
+                    <option value="">全部项目</option>
+                    <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                </select>
+                <button class="btn btn-primary" style="height:30px;padding:0 12px;" onclick="renderImportTable()">查询</button>
+            </div>
+            <div class="import-summary">已选 <strong id="impSelectedCount">0</strong> 辆 · 已添加的车辆将置灰不可重复选择</div>
+            <div class="import-table-wrap">
+                <table class="import-table">
+                    <thead><tr>
+                        <th style="width:42px;"><input type="checkbox" id="impCheckAll" onchange="impToggleAll(this)"></th>
+                        <th>车架号</th><th>车型名称</th><th>车牌号</th><th>车辆状态</th><th>归属项目</th><th>当前标签</th>
+                    </tr></thead>
+                    <tbody id="importTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeImportModal()">取消</button>
+            <button class="btn btn-primary" onclick="saveImport()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-box confirm-box">
+        <div class="modal-header"><h3>提示</h3><span class="modal-close" onclick="closeDeleteModal()">×</span></div>
+        <div class="confirm-body">
+            <span class="confirm-icon">⚠</span>
+            <span class="confirm-text" id="deleteText"></span>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeDeleteModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmDelete()">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 移出确认弹窗 -->
+<div class="modal-overlay" id="removeModal">
+    <div class="modal-box confirm-box">
+        <div class="modal-header"><h3>提示</h3><span class="modal-close" onclick="closeRemoveModal()">×</span></div>
+        <div class="confirm-body">
+            <span class="confirm-icon">⚠</span>
+            <span class="confirm-text" id="removeText"></span>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeRemoveModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmRemove()">确定</button>
+        </div>
+    </div>
+</div>
+
+<script src="../components/common.js"></script>
+<script>
+// ===== 初始化布局 =====
+Common.initLayout({
+    basePath: '../',
+    sidebarId: 'sidebar',
+    activeMenuId: 'tag-manage',
+    headerId: 'header',
+    breadcrumbs: [{ label: '车辆管理' }, { label: '标签管理' }],
+    headerOptions: { showProject: false }
+});
+
+// ===== 颜色映射 =====
+const colorMap = {
+    blue:   { name: '蓝', hex: '#1677ff', tag: 'tag-blue' },
+    green:  { name: '绿', hex: '#52c41a', tag: 'tag-green' },
+    orange: { name: '橙', hex: '#fa8c16', tag: 'tag-orange' },
+    red:    { name: '红', hex: '#ff4d4f', tag: 'tag-red' },
+    yellow: { name: '黄', hex: '#d4b106', tag: 'tag-yellow' },
+    purple: { name: '紫', hex: '#722ed1', tag: 'tag-purple' },
+    cyan:   { name: '青', hex: '#13c2c2', tag: 'tag-cyan' },
+    gray:   { name: '灰', hex: '#86909c', tag: 'tag-default' },
+};
+
+// ===== 模拟数据：车辆主数据（与车辆资产管理一致） =====
+const vehicles = [
+    { vin:'LSVAU2A39EN000001', model_name:'麒麟清扫车', plate_no:'京ADG090', vehicle_status:'在库-正常使用', project:'鸠江项目' },
+    { vin:'LSVAU2A39EN000002', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'京ADG091', vehicle_status:'在库-正常使用', project:'椒北街道' },
+    { vin:'LSVAU2A39EN000003', model_name:'中联清洗车', plate_no:'浙JAR6538', vehicle_status:'在库-闲置留用', project:'镜湖区项目' },
+    { vin:'LSVAU2A39EN000004', model_name:'泰坦智能驾驶洒水车', plate_no:'京ADH066', vehicle_status:'待分配', project:'' },
+    { vin:'LSVAU2A39EN000005', model_name:'三力洒水车', plate_no:'浙JDB1062', vehicle_status:'在库-维修', project:'鸠江江北项目' },
+    { vin:'LSVAU2A39EN000006', model_name:'独角兽', plate_no:'沪AAB124', vehicle_status:'在库-正常使用', project:'嘉定研发' },
+    { vin:'LSVAU2A39EN000007', model_name:'麒麟无人化扫地车', plate_no:'京ADJ055', vehicle_status:'在库-正常使用', project:'鸠江开发区项目' },
+    { vin:'LSVAU2A39EN000008', model_name:'长城多用途货车', plate_no:'京ADJ056', vehicle_status:'在库-正常使用', project:'陵水项目' },
+    { vin:'LSVAU2A39EN000009', model_name:'麒麟清扫车', plate_no:'粤AEE077', vehicle_status:'在库-正常使用', project:'鸠江项目' },
+    { vin:'LSVAU2A39EN000010', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'粤AEE078', vehicle_status:'在库-闲置留用', project:'椒北街道' },
+    { vin:'LSVAU2A39EN000011', model_name:'中联清洗车', plate_no:'京ADK033', vehicle_status:'在库-正常使用', project:'镜湖区项目' },
+    { vin:'LSVAU2A39EN000012', model_name:'三力洒水车', plate_no:'京ADG092', vehicle_status:'在库-正常使用', project:'鸠江江北项目' },
+];
+
+// ===== 模拟数据：标签结构（两级） =====
+let labelGroups = [
+    { id:'g1', name:'运营场景', type:'public', project:'', color:'blue', sort:0, remark:'按车辆运营班次与场景归类',
+      labels:[
+        { id:'l1', name:'早班车', color:'green', sort:0, remark:'' },
+        { id:'l2', name:'夜班车', color:'blue', sort:1, remark:'' },
+        { id:'l3', name:'保障车', color:'orange', sort:2, remark:'' },
+      ]},
+    { id:'g2', name:'重点保障', type:'public', project:'', color:'red', sort:1, remark:'重点任务保障车辆',
+      labels:[ { id:'l4', name:'VIP保障', color:'red', sort:0, remark:'' } ]},
+    { id:'g3', name:'车辆等级', type:'public', project:'', color:'cyan', sort:2, remark:'车辆性能/等级分类',
+      labels:[
+        { id:'l7', name:'A级车', color:'green', sort:0, remark:'' },
+        { id:'l8', name:'B级车', color:'yellow', sort:1, remark:'' },
+      ]},
+    { id:'g4', name:'租赁批次', type:'public', project:'', color:'orange', sort:3, remark:'外购/租赁车辆批次',
+      labels:[ { id:'l9', name:'常规租赁', color:'gray', sort:0, remark:'' } ]},
+    { id:'g5', name:'鸠江项目专属', type:'private', project:'鸠江项目', color:'purple', sort:0, remark:'鸠江项目内部使用标签',
+      labels:[
+        { id:'l10', name:'测试车组', color:'purple', sort:0, remark:'' },
+        { id:'l11', name:'临时调度', color:'cyan', sort:1, remark:'' },
+      ]},
+    { id:'g6', name:'嘉定研发专项', type:'private', project:'嘉定研发', color:'green', sort:1, remark:'嘉定研发项目专用',
+      labels:[ { id:'l12', name:'重点测试', color:'green', sort:0, remark:'' } ]},
+];
+
+// ===== 模拟数据：车辆-标签关联（多对多） vin -> [{labelId, time}] =====
+let vehicleLabels = {
+    'LSVAU2A39EN000001': [{labelId:'l1',time:'2026-03-01 09:00:00'},{labelId:'l7',time:'2026-03-02 10:30:00'},{labelId:'l10',time:'2026-03-05 14:00:00'}],
+    'LSVAU2A39EN000002': [{labelId:'l2',time:'2026-03-03 11:00:00'},{labelId:'l9',time:'2026-03-04 09:20:00'}],
+    'LSVAU2A39EN000003': [{labelId:'l3',time:'2026-03-06 16:00:00'},{labelId:'l8',time:'2026-03-07 08:45:00'}],
+    'LSVAU2A39EN000005': [{labelId:'l4',time:'2026-03-08 13:30:00'}],
+    'LSVAU2A39EN000006': [{labelId:'l12',time:'2026-03-09 10:00:00'}],
+    'LSVAU2A39EN000007': [{labelId:'l1',time:'2026-03-10 15:20:00'}],
+    'LSVAU2A39EN000009': [{labelId:'l10',time:'2026-03-11 09:10:00'},{labelId:'l11',time:'2026-03-12 11:40:00'}],
+    'LSVAU2A39EN000011': [{labelId:'l3',time:'2026-03-13 14:50:00'}],
+};
+
+// ===== 状态标签映射 =====
+const statusTagClass = {
+    '在库-正常使用':'green','在库-闲置留用':'blue','在库-闲置可调出':'orange',
+    '在库-维修':'red','在库-保养中':'yellow','在库-待报废':'gray',
+    '待分配':'purple','已报废':'gray','已处置':'gray'
+};
+
+// ===== 全局状态 =====
+let currentSelect = null; // {type:'group'|'label', id}
+let currentVehiclePage = 1, vehiclePageSize = 10;
+let selectedVehicleVins = new Set(); // 右栏勾选
+let groupEditMode = null; // null=新建，否则=编辑的groupId
+let groupEditSelectedColor = 'blue';
+let labelEditMode = null; // null=新建，否则=编辑的labelId
+let labelEditGroupId = null; // 新建子标签时的默认组
+let labelEditSelectedColor = 'blue';
+let deleteTarget = null; // {type, id}
+let removeTarget = null; // {type:'single'|'batch', vins}
+let importSelectedVins = new Set();
+let importTargetLabelId = null;
+
+// ===== 工具函数 =====
+function getGroup(gid){ return labelGroups.find(g=>g.id===gid); }
+function getLabel(lid){ for(const g of labelGroups){ const l=g.labels.find(x=>x.id===lid); if(l) return {group:g,label:l}; } return null; }
+function getVinsByLabel(lid){
+    const vins=[];
+    for(const [vin,rels] of Object.entries(vehicleLabels)){
+        if(rels.some(r=>r.labelId===lid)) vins.push(vin);
+    }
+    return vins;
+}
+function getVinsByGroup(gid){
+    const group=getGroup(gid); if(!group) return [];
+    const labelIds=new Set(group.labels.map(l=>l.id));
+    const vins=new Set();
+    for(const [vin,rels] of Object.entries(vehicleLabels)){
+        if(rels.some(r=>labelIds.has(r.labelId))) vins.add(vin);
+    }
+    return [...vins];
+}
+function getLabelTime(vin,lid){ const rels=vehicleLabels[vin]||[]; const r=rels.find(x=>x.labelId===lid); return r?r.time:'—'; }
+function getVehicleByVin(vin){ return vehicles.find(v=>v.vin===vin); }
+
+// ===== 查询过滤标签树 =====
+function getFilteredGroups(){
+    const sn=document.getElementById('s_name').value.trim().toLowerCase();
+    const st=document.getElementById('s_type').value;
+    const sp=document.getElementById('s_project').value;
+    const sc=document.getElementById('s_color').value;
+    return labelGroups.filter(g=>{
+        if(st && g.type!==st) return false;
+        if(sp && g.project!==sp) return false;
+        if(sc && g.color!==sc) return false;
+        if(sn){
+            const inName=g.name.toLowerCase().includes(sn);
+            const inLabel=g.labels.some(l=>l.name.toLowerCase().includes(sn));
+            if(!inName && !inLabel) return false;
+        }
+        return true;
+    });
+}
+
+// ===== 渲染标签树 =====
+function renderTree(){
+    const body=document.getElementById('treeBody');
+    const groups=getFilteredGroups();
+    document.getElementById('treeStat').textContent='共 '+groups.length+' 组';
+    if(groups.length===0){ body.innerHTML='<div class="empty-state"><div class="empty-icon">🗂️</div><div class="empty-text">未找到匹配的标签</div></div>'; return; }
+    const publicGroups=groups.filter(g=>g.type==='public').sort((a,b)=>a.sort-b.sort);
+    const privateGroups=groups.filter(g=>g.type==='private').sort((a,b)=>a.sort-b.sort);
+    let html='';
+    if(publicGroups.length){
+        html+='<div class="tree-section-title">公有标签</div>';
+        publicGroups.forEach(g=>{ html+=renderGroupNode(g); });
+    }
+    if(privateGroups.length){
+        html+='<div class="tree-section-title">私有标签</div>';
+        privateGroups.forEach(g=>{ html+=renderGroupNode(g); });
+    }
+    body.innerHTML=html;
+}
+function renderGroupNode(g){
+    const expanded = (currentSelect && currentSelect.type==='group' && currentSelect.id===g.id) ||
+                     (currentSelect && currentSelect.type==='label' && getLabel(currentSelect.id) && getLabel(currentSelect.id).group.id===g.id);
+    const isActive = currentSelect && currentSelect.type==='group' && currentSelect.id===g.id;
+    const cnt = getVinsByGroup(g.id).length;
+    let html='<div class="tree-group'+(expanded?' expanded':'')+'">';
+    html+=`<div class="tree-group-row${isActive?' active':''}" onclick="onGroupRowClick('${g.id}')">
+        <span class="tree-arrow">▶</span>
+        <span class="tree-group-icon">📁</span>
+        <span class="tree-group-name" title="${g.name}">${g.name}</span>
+        <span class="tree-type-badge ${g.type}">${g.type==='public'?'公有':'私有'}</span>
+        <span class="tree-count">${cnt}辆</span>
+        <span class="tree-actions">
+            <a onclick="event.stopPropagation();editGroup('${g.id}')">编辑</a>
+            <a onclick="event.stopPropagation();addLabel('${g.id}')">新建子标签</a>
+            <a class="danger" onclick="event.stopPropagation();deleteGroup('${g.id}')">删除</a>
+        </span>
+    </div>`;
+    html+='<div class="tree-labels">';
+    g.labels.sort((a,b)=>a.sort-b.sort).forEach(l=>{
+        const lActive = currentSelect && currentSelect.type==='label' && currentSelect.id===l.id;
+        const lCnt = getVinsByLabel(l.id).length;
+        const c = colorMap[l.color]||colorMap.gray;
+        html+=`<div class="tree-label-row${lActive?' active':''}" onclick="onLabelRowClick('${l.id}')">
+            <span class="color-dot" style="background:${c.hex}"></span>
+            <span class="tree-label-name" title="${l.name}">${l.name}</span>
+            <span class="tree-count">${lCnt}辆</span>
+            <span class="tree-actions">
+                <a onclick="event.stopPropagation();editLabel('${l.id}')">编辑</a>
+                <a class="danger" onclick="event.stopPropagation();deleteLabel('${l.id}')">删除</a>
+            </span>
+        </div>`;
+    });
+    html+='</div></div>';
+    return html;
+}
+
+// ===== 树节点点击 =====
+function onGroupRowClick(gid){
+    const g=getGroup(gid);
+    currentSelect={type:'group',id:gid};
+    currentVehiclePage=1; selectedVehicleVins.clear();
+    renderTree(); renderPanel();
+}
+function onLabelRowClick(lid){
+    currentSelect={type:'label',id:lid};
+    currentVehiclePage=1; selectedVehicleVins.clear();
+    renderTree(); renderPanel();
+}
+
+// ===== 渲染右栏 =====
+function renderPanel(){
+    const titleEl=document.getElementById('panelTitle');
+    const contentEl=document.getElementById('panelContent');
+    if(!currentSelect){ titleEl.textContent='请选择左侧标签'; contentEl.innerHTML='<div class="empty-state"><div class="empty-icon">👈</div><div class="empty-text">请选择左侧标签组或子标签，查看其下车辆</div></div>'; return; }
+    let vehiclesList=[], titleCrumb='';
+    if(currentSelect.type==='group'){
+        const g=getGroup(currentSelect.id);
+        titleCrumb=`标签组：${g.name}（聚合，共 ${getVinsByGroup(g.id).length} 辆）`;
+        vehiclesList=getVinsByGroup(g.id).map(vin=>getVehicleByVin(vin)).filter(Boolean);
+    }else{
+        const info=getLabel(currentSelect.id);
+        if(!info){ titleEl.textContent='—'; return; }
+        titleCrumb=`${info.group.name} / ${info.label.name}（${getVinsByLabel(currentSelect.id).length} 辆）`;
+        vehiclesList=getVinsByLabel(currentSelect.id).map(vin=>getVehicleByVin(vin)).filter(Boolean);
+    }
+    titleEl.innerHTML=titleCrumb;
+    contentEl.innerHTML=renderVehiclePanel(vehiclesList);
+}
+function renderVehiclePanel(list){
+    // 查询过滤
+    const fv=document.getElementById('p_vin')?document.getElementById('p_vin').value.trim().toLowerCase():'';
+    const fm=document.getElementById('p_model')?document.getElementById('p_model').value.trim().toLowerCase():'';
+    const fp=document.getElementById('p_plate')?document.getElementById('p_plate').value.trim().toLowerCase():'';
+    const fs=document.getElementById('p_status')?document.getElementById('p_status').value:'';
+    let filtered=list.filter(v=>{
+        if(fv && !v.vin.toLowerCase().includes(fv)) return false;
+        if(fm && !v.model_name.toLowerCase().includes(fm)) return false;
+        if(fp && !v.plate_no.toLowerCase().includes(fp)) return false;
+        if(fs && v.vehicle_status!==fs) return false;
+        return true;
+    });
+    const total=filtered.length;
+    const start=(currentVehiclePage-1)*vehiclePageSize;
+    const pageData=filtered.slice(start,start+vehiclePageSize);
+    let html='';
+    // 操作行：移入车辆、批量移出（仅子标签视图）、导出（导出当前标签下车辆）
+    html+='<div class="panel-action-bar">';
+    if(currentSelect && currentSelect.type==='label'){
+        html+='<button class="btn btn-primary" onclick="openImportModal()">移入车辆</button>';
+        html+='<button class="btn" onclick="openBatchRemove()">批量移出</button>';
+        html+='<span class="selected-tip">已选 '+selectedVehicleVins.size+' 辆</span>';
+    }else{
+        html+='<span class="selected-tip">标签组聚合视图：仅支持查看与导出；移入/移出请在左侧选择具体子标签</span>';
+    }
+    html+='<button class="btn btn-export" onclick="doExport()">导出</button>';
+    html+='</div>';
+    // 查询区
+    html+='<div class="panel-search">';
+    html+='<div class="si"><label>车架号</label><input type="text" id="p_vin" placeholder="请输入车架号" value="'+(document.getElementById('p_vin')?document.getElementById('p_vin').value:'')+'"></div>';
+    html+='<div class="si"><label>车型名称</label><input type="text" id="p_model" placeholder="请输入车型名称" value="'+(document.getElementById('p_model')?document.getElementById('p_model').value:'')+'"></div>';
+    html+='<div class="si"><label>车牌号</label><input type="text" id="p_plate" placeholder="请输入车牌号" value="'+(document.getElementById('p_plate')?document.getElementById('p_plate').value:'')+'"></div>';
+    html+='<div class="si"><label>车辆状态</label><select id="p_status"><option value="">全部</option><option>在库-正常使用</option><option>在库-闲置留用</option><option>在库-闲置可调出</option><option>在库-维修</option><option>在库-保养中</option><option>在库-待报废</option><option>待分配</option><option>已报废</option><option>已处置</option></select></div>';
+    html+='<div class="si" style="margin-left:auto;"><button class="btn btn-primary" style="height:32px;" onclick="onVehicleSearch()">查询</button><button class="btn" style="height:32px;margin-left:8px;" onclick="onVehicleReset()">重置</button></div>';
+    html+='</div>';
+    // 表格
+    if(total===0){ html+='<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">'+(currentSelect.type==='label'?'该标签下暂无车辆，可点击「移入车辆」添加':'该标签组下暂无车辆')+'</div></div>'; return html; }
+    html+='<div class="table-wrapper"><table><thead><tr>';
+    if(currentSelect.type==='label'){ html+='<th style="width:50px;text-align:center"><input type="checkbox" onchange="vehicleCheckAll(this)"></th>'; }
+    html+='<th>车架号</th><th>车型名称（中）</th><th>车牌号</th><th>车辆状态</th><th>归属项目</th>';
+    if(currentSelect.type==='label'){ html+='<th>打标时间</th>'; }else{ html+='<th>所属子标签</th>'; }
+    html+='<th style="width:160px;text-align:center">操作</th></tr></thead><tbody>';
+    pageData.forEach(v=>{
+        const tagCls=statusTagClass[v.vehicle_status]||'gray';
+        const selCls=selectedVehicleVins.has(v.vin)?' selected':'';
+        html+='<tr'+(selCls?' class="selected"':'')+'>';
+        if(currentSelect.type==='label'){
+            const ck=selectedVehicleVins.has(v.vin)?'checked':'';
+            html+=`<td style="text-align:center"><input type="checkbox" ${ck} onchange="vehicleCheck('${v.vin}',this)"></td>`;
+        }
+        html+=`<td><a class="action-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${v.vin}">${v.vin}</a></td>`;
+        html+=`<td>${v.model_name}</td><td>${v.plate_no||'—'}</td>`;
+        html+=`<td><span class="status-tag ${tagCls}">${v.vehicle_status}</span></td>`;
+        html+=`<td>${v.project||'—'}</td>`;
+        if(currentSelect.type==='label'){
+            html+=`<td>${getLabelTime(v.vin,currentSelect.id)}</td>`;
+        }else{
+            // 标签组聚合：显示该车在该组下的子标签
+            const g=getGroup(currentSelect.id);
+            const lids=(vehicleLabels[v.vin]||[]).filter(r=>g.labels.some(l=>l.id===r.labelId)).map(r=>r.labelId);
+            const tags=lids.map(lid=>{ const info=getLabel(lid); if(!info) return ''; const c=colorMap[info.label.color]||colorMap.gray; return `<span class="tag ${c.tag}">${info.label.name}</span>`; }).join(' ');
+            html+=`<td><div class="cell-tags">${tags||'—'}</div></td>`;
+        }
+        html+=`<td style="text-align:center">`;
+        if(currentSelect.type==='label'){ html+=`<a class="action-link danger" onclick="removeSingle('${v.vin}')">移出</a>`; }
+        html+=`<a class="action-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${v.vin}" style="margin-left:12px;">详情</a>`;
+        html+=`</td></tr>`;
+    });
+    html+='</tbody></table></div>';
+    // 分页
+    html+='<div class="pagination-area"><div class="pagination-info">共 <strong>'+total+'</strong> 条记录</div>';
+    html+='<div style="display:flex;align-items:center;gap:8px"><div class="pagination" id="vehiclePagination"></div>';
+    html+='<select class="page-size-select" onchange="changeVehiclePageSize(this.value)"><option value="10" selected>10条/页</option><option value="20">20条/页</option><option value="50">50条/页</option><option value="100">100条/页</option></select></div></div>';
+    setTimeout(()=>{ renderVehiclePagination(total); },0);
+    return html;
+}
+function renderVehiclePagination(total){
+    const el=document.getElementById('vehiclePagination');
+    if(!el) return;
+    Common.renderPagination({total,currentPage:currentVehiclePage,pageSize:vehiclePageSize,containerId:'vehiclePagination',onPageChange:p=>{currentVehiclePage=p;renderPanel();}});
+}
+function changeVehiclePageSize(v){ vehiclePageSize=parseInt(v); currentVehiclePage=1; renderPanel(); }
+function onVehicleSearch(){ currentVehiclePage=1; selectedVehicleVins.clear(); renderPanel(); }
+function onVehicleReset(){ ['p_vin','p_model','p_plate','p_status'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); currentVehiclePage=1; selectedVehicleVins.clear(); renderPanel(); }
+function vehicleCheckAll(el){
+    const list=getCurrentPanelVins();
+    list.forEach(vin=>{ if(el.checked) selectedVehicleVins.add(vin); else selectedVehicleVins.delete(vin); });
+    renderPanel();
+}
+function vehicleCheck(vin,el){ if(el.checked) selectedVehicleVins.add(vin); else selectedVehicleVins.delete(vin); renderPanel(); }
+function getCurrentPanelVins(){
+    if(currentSelect.type==='label') return getVinsByLabel(currentSelect.id);
+    return getVinsByGroup(currentSelect.id);
+}
+
+// ===== 颜色选择器 =====
+function buildColorPicker(containerId, selected){
+    const el=document.getElementById(containerId);
+    el.innerHTML='';
+    Object.keys(colorMap).forEach(key=>{
+        const c=colorMap[key];
+        const o=document.createElement('div');
+        o.className='color-option'+(key===selected?' selected':'');
+        o.style.background=c.hex;
+        o.title=c.name;
+        o.onclick=()=>{
+            if(containerId==='g_colorPicker') groupEditSelectedColor=key;
+            else labelEditSelectedColor=key;
+            buildColorPicker(containerId,key);
+        };
+        el.appendChild(o);
+    });
+}
+
+// ===== 新建/编辑标签组 =====
+function openGroupModal(){
+    groupEditMode=null;
+    document.getElementById('groupModalTitle').textContent='新建标签组';
+    document.getElementById('g_name').value='';
+    document.querySelector('input[name="g_type"][value="public"]').checked=true;
+    document.getElementById('g_project_row').style.display='none';
+    document.getElementById('g_project').value='';
+    document.getElementById('g_sort').value='0';
+    document.getElementById('g_remark').value='';
+    groupEditSelectedColor='blue';
+    buildColorPicker('g_colorPicker','blue');
+    hideErr('g_name_err'); hideErr('g_project_err');
+    document.getElementById('groupModal').classList.add('active');
+}
+function editGroup(gid){
+    const g=getGroup(gid);
+    groupEditMode=gid;
+    document.getElementById('groupModalTitle').textContent='编辑标签组';
+    document.getElementById('g_name').value=g.name;
+    document.querySelector(`input[name="g_type"][value="${g.type}"]`).checked=true;
+    document.getElementById('g_project_row').style.display = g.type==='private'?'flex':'none';
+    document.getElementById('g_project').value=g.project||'';
+    document.getElementById('g_sort').value=g.sort;
+    document.getElementById('g_remark').value=g.remark||'';
+    groupEditSelectedColor=g.color||'blue';
+    buildColorPicker('g_colorPicker',groupEditSelectedColor);
+    hideErr('g_name_err'); hideErr('g_project_err');
+    document.getElementById('groupModal').classList.add('active');
+}
+function closeGroupModal(){ document.getElementById('groupModal').classList.remove('active'); }
+function onTypeChange(){
+    const t=document.querySelector('input[name="g_type"]:checked').value;
+    document.getElementById('g_project_row').style.display = t==='private'?'flex':'none';
+}
+function saveGroup(){
+    const name=document.getElementById('g_name').value.trim();
+    const type=document.querySelector('input[name="g_type"]:checked').value;
+    const project=document.getElementById('g_project').value;
+    const sort=parseInt(document.getElementById('g_sort').value)||0;
+    const remark=document.getElementById('g_remark').value.trim();
+    if(!name){ showErr('g_name_err','请输入标签组名称'); return; } hideErr('g_name_err');
+    if(type==='private' && !project){ showErr('g_project_err','请选择所属项目'); return; } hideErr('g_project_err');
+    // 唯一性校验
+    const dup=labelGroups.find(g=>g.name===name && g.type===type && g.project==project && g.id!==groupEditMode);
+    if(dup){ showErr('g_name_err','该"类型+所属项目"下已存在同名标签组'); return; } hideErr('g_name_err');
+    if(groupEditMode){
+        const g=getGroup(groupEditMode);
+        g.name=name; g.type=type; g.project=type==='private'?project:''; g.color=groupEditSelectedColor; g.sort=sort; g.remark=remark;
+    }else{
+        const ng={id:'g'+Date.now(),name,type,project:type==='private'?project:'',color:groupEditSelectedColor,sort,remark,labels:[]};
+        labelGroups.push(ng);
+    }
+    closeGroupModal();
+    renderTree(); renderPanel();
+    Common.showToast('保存成功','success');
+}
+
+// ===== 新建/编辑子标签 =====
+function addLabel(gid){
+    labelEditMode=null; labelEditGroupId=gid;
+    openLabelModalInternal('新建子标签');
+}
+function editLabel(lid){
+    const info=getLabel(lid); if(!info) return;
+    labelEditMode=lid; labelEditGroupId=info.group.id;
+    document.getElementById('l_name').value=info.label.name;
+    document.getElementById('l_sort').value=info.label.sort;
+    document.getElementById('l_remark').value=info.label.remark||'';
+    labelEditSelectedColor=info.label.color||info.group.color||'blue';
+    openLabelModalInternal('编辑子标签');
+}
+function openLabelModalInternal(title){
+    document.getElementById('labelModalTitle').textContent=title;
+    // 填充所属标签组下拉
+    const sel=document.getElementById('l_group');
+    sel.innerHTML='<option value="">请选择标签组</option>';
+    labelGroups.forEach(g=>{ sel.innerHTML+=`<option value="${g.id}" ${g.id===labelEditGroupId?'selected':''}>${g.name}${g.type==='private'?'（私有-'+g.project+'）':''}</option>`; });
+    if(!labelEditMode){
+        const defGroup=getGroup(labelEditGroupId);
+        labelEditSelectedColor=defGroup?defGroup.color:'blue';
+    }
+    buildColorPicker('l_colorPicker',labelEditSelectedColor);
+    if(!labelEditMode){
+        document.getElementById('l_name').value='';
+        document.getElementById('l_sort').value='0';
+        document.getElementById('l_remark').value='';
+    }
+    hideErr('l_name_err');
+    document.getElementById('labelModal').classList.add('active');
+}
+function closeLabelModal(){ document.getElementById('labelModal').classList.remove('active'); }
+function saveLabel(){
+    const gid=document.getElementById('l_group').value;
+    const name=document.getElementById('l_name').value.trim();
+    const sort=parseInt(document.getElementById('l_sort').value)||0;
+    const remark=document.getElementById('l_remark').value.trim();
+    if(!gid){ Common.showToast('请选择所属标签组','warning'); return; }
+    if(!name){ showErr('l_name_err','请输入子标签名称'); return; } hideErr('l_name_err');
+    const g=getGroup(gid);
+    const dup=g.labels.find(l=>l.name===name && l.id!==labelEditMode);
+    if(dup){ showErr('l_name_err','该标签组下已存在同名子标签'); return; } hideErr('l_name_err');
+    if(labelEditMode){
+        const info=getLabel(labelEditMode);
+        info.label.name=name; info.label.color=labelEditSelectedColor; info.label.sort=sort; info.label.remark=remark;
+    }else{
+        g.labels.push({id:'l'+Date.now(),name,color:labelEditSelectedColor,sort,remark});
+    }
+    closeLabelModal();
+    renderTree(); renderPanel();
+    Common.showToast('保存成功','success');
+}
+
+// ===== 删除 =====
+function deleteGroup(gid){
+    const g=getGroup(gid);
+    if(g.labels.length>0){ Common.showToast('该标签组下存在子标签，请先删除子标签后再删除标签组','warning'); return; }
+    deleteTarget={type:'group',id:gid};
+    document.getElementById('deleteText').textContent='确定要删除标签组「'+g.name+'」吗？删除后不可恢复。';
+    document.getElementById('deleteModal').classList.add('active');
+}
+function deleteLabel(lid){
+    const info=getLabel(lid); if(!info) return;
+    const cnt=getVinsByLabel(lid).length;
+    deleteTarget={type:'label',id:lid};
+    document.getElementById('deleteText').textContent=cnt>0
+        ? '该子标签下存在 '+cnt+' 辆关联车辆，是否确认删除？删除后该标签与车辆的关联将一并解除。'
+        : '确定要删除子标签「'+info.label.name+'」吗？删除后不可恢复。';
+    document.getElementById('deleteModal').classList.add('active');
+}
+function closeDeleteModal(){ document.getElementById('deleteModal').classList.remove('active'); deleteTarget=null; }
+function confirmDelete(){
+    if(!deleteTarget){ closeDeleteModal(); return; }
+    if(deleteTarget.type==='group'){
+        labelGroups=labelGroups.filter(g=>g.id!==deleteTarget.id);
+    }else{
+        const info=getLabel(deleteTarget.id);
+        if(info){ info.group.labels=info.group.labels.filter(l=>l.id!==deleteTarget.id); }
+        // 解除关联
+        for(const vin in vehicleLabels){
+            vehicleLabels[vin]=vehicleLabels[vin].filter(r=>r.labelId!==deleteTarget.id);
+            if(vehicleLabels[vin].length===0) delete vehicleLabels[vin];
+        }
+    }
+    if(currentSelect && currentSelect.id===deleteTarget.id){ currentSelect=null; }
+    closeDeleteModal();
+    renderTree(); renderPanel();
+    Common.showToast('删除成功','success');
+}
+
+// ===== 移入车辆 =====
+function openImportModal(){
+    if(!currentSelect || currentSelect.type!=='label'){ Common.showToast('请在左侧选择具体子标签后再移入车辆','warning'); return; }
+    importTargetLabelId=currentSelect.id;
+    importSelectedVins.clear();
+    const info=getLabel(currentSelect.id);
+    document.getElementById('importModalTitle').textContent='移入车辆至「'+info.group.name+' / '+info.label.name+'」';
+    document.getElementById('imp_vin').value='';
+    document.getElementById('imp_model').value='';
+    document.getElementById('imp_plate').value='';
+    document.getElementById('imp_project').value='';
+    renderImportTable();
+    document.getElementById('importModal').classList.add('active');
+}
+function closeImportModal(){ document.getElementById('importModal').classList.remove('active'); }
+function renderImportTable(){
+    const fv=document.getElementById('imp_vin').value.trim().toLowerCase();
+    const fm=document.getElementById('imp_model').value.trim().toLowerCase();
+    const fp=document.getElementById('imp_plate').value.trim().toLowerCase();
+    const fpr=document.getElementById('imp_project').value;
+    const existing=getVinsByLabel(importTargetLabelId);
+    const tbody=document.getElementById('importTableBody');
+    tbody.innerHTML='';
+    let matched=0;
+    vehicles.forEach(v=>{
+        if(fv && !v.vin.toLowerCase().includes(fv)) return;
+        if(fm && !v.model_name.toLowerCase().includes(fm)) return;
+        if(fp && !v.plate_no.toLowerCase().includes(fp)) return;
+        if(fpr && v.project!==fpr) return;
+        matched++;
+        const isAdded=existing.includes(v.vin);
+        const ckd=importSelectedVins.has(v.vin)?'checked':'';
+        const tr=document.createElement('tr');
+        if(isAdded) tr.className='added';
+        // 当前标签
+        const myLabels=(vehicleLabels[v.vin]||[]).map(r=>{ const info=getLabel(r.labelId); if(!info) return ''; const c=colorMap[info.label.color]||colorMap.gray; return `<span class="tag ${c.tag}">${info.label.name}</span>`; }).join(' ');
+        tr.innerHTML=`<td style="text-align:center">${isAdded?'<span class="added-mark">已添加</span>':'<input type="checkbox" data-vin="'+v.vin+'" '+ckd+' onchange="impToggle(this)">'}</td>
+            <td>${v.vin}</td><td>${v.model_name}</td><td>${v.plate_no||'—'}</td>
+            <td><span class="status-tag ${statusTagClass[v.vehicle_status]||'gray'}">${v.vehicle_status}</span></td>
+            <td>${v.project||'—'}</td><td><div class="cell-tags">${myLabels||'—'}</div></td>`;
+        tbody.appendChild(tr);
+    });
+    if(matched===0){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-secondary);">未找到匹配的车辆</td></tr>'; }
+    document.getElementById('impSelectedCount').textContent=importSelectedVins.size;
+    document.getElementById('impCheckAll').checked=false;
+}
+function impToggle(el){
+    const vin=el.dataset.vin;
+    if(el.checked) importSelectedVins.add(vin); else importSelectedVins.delete(vin);
+    document.getElementById('impSelectedCount').textContent=importSelectedVins.size;
+}
+function impToggleAll(el){
+    const checkboxes=document.querySelectorAll('#importTableBody input[type=checkbox]');
+    checkboxes.forEach(cb=>{ cb.checked=el.checked; const vin=cb.dataset.vin; if(el.checked) importSelectedVins.add(vin); else importSelectedVins.delete(vin); });
+    document.getElementById('impSelectedCount').textContent=importSelectedVins.size;
+}
+function saveImport(){
+    if(importSelectedVins.size===0){ Common.showToast('请选择要移入的车辆','warning'); return; }
+    const now=new Date();
+    const t=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+    importSelectedVins.forEach(vin=>{
+        if(!vehicleLabels[vin]) vehicleLabels[vin]=[];
+        if(!vehicleLabels[vin].some(r=>r.labelId===importTargetLabelId)){
+            vehicleLabels[vin].push({labelId:importTargetLabelId,time:t});
+        }
+    });
+    closeImportModal();
+    renderTree(); renderPanel();
+    Common.showToast('移入成功','success');
+}
+
+// ===== 移出（单车/批量） =====
+function removeSingle(vin){
+    removeTarget={type:'single',vins:[vin]};
+    const v=getVehicleByVin(vin);
+    document.getElementById('removeText').textContent='确定要将车辆「'+(v?v.vin:vin)+'」移出当前标签吗？';
+    document.getElementById('removeModal').classList.add('active');
+}
+function openBatchRemove(){
+    if(selectedVehicleVins.size===0){ Common.showToast('请先勾选要移出的车辆','warning'); return; }
+    removeTarget={type:'batch',vins:[...selectedVehicleVins]};
+    document.getElementById('removeText').textContent='确定要将选中的 '+selectedVehicleVins.size+' 辆车移出当前标签吗？';
+    document.getElementById('removeModal').classList.add('active');
+}
+function closeRemoveModal(){ document.getElementById('removeModal').classList.remove('active'); removeTarget=null; }
+function confirmRemove(){
+    if(!removeTarget){ closeRemoveModal(); return; }
+    const lid=currentSelect.id;
+    removeTarget.vins.forEach(vin=>{
+        if(vehicleLabels[vin]){ vehicleLabels[vin]=vehicleLabels[vin].filter(r=>r.labelId!==lid); if(vehicleLabels[vin].length===0) delete vehicleLabels[vin]; }
+        selectedVehicleVins.delete(vin);
+    });
+    closeRemoveModal();
+    renderTree(); renderPanel();
+    Common.showToast(removeTarget.type==='batch'?'批量移出成功':'移出成功','success');
+    removeTarget=null;
+}
+
+// ===== 查询/重置（标签树） =====
+function doSearch(){ currentSelect=null; selectedVehicleVins.clear(); renderTree(); renderPanel(); }
+function doReset(){
+    document.getElementById('s_name').value='';
+    document.getElementById('s_type').value='';
+    document.getElementById('s_project').value='';
+    document.getElementById('s_color').value='';
+    currentSelect=null; selectedVehicleVins.clear();
+    renderTree(); renderPanel();
+}
+
+// ===== 导出 =====
+function doExport(){
+    if(!currentSelect){ Common.showToast('请先选择标签','warning'); return; }
+    const cnt=currentSelect.type==='label'?getVinsByLabel(currentSelect.id).length:getVinsByGroup(currentSelect.id).length;
+    Common.showToast('已导出当前标签下车辆（共 '+cnt+' 条）','success');
+}
+
+// ===== 辅助：错误提示 =====
+function showErr(id,msg){ const el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
+function hideErr(id){ const el=document.getElementById(id); el.style.display='none'; }
+
+// ===== 初始化 =====
+renderTree();
+// 默认展开第一个公有标签组并选中其第一个子标签
+(function initDefault(){
+    const firstPub=labelGroups.find(g=>g.type==='public');
+    if(firstPub && firstPub.labels.length){
+        currentSelect={type:'label',id:firstPub.labels[0].id};
+        renderTree(); renderPanel();
+    }else{
+        renderPanel();
+    }
+})();
+</script>
+</body>
+</html>
