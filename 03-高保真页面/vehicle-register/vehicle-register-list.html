@@ -91,7 +91,6 @@
                                 <option>待分配</option><option>已报废</option><option>已处置</option>
                             </select>
                         </div>
-                        <div class="search-item"><label>国标车架号</label><input type="text" id="s_gbt_vin" placeholder="请输入国标车架号"></div>
                         <div class="search-item"><label>网联编号</label><input type="text" id="s_iot" placeholder="请输入网联编号"></div>
                         <div class="search-item"><label>车型编码</label><input type="text" id="s_mcode" placeholder="请输入车型编码"></div>
                         <div class="search-item"><label>资产属性</label>
@@ -131,7 +130,6 @@
                                 <th style="width:50px;text-align:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
                                 <th style="width:50px">序号</th>
                                 <th>车架号</th>
-                                <th>国标车架号</th>
                                 <th>车型名称（中）</th>
                                 <th>车牌号</th>
                                 <th>网联编号</th>
@@ -215,7 +213,6 @@ function renderTable() {
             <td style="text-align:center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
             <td>${rowNum}</td>
             <td title="${item.vin}">${item.vin}</td>
-            <td>${item.gbt_vin}</td>
             <td>${item.model_name}</td>
             <td>${item.plate_no}</td>
             <td>${item.iot_code}</td>
@@ -248,7 +245,6 @@ function doSearch() {
     const sp = document.getElementById('s_plate').value.trim().toLowerCase();
     const sm = document.getElementById('s_model').value.trim().toLowerCase();
     const ss = document.getElementById('s_status').value;
-    const sg = document.getElementById('s_gbt_vin').value.trim().toLowerCase();
     const si = document.getElementById('s_iot').value.trim().toLowerCase();
     const sc = document.getElementById('s_mcode').value.trim().toLowerCase();
     const sa = document.getElementById('s_attr').value;
@@ -261,7 +257,6 @@ function doSearch() {
         if (sp && !item.plate_no.toLowerCase().includes(sp)) return false;
         if (sm && !item.model_name.toLowerCase().includes(sm)) return false;
         if (ss && item.status !== ss) return false;
-        if (sg && !item.gbt_vin.toLowerCase().includes(sg)) return false;
         if (si && !item.iot_code.toLowerCase().includes(si)) return false;
         if (sc && !item.model_code.toLowerCase().includes(sc)) return false;
         if (sa && item.asset_attr !== sa) return false;

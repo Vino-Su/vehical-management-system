@@ -4,24 +4,55 @@
  */
 const Common = {
   // ===== 侧边栏菜单配置（严格按01-需求文档/页面框架.md） =====
+  // disabled: true 表示未开发页面，做淡化处理
   menuConfig: [
     { group: '车辆管理', items: [
       { label: '车辆建档', id: 'vehicle-register', href: 'vehicle-register/vehicle-register-list.html' },
       { label: '车辆资产管理', id: 'asset-manage', href: 'vehicle-asset/vehicle-asset-list.html' },
       { label: '标签管理', id: 'tag-manage', href: 'vehicle-tag/tag-manage-list.html' },
-      { label: '车辆资产盘点', id: 'asset-inventory', href: '' },
-      { label: '车辆资产信息维护', id: 'asset-maintain', href: '' },
+      { label: '车辆资产盘点', id: 'asset-inventory', href: '', disabled: true },
+      { label: '车辆资产信息维护', id: 'asset-maintain', href: '', disabled: true },
       { label: '车型管理', id: 'vehicle-model', href: 'vehicle-model/vehicle-model-list.html' },
     ]},
-    { group: '调度管理', items: [
+    { group: '车辆调度管理', items: [
       { label: '可用车辆库', id: 'transfer-available', href: 'vehicle-dispatch/dispatch-vehicle-list.html' },
-      { label: '调度任务管理', id: 'transfer-apply', href: 'vehicle-dispatch/dispatch-record-list.html' },
+      { label: '调度记录管理', id: 'transfer-apply', href: 'vehicle-dispatch/dispatch-record-list.html' },
     ]},
-    { group: '车辆运行管理', items: [] },
-    { group: '车辆退出管理', items: [] },
+    { group: '维保管理', items: [
+      { label: '维修申请工单', id: 'repair-apply', href: '', disabled: true },
+      { label: '维修结算单', id: 'repair-settle', href: '', disabled: true },
+      { label: '保养任务清单', id: 'maintain-task', href: '', disabled: true },
+      { label: '保养结算单', id: 'maintain-settle', href: '', disabled: true },
+    ]},
+    { group: '合规管理', items: [
+      { label: '保险管理', id: 'insurance', href: '', disabled: true },
+      { label: '年检管理', id: 'annual-inspect', href: '', disabled: true },
+      { label: '证照管理', id: 'license', href: '', disabled: true },
+      { label: '到期预警', id: 'expire-warn', href: '', disabled: true },
+    ]},
+    { group: '风险管理', items: [
+      { label: '违章记录', id: 'violation-record', href: '', disabled: true },
+      { label: '违章费用', id: 'violation-fee', href: '', disabled: true },
+      { label: '事故记录', id: 'accident-record', href: '', disabled: true },
+      { label: '事故理赔', id: 'accident-claim', href: '', disabled: true },
+    ]},
+    { group: '费用管理', items: [
+      { label: '加油费明细台账', id: 'fuel-fee', href: '', disabled: true },
+      { label: '水费明细台账', id: 'water-fee', href: '', disabled: true },
+      { label: '电费明细台账', id: 'electric-fee', href: '', disabled: true },
+      { label: '通行费明细台账', id: 'toll-fee', href: '', disabled: true },
+      { label: '停车费明细台账', id: 'parking-fee', href: '', disabled: true },
+      { label: '运输费明细台账', id: 'transport-fee', href: '', disabled: true },
+    ]},
+    { group: '车辆退出管理', items: [
+      { label: '退出申请', id: 'exit-apply', href: '', disabled: true },
+      { label: '退出审批', id: 'exit-approve', href: '', disabled: true },
+      { label: '车辆处置', id: 'exit-dispose', href: '', disabled: true },
+      { label: '车辆归档', id: 'exit-archive', href: '', disabled: true },
+    ]},
     { group: '系统管理', items: [
-      { label: '预警规则配置', id: 'alert-config', href: '' },
-      { label: '维保策略管理', id: 'maintenance-strategy', href: '' },
+      { label: '预警规则配置', id: 'alert-config', href: '', disabled: true },
+      { label: '维保策略管理', id: 'maintenance-strategy', href: '', disabled: true },
     ]},
   ],
 
@@ -49,16 +80,25 @@ const Common = {
     html += '<nav class="sidebar-nav">';
 
     this.menuConfig.forEach(group => {
-      html += `<div class="menu-group">`;
-      html += `<div class="menu-group-title">${group.group}</div>`;
+      // 判断当前组是否包含激活菜单项，若包含则默认展开
+      const hasActive = group.items.some(item => item.id === activeMenuId);
+      const openCls = hasActive ? ' open' : '';
+      html += `<div class="menu-group${openCls}">`;
+      html += `<div class="menu-group-title" onclick="Common.toggleMenuGroup(this)">${group.group}<span class="group-arrow">▼</span></div>`;
       html += `<div class="menu-group-items">`;
       if (group.items.length === 0) {
         html += `<div class="menu-item disabled">暂未开放</div>`;
       } else {
         group.items.forEach(item => {
-          const cls = item.id === activeMenuId ? 'menu-item active' : 'menu-item';
-          const href = item.href ? (this._basePath + item.href) : 'javascript:;';
-          html += `<a class="${cls}" href="${href}" data-id="${item.id}">${item.label}</a>`;
+          const isDisabled = item.disabled;
+          const cls = [
+            'menu-item',
+            item.id === activeMenuId ? 'active' : '',
+            isDisabled ? 'disabled' : '',
+          ].filter(Boolean).join(' ');
+          const href = !isDisabled && item.href ? (this._basePath + item.href) : 'javascript:;';
+          const suffix = isDisabled ? '<span class="menu-item-badge">未开放</span>' : '';
+          html += `<a class="${cls}" href="${href}" data-id="${item.id}"${isDisabled ? ' onclick="return false;"' : ''}>${item.label}${suffix}</a>`;
         });
       }
       html += '</div></div>';
@@ -66,6 +106,12 @@ const Common = {
 
     html += '</nav>';
     container.innerHTML = html;
+  },
+
+  // ===== 菜单组展开/收起 =====
+  toggleMenuGroup(titleEl) {
+    const group = titleEl.parentElement;
+    group.classList.toggle('open');
   },
 
   // ===== 头部渲染 =====

@@ -148,49 +148,43 @@
                             <label>车架号</label>
                             <input type="text" id="s_vin" placeholder="请输入车架号">
                         </div>
+
                         <div class="search-item visible" data-idx="1">
-                            <label>国标车架号</label>
-                            <input type="text" id="s_gbt_vin" placeholder="请输入国标车架号">
-                        </div>
-                        <div class="search-item visible" data-idx="2">
                             <label>车型名称（中）</label>
                             <input type="text" id="s_model_name" placeholder="请输入车型名称">
                         </div>
-                        <div class="search-item visible" data-idx="3">
+                        <div class="search-item visible" data-idx="2">
                             <label>车型版本</label>
                             <select id="s_model_version">
                                 <option value="">请选择</option>
                                 <option>V1.0</option><option>V2.0</option><option>V3.0</option>
                             </select>
                         </div>
-                        <div class="search-item" data-idx="4">
+                        <div class="search-item visible" data-idx="3">
                             <label>网联编号</label>
                             <input type="text" id="s_iot_code" placeholder="请输入网联编号">
                         </div>
-                        <div class="search-item" data-idx="5">
+                        <div class="search-item" data-idx="4">
                             <label>车型编码</label>
                             <input type="text" id="s_model_code" placeholder="请输入车型编码">
                         </div>
-                        <div class="search-item" data-idx="6">
+                        <div class="search-item" data-idx="5">
                             <label>车牌号</label>
                             <input type="text" id="s_plate_no" placeholder="请输入车牌号">
                         </div>
-                        <div class="search-item" data-idx="7">
-                            <label>历史车型编码</label>
-                            <input type="text" id="s_old_model_code" placeholder="请输入历史车型编码">
-                        </div>
-                        <div class="search-item" data-idx="8">
+
+                        <div class="search-item" data-idx="6">
                             <label>车辆型号</label>
                             <input type="text" id="s_vehicle_model" placeholder="请输入车辆型号">
                         </div>
-                        <div class="search-item" data-idx="9">
+                        <div class="search-item" data-idx="7">
                             <label>车辆来源</label>
                             <select id="s_asset_source">
                                 <option value="">请选择</option>
                                 <option>外购</option><option>租赁</option><option>融资租赁</option><option>借用</option><option>自研</option>
                             </select>
                         </div>
-                        <div class="search-item" data-idx="10">
+                        <div class="search-item" data-idx="8">
                             <label>车辆状态</label>
                             <select id="s_vehicle_status">
                                 <option value="">请选择</option>
@@ -199,20 +193,20 @@
                                 <option>待分配</option><option>已报废</option><option>已处置</option>
                             </select>
                         </div>
-                        <div class="search-item" data-idx="11">
+                        <div class="search-item" data-idx="9">
                             <label>归属项目</label>
                             <select id="s_project">
                                 <option value="">请选择</option>
                                 <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
                             </select>
                         </div>
-                        <div class="search-item" data-idx="12">
+                        <div class="search-item" data-idx="10">
                             <label>注册时间</label>
                             <input type="date" id="s_reg_start">
                             <span class="date-sep">~</span>
                             <input type="date" id="s_reg_end">
                         </div>
-                        <div class="search-item" data-idx="13">
+                        <div class="search-item" data-idx="11">
                             <label>标签</label>
                             <div class="tag-filter">
                                 <div class="tag-filter-display" id="tagFilterDisplay" onclick="toggleTagFilterPanel()">请选择标签</div>
@@ -245,13 +239,11 @@
                             <tr>
                                 <th style="width:50px;text-align:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
                                 <th>车架号</th>
-                                <th>国标车架号</th>
                                 <th>车型名称（中）</th>
                                 <th>车型版本</th>
                                 <th>网联编号</th>
                                 <th>车型编码</th>
                                 <th>车牌号</th>
-                                <th>历史车型编码</th>
                                 <th>车辆型号</th>
                                 <th>车辆来源</th>
                                 <th>车辆状态</th>
@@ -486,13 +478,11 @@ function renderTable() {
         tr.innerHTML = `
             <td style="text-align:center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
             <td title="${item.vin}">${item.vin}</td>
-            <td>${item.gbt_vin}</td>
             <td>${item.model_name}</td>
             <td>${item.model_version}</td>
             <td>${item.iot_code}</td>
             <td>${item.model_code}</td>
             <td>${item.plate_no}</td>
-            <td>${item.old_model_code || '—'}</td>
             <td>${item.vehicle_model}</td>
             <td>${item.asset_source}</td>
             <td><span class="status-tag ${tagCls}">${item.vehicle_status}</span></td>
@@ -538,13 +528,11 @@ function toggleCheck(id, el) {
 // ===== 查询/重置 =====
 function doSearch() {
     const sv = document.getElementById('s_vin').value.trim().toLowerCase();
-    const sg = document.getElementById('s_gbt_vin').value.trim().toLowerCase();
     const sm = document.getElementById('s_model_name').value.trim().toLowerCase();
     const smv = document.getElementById('s_model_version').value;
     const si = document.getElementById('s_iot_code').value.trim().toLowerCase();
     const smc = document.getElementById('s_model_code').value.trim().toLowerCase();
     const sp = document.getElementById('s_plate_no').value.trim().toLowerCase();
-    const so = document.getElementById('s_old_model_code').value.trim().toLowerCase();
     const svm = document.getElementById('s_vehicle_model').value.trim().toLowerCase();
     const ss = document.getElementById('s_asset_source').value;
     const sst = document.getElementById('s_vehicle_status').value;
@@ -553,13 +541,11 @@ function doSearch() {
     const sre = document.getElementById('s_reg_end').value;
     filteredData = mockData.filter(item => {
         if (sv && !item.vin.toLowerCase().includes(sv)) return false;
-        if (sg && !item.gbt_vin.toLowerCase().includes(sg)) return false;
         if (sm && !item.model_name.toLowerCase().includes(sm)) return false;
         if (smv && item.model_version !== smv) return false;
         if (si && !item.iot_code.toLowerCase().includes(si)) return false;
         if (smc && !item.model_code.toLowerCase().includes(smc)) return false;
         if (sp && !item.plate_no.toLowerCase().includes(sp)) return false;
-        if (so && !(item.old_model_code||'').toLowerCase().includes(so)) return false;
         if (svm && !item.vehicle_model.toLowerCase().includes(svm)) return false;
         if (ss && item.asset_source !== ss) return false;
         if (sst && item.vehicle_status !== sst) return false;
