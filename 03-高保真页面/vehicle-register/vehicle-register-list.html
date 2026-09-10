@@ -5,9 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>车辆建档 - 列表页</title>
     <link rel="stylesheet" href="../components/common.css">
+    <!--
+      车辆建档 - 列表页
+      页面用途：车辆建档信息的分页列表，支持条件筛选、单个录入、批量导入与导出
+      核心功能：多条件筛选（展开/收起）、批量导入（弹窗+拖拽上传）、导出、行内详情/删除、全选与单选、分页
+      交互逻辑：查询/重置回到第 1 页；列表默认按建档时间由近到远倒序；删除走 Common.confirm 二次确认；弹窗支持遮罩与 ESC 关闭
+    -->
     <style>
-        .search-bar { background: var(--bg-container); border-radius: var(--radius); padding: 20px 24px 16px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
-        .search-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+        /* 筛选区卡片与间距、按钮组间距统一由 common.css 的 .search-bar / .search-row / .action-bar 提供 */
         .search-item { display: none; align-items: center; gap: 8px; }
         .search-item.visible { display: flex; }
         .search-item label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
@@ -17,37 +22,21 @@
         }
         .search-item input:focus, .search-item select:focus { border-color: var(--primary); }
         .search-item input::placeholder { color: var(--text-disabled); }
-        .search-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        /* 查询（主按钮）与重置（次按钮）间距 12px（规范二.2） */
+        .search-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
         .toggle-expand { color: var(--primary); font-size: 14px; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 4px; }
         .toggle-expand:hover { color: var(--primary-hover); }
         .toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
         .toggle-expand.expanded .arrow { transform: rotate(180deg); }
-        .action-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; line-height: 20px; white-space: nowrap; }
-        .status-tag.green { background: #f6ffed; color: #52c41a; }
-        .status-tag.blue { background: #e6f4ff; color: #1677ff; }
-        .status-tag.orange { background: #fff7e6; color: #fa8c16; }
-        .status-tag.red { background: #fff2f0; color: #ff4d4f; }
-        .status-tag.yellow { background: #fffbe6; color: #d4b106; }
-        .status-tag.gray { background: #f2f3f5; color: #86909c; }
-        .status-tag.purple { background: #f5e8ff; color: #722ed1; }
+        /* 状态标签改用 common.css 的 .tag / .tag-*（圆角 4px、Ant Design 标准色值） */
         .action-link { color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: none; }
         .action-link:hover { color: var(--primary-hover); }
-        .action-link + .action-link { margin-left: 12px; }
+        /* 操作按钮组内间距 8px（规范二.2） */
+        .action-link + .action-link { margin-left: 8px; }
         .action-link.danger { color: var(--error); }
         .action-link.danger:hover { color: #ff7875; }
 
-        /* ===== 批量导入弹窗 ===== */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 100; }
-        .modal-overlay.active { display: flex; }
-        .modal-box { background: var(--bg-container); border-radius: var(--radius); width: 600px; max-width: 90vw; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,.15); }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border-color); }
-        .modal-header h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; }
-        .modal-close { font-size: 20px; color: var(--text-secondary); cursor: pointer; line-height: 1; }
-        .modal-close:hover { color: var(--text-primary); }
-        .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--border-color); }
-
+        /* ===== 批量导入弹窗（弹窗容器统一使用 common.css 的 .modal-* 公共类） ===== */
         .download-link { color: var(--primary); font-size: 14px; cursor: pointer; text-decoration: underline; margin-bottom: 16px; display: inline-block; }
         .download-link:hover { color: var(--primary-hover); }
         .upload-zone {
@@ -64,10 +53,7 @@
         .file-remove { color: var(--error); font-size: 14px; cursor: pointer; padding: 2px 6px; }
         .file-remove:hover { background: #fff2f0; border-radius: 4px; }
 
-        /* 导出确认弹窗 */
-        .confirm-body { padding: 32px 24px; text-align: center; }
-        .confirm-icon { font-size: 28px; color: #faad14; margin-right: 8px; vertical-align: middle; }
-        .confirm-text { font-size: 14px; color: var(--text-primary); vertical-align: middle; }
+        /* 导出确认弹窗：.confirm-body / .confirm-icon / .confirm-text 由 common.css 提供 */
     </style>
 </head>
 <body>
@@ -119,27 +105,28 @@
                 <div class="action-bar">
                     <button class="btn btn-primary" onclick="window.location.href='./vehicle-register-add.html'">单个录入</button>
                     <button class="btn" onclick="openBatchImport()">批量导入</button>
-                    <button class="btn" style="margin-left:auto" onclick="doExport()">导出</button>
+                    <button class="btn push-right" onclick="doExport()">导出</button>
                 </div>
 
-                <!-- 数据列表（与建档PRD 3.1.4节字段一致） -->
+                <!-- 数据列表（与建档PRD 3.1.4节字段一致）
+                     对齐规则（规范二.3）：文本列左对齐、固定宽度编码列居中、操作/复选框列居中 -->
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
-                                <th style="width:50px;text-align:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
-                                <th style="width:50px">序号</th>
-                                <th>车架号</th>
-                                <th>车型名称（中）</th>
-                                <th>车牌号</th>
-                                <th>网联编号</th>
-                                <th>车型编码</th>
-                                <th>资产属性</th>
-                                <th>车辆状态</th>
-                                <th>归属项目</th>
-                                <th>建档人</th>
-                                <th>建档时间</th>
-                                <th style="width:140px;text-align:center">操作</th>
+                                <th class="col-center" style="width:50px"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
+                                <th class="col-center" style="width:70px">序号</th>
+                                <th class="col-center" style="width:180px">车架号</th>
+                                <th class="ellipsis" style="width:200px">车型名称（中）</th>
+                                <th class="col-center" style="width:120px">车牌号</th>
+                                <th class="col-center" style="width:110px">网联编号</th>
+                                <th class="col-center" style="width:120px">车型编码</th>
+                                <th style="width:150px">资产属性</th>
+                                <th style="width:140px">车辆状态</th>
+                                <th class="ellipsis" style="width:130px">归属项目</th>
+                                <th style="width:100px">建档人</th>
+                                <th class="col-center" style="width:170px">建档时间</th>
+                                <th class="col-center" style="width:140px">操作</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
@@ -148,7 +135,10 @@
 
                 <!-- 分页 -->
                 <div class="pagination-area">
-                    <div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div>
+                    <div class="pagination-left">
+                        <div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div>
+                        <span class="pagination-pages" id="listPageInfo"></span>
+                    </div>
                     <div style="display:flex;align-items:center;gap:8px">
                         <div class="pagination" id="paginationEl"></div>
                         <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
@@ -171,7 +161,6 @@ Common.initLayout({
     sidebarId: 'sidebar',
     activeMenuId: 'vehicle-register',
     headerId: 'header',
-    breadcrumbs: [{ label: '车辆管理' }, { label: '车辆建档' }],
     headerOptions: { showProject: false }
 });
 
@@ -193,36 +182,42 @@ const mockData = [
 
 let currentPage = 1, pageSize = 10;
 let filteredData = [...mockData];
+// 状态标签复用 common.css 的 .tag-* 公共类（Ant Design 标准色值）
 const statusTagClass = {
-    '在库-正常使用':'green', '在库-闲置留用':'blue', '在库-闲置可调出':'orange',
-    '在库-维修':'red', '在库-保养中':'yellow', '在库-待报废':'gray',
-    '待分配':'purple', '已报废':'gray', '已处置':'gray'
+    '在库-正常使用':'tag-green', '在库-闲置留用':'tag-blue', '在库-闲置可调出':'tag-orange',
+    '在库-维修':'tag-red', '在库-保养中':'tag-yellow', '在库-待报废':'tag-default',
+    '待分配':'tag-purple', '已报废':'tag-default', '已处置':'tag-default'
 };
+
+// 列表统一按建档时间由近到远倒序（PRD 要求），分页与全选共用同一份排序结果
+function getSortedData() {
+    return [...filteredData].sort((a, b) => b.create_time.localeCompare(a.create_time));
+}
 
 function renderTable() {
     const start = (currentPage - 1) * pageSize;
-    const pageData = filteredData.slice(start, start + pageSize);
+    const pageData = getSortedData().slice(start, start + pageSize);
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
     pageData.forEach((item, idx) => {
         const ck = selectedIds.has(item.id) ? 'checked' : '';
         const selCls = selectedIds.has(item.id) ? ' class="selected"' : '';
-        const tagCls = statusTagClass[item.status] || 'gray';
+        const tagCls = statusTagClass[item.status] || 'tag-default';
         const rowNum = start + idx + 1;
         tbody.innerHTML += `<tr${selCls}>
-            <td style="text-align:center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
-            <td>${rowNum}</td>
-            <td title="${item.vin}">${item.vin}</td>
-            <td>${item.model_name}</td>
-            <td>${item.plate_no}</td>
-            <td>${item.iot_code}</td>
-            <td>${item.model_code}</td>
+            <td class="col-center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
+            <td class="col-center num">${rowNum}</td>
+            <td class="col-center ellipsis" title="${item.vin}">${item.vin}</td>
+            <td class="ellipsis" title="${item.model_name}">${item.model_name}</td>
+            <td class="col-center">${item.plate_no}</td>
+            <td class="col-center">${item.iot_code}</td>
+            <td class="col-center">${item.model_code}</td>
             <td>${item.asset_attr}</td>
-            <td><span class="status-tag ${tagCls}">${item.status}</span></td>
-            <td>${item.project || '—'}</td>
+            <td><span class="tag ${tagCls}">${item.status}</span></td>
+            <td class="ellipsis" title="${item.project || '—'}">${item.project || '—'}</td>
             <td>${item.creator}</td>
-            <td>${item.create_time}</td>
-            <td style="text-align:center">
+            <td class="col-center num">${item.create_time}</td>
+            <td class="col-center">
                 <a class="action-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${item.id}">详情</a>
                 <a class="action-link danger" onclick="deleteItem(${item.id})">删除</a>
             </td>
@@ -234,7 +229,7 @@ function renderTable() {
 function renderPagination() {
     Common.renderPagination({
         total: filteredData.length, currentPage, pageSize,
-        containerId: 'paginationEl', infoId: 'totalCount',
+        containerId: 'paginationEl', infoId: 'totalCount', pageInfoId: 'listPageInfo',
         onPageChange: p => { currentPage = p; renderTable(); }
     });
 }
@@ -285,7 +280,22 @@ function toggleExpand() {
     toggle.classList.toggle('expanded', expanded);
 }
 
-function deleteItem(id) { if (confirm('确定要删除该车辆建档信息吗？')) { const idx = mockData.findIndex(d => d.id === id); if (idx > -1) mockData.splice(idx, 1); filteredData = filteredData.filter(d => d.id !== id); renderTable(); } }
+// 删除：使用公共确认弹窗（危险按钮），确认后执行原有删除逻辑
+function deleteItem(id) {
+    Common.confirm({
+        title: '删除确认',
+        content: '确定要删除该车辆建档信息吗？删除后不可恢复。',
+        danger: true,
+        onOk: function () {
+            const idx = mockData.findIndex(d => d.id === id);
+            if (idx > -1) mockData.splice(idx, 1);
+            filteredData = filteredData.filter(d => d.id !== id);
+            selectedIds.delete(id);
+            Common.showToast('删除成功', 'success');
+            renderTable();
+        }
+    });
+}
 
 let selectedIds = new Set();
 
@@ -333,9 +343,10 @@ function confirmImport() {
     closeBatchImport();
 }
 
-// 拖拽上传
-const uploadZone = document.getElementById('uploadZone');
-if (uploadZone) {
+// 拖拽上传：弹窗节点位于脚本之后，需等 DOM 就绪后再绑定（否则 uploadZone 取到 null）
+document.addEventListener('DOMContentLoaded', function () {
+    const uploadZone = document.getElementById('uploadZone');
+    if (!uploadZone) return;
     uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
     uploadZone.addEventListener('dragleave', e => { e.preventDefault(); uploadZone.classList.remove('dragover'); });
     uploadZone.addEventListener('drop', e => {
@@ -354,12 +365,13 @@ if (uploadZone) {
             uploadZone.style.display = 'none';
         }
     });
-}
+});
 
 // ===== 复选框 =====
 function toggleCheckAll(el) {
     const start = (currentPage - 1) * pageSize;
-    filteredData.slice(start, start + pageSize).forEach(item => { el.checked ? selectedIds.add(item.id) : selectedIds.delete(item.id); });
+    // 与 renderTable 保持同一份排序结果，避免全选到非当前页数据
+    getSortedData().slice(start, start + pageSize).forEach(item => { el.checked ? selectedIds.add(item.id) : selectedIds.delete(item.id); });
     renderTable();
 }
 function toggleCheck(id, el) {
@@ -385,10 +397,10 @@ function confirmExport() {
 }
 </script>
 
-<!-- 批量导入弹窗 -->
-<div class="modal-overlay" id="batchImportModal" onclick="if(event.target===this)closeBatchImport()">
+<!-- 批量导入弹窗（遮罩点击与 ESC 关闭由 Common.bindGlobalEvents 统一处理） -->
+<div class="modal-overlay" id="batchImportModal">
     <div class="modal-box">
-        <div class="modal-header"><h3>批量导入车辆信息</h3><span class="modal-close" onclick="closeBatchImport()">×</span></div>
+        <div class="modal-header"><h3>批量导入车辆信息</h3><button class="modal-close" type="button" onclick="closeBatchImport()">×</button></div>
         <div class="modal-body">
             <a class="download-link" onclick="downloadTemplate()">📥 下载导入模板</a>
             <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
@@ -406,23 +418,23 @@ function confirmExport() {
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn" onclick="closeBatchImport()">取消</button>
-            <button class="btn btn-primary" onclick="confirmImport()">确认</button>
+            <button class="btn" type="button" onclick="closeBatchImport()">取消</button>
+            <button class="btn btn-primary" type="button" onclick="confirmImport()">确认</button>
         </div>
     </div>
 </div>
 
-<!-- 导出确认弹窗 -->
-<div class="modal-overlay" id="exportModal" onclick="if(event.target===this)closeExportModal()">
-    <div class="modal-box">
-        <div class="modal-header"><h3>提示</h3><span class="modal-close" onclick="closeExportModal()">×</span></div>
+<!-- 导出确认弹窗（取消居左、提交居右，由 .modal-footer 默认两端分布实现） -->
+<div class="modal-overlay" id="exportModal">
+    <div class="modal-box confirm-box">
+        <div class="modal-header"><h3>提示</h3><button class="modal-close" type="button" onclick="closeExportModal()">×</button></div>
         <div class="confirm-body">
             <span class="confirm-icon">⚠</span>
             <span class="confirm-text">是否导出所有数据？</span>
         </div>
         <div class="modal-footer">
-            <button class="btn" onclick="closeExportModal()">否</button>
-            <button class="btn btn-primary" onclick="confirmExport()">是</button>
+            <button class="btn" type="button" onclick="closeExportModal()">否</button>
+            <button class="btn btn-primary" type="button" onclick="confirmExport()">是</button>
         </div>
     </div>
 </div>

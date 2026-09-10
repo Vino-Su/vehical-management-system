@@ -5,16 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>标签管理 - 车辆管理系统</title>
 <link rel="stylesheet" href="../components/common.css">
+<!--
+  标签管理 - 标签组/子标签维护 + 标签下车辆列表
+  页面用途：左侧以两级树维护标签组与子标签（公有/私有），右侧查看选中标签/标签组下的车辆清单
+  核心功能：标签树查询（名称/类型/项目/颜色）、新建/编辑/删除标签组与子标签、右侧车辆清单查询、
+            移入车辆（弹窗多选）、单车/批量移出、导出、车辆清单分页（10/20/50/100 条每页）
+  交互逻辑：右侧车辆按打标时间由近到远倒序；树节点点击切换右栏内容；删除/移出走二次确认弹窗；
+            弹窗统一由 common.css 的 .modal-* 提供，支持点击遮罩与 ESC 关闭
+-->
 <style>
-/* ========== 查询筛选区 ========== */
-.search-bar {
-    background: var(--bg-container);
-    border-radius: var(--radius-lg);
-    padding: 20px 24px 16px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
-}
-.search-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+/* ========== 查询筛选区 ==========
+   卡片外观、筛选区与内容区间距 24px、按钮组间距统一由
+   common.css 的 .search-bar / .search-row / .action-bar 提供（规范二.2） ========== */
 .search-item { display: none; align-items: center; gap: 8px; }
 .search-item.visible { display: flex; }
 .search-item label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
@@ -25,7 +27,8 @@
     min-width: 160px; transition: border-color .2s;
 }
 .search-item input:focus, .search-item select:focus { border-color: var(--primary); }
-.search-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+/* 查询（主按钮）与重置（次按钮）间距 12px（规范二.2） */
+.search-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .toggle-expand {
     color: var(--primary); font-size: 14px; cursor: pointer;
     user-select: none; display: flex; align-items: center; gap: 4px;
@@ -34,24 +37,13 @@
 .toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
 .toggle-expand.expanded .arrow { transform: rotate(180deg); }
 
-/* ========== 状态标签 ========== */
-.status-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; line-height: 20px; white-space: nowrap; }
-.status-tag.green { background: #f6ffed; color: #52c41a; }
-.status-tag.blue { background: #e6f4ff; color: #1677ff; }
-.status-tag.orange { background: #fff7e6; color: #fa8c16; }
-.status-tag.red { background: #fff2f0; color: #ff4d4f; }
-.status-tag.yellow { background: #fffbe6; color: #d4b106; }
-.status-tag.gray { background: #f2f3f5; color: #86909c; }
-.status-tag.purple { background: #f5e8ff; color: #722ed1; }
+/* ========== 状态标签：改用 common.css 的 .tag / .tag-*（圆角 4px、Ant Design 标准色值） ========== */
 
-/* 补充青色标签（common.css 未含） */
-.tag-cyan { background: #e6fffb; color: #13c2c2; }
-
-/* ========== 操作链接 ========== */
-.action-link { color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: none; }
-.action-link:hover { color: var(--primary-hover); }
-.action-link + .action-link { margin-left: 12px; }
-.action-link.danger { color: var(--error); }
+/* ========== 操作链接：复用 common.css 的 .btn-link ========== */
+/* 操作按钮组内间距 8px（规范二.2） */
+td .btn-link + .btn-link { margin-left: 8px; }
+.link-danger { color: var(--error); }
+.link-danger:hover { color: #ff7875; }
 
 /* ========== 左右分栏布局 ========== */
 .tag-page-layout { display: flex; gap: 16px; align-items: stretch; }
@@ -110,7 +102,7 @@
 .panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .panel-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
 .panel-title .crumb { color: var(--text-secondary); font-weight: 400; font-size: 13px; margin-left: 4px; }
-.panel-actions { display: flex; gap: 8px; margin-left: auto; }
+.panel-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 .panel-search { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 16px; }
 .panel-search .si { display: flex; align-items: center; gap: 8px; }
 .panel-search .si label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
@@ -120,16 +112,17 @@
 }
 .panel-search .si input:focus, .panel-search .si select:focus { border-color: var(--primary); }
 
-/* 操作栏 */
+/* 操作栏（按钮组内间距 8px + 小屏自动换行，规范二.2 / 二.4） */
 .sub-action-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.panel-action-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.panel-action-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
 .panel-action-bar .selected-tip { font-size: 13px; color: var(--text-secondary); margin-left: 4px; }
-.panel-action-bar .btn-export { margin-left: auto; }
+/* 导出按钮靠右（与 common.css .action-bar .push-right 同一契约） */
+.panel-action-bar .push-right { margin-left: auto; }
 /* 标签树面板头部 */
 .tp-header-left { display: flex; align-items: baseline; gap: 8px; }
 .tp-stat { font-size: 12px; color: var(--text-secondary); }
-.tp-add-btn { height: 28px; padding: 0 12px; font-size: 13px; }
 .tp-subtip { padding: 8px 16px; font-size: 12px; color: var(--text-secondary); background: #fafafa; border-bottom: 1px solid var(--border-color); line-height: 1.6; }
+
 
 /* 标签列展示 */
 .cell-tags { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
@@ -148,8 +141,8 @@
     align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700;
 }
 
-/* 表单弹窗字段 */
-.form-row { display: flex; align-items: flex-start; margin-bottom: 18px; }
+/* 表单弹窗字段（表单项垂直间距 16px、标签与控件间距 12px，规范二.2） */
+.form-row { display: flex; align-items: flex-start; margin-bottom: 16px; }
 .form-row .form-label { width: 100px; flex-shrink: 0; text-align: right; padding-right: 12px; font-size: 14px; color: var(--text-primary); line-height: 32px; }
 .form-row .form-label .req { color: var(--error); margin-right: 2px; }
 .form-row .form-control { flex: 1; }
@@ -167,14 +160,15 @@
 /* 移入车辆弹窗 */
 .import-search { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
 .import-search input, .import-search select {
-    height: 30px; border: 1px solid var(--border-input); border-radius: var(--radius);
+    height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
     padding: 0 8px; font-size: 13px; outline: none;
 }
 .import-search input { width: 170px; }
 .import-search select { width: 130px; }
 .import-summary { font-size: 13px; color: var(--text-secondary); margin: 8px 0 12px; }
-.import-table-wrap { max-height: 360px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius); }
-.import-table { width: 100%; border-collapse: collapse; }
+/* 弹窗内表格：小屏横向滚动，禁止列挤变形（规范二.4） */
+.import-table-wrap { max-height: 360px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius); }
+.import-table { width: 100%; min-width: 680px; border-collapse: collapse; }
 .import-table thead th {
     position: sticky; top: 0; background: #fafafa; color: var(--text-secondary); font-weight: 600;
     font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap;
@@ -196,7 +190,7 @@
     <div class="main-area">
         <div id="header"></div>
         <div class="content">
-            <div class="page-container" style="padding:0;background:transparent;box-shadow:none;">
+            <div class="page-container">
                 <!-- 查询筛选区 -->
                 <div class="search-bar">
                     <div class="search-row" id="searchRow">
@@ -261,9 +255,9 @@
     </div>
 </div>
 
-<!-- 新建/编辑标签组弹窗 -->
+<!-- 新建/编辑标签组弹窗（表单弹窗默认 600px，规范二.3） -->
 <div class="modal-overlay" id="groupModal">
-    <div class="modal-box" style="width:600px">
+    <div class="modal-box">
         <div class="modal-header"><h3 id="groupModalTitle">新建标签组</h3><span class="modal-close" onclick="closeGroupModal()">×</span></div>
         <div class="modal-body">
             <div class="form-row">
@@ -318,9 +312,9 @@
     </div>
 </div>
 
-<!-- 新建/编辑子标签弹窗 -->
+<!-- 新建/编辑子标签弹窗（表单弹窗默认 600px，规范二.3） -->
 <div class="modal-overlay" id="labelModal">
-    <div class="modal-box" style="width:500px">
+    <div class="modal-box">
         <div class="modal-header"><h3 id="labelModalTitle">新建子标签</h3><span class="modal-close" onclick="closeLabelModal()">×</span></div>
         <div class="modal-body">
             <div class="form-row">
@@ -364,9 +358,9 @@
     </div>
 </div>
 
-<!-- 移入车辆弹窗 -->
+<!-- 移入车辆弹窗（表格类弹窗 800px，规范二.3） -->
 <div class="modal-overlay" id="importModal">
-    <div class="modal-box" style="width:800px">
+    <div class="modal-box modal-box--lg">
         <div class="modal-header"><h3 id="importModalTitle">移入车辆</h3><span class="modal-close" onclick="closeImportModal()">×</span></div>
         <div class="modal-body">
             <div class="import-search">
@@ -377,13 +371,13 @@
                     <option value="">全部项目</option>
                     <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
                 </select>
-                <button class="btn btn-primary" style="height:30px;padding:0 12px;" onclick="renderImportTable()">查询</button>
+                <button class="btn btn-primary" onclick="renderImportTable()">查询</button>
             </div>
             <div class="import-summary">已选 <strong id="impSelectedCount">0</strong> 辆 · 已添加的车辆将置灰不可重复选择</div>
             <div class="import-table-wrap">
                 <table class="import-table">
                     <thead><tr>
-                        <th style="width:42px;"><input type="checkbox" id="impCheckAll" onchange="impToggleAll(this)"></th>
+                        <th class="col-center" style="width:50px"><input type="checkbox" id="impCheckAll" onchange="impToggleAll(this)"></th>
                         <th>车架号</th><th>车型名称</th><th>车牌号</th><th>车辆状态</th><th>归属项目</th><th>当前标签</th>
                     </tr></thead>
                     <tbody id="importTableBody"></tbody>
@@ -407,7 +401,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="closeDeleteModal()">取消</button>
-            <button class="btn btn-primary" onclick="confirmDelete()">确定</button>
+            <button class="btn btn-danger" onclick="confirmDelete()">确定</button>
         </div>
     </div>
 </div>
@@ -422,7 +416,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="closeRemoveModal()">取消</button>
-            <button class="btn btn-primary" onclick="confirmRemove()">确定</button>
+            <button class="btn btn-danger" onclick="confirmRemove()">确定</button>
         </div>
     </div>
 </div>
@@ -435,7 +429,6 @@ Common.initLayout({
     sidebarId: 'sidebar',
     activeMenuId: 'tag-manage',
     headerId: 'header',
-    breadcrumbs: [{ label: '车辆管理' }, { label: '标签管理' }],
     headerOptions: { showProject: false }
 });
 
@@ -447,24 +440,25 @@ const colorMap = {
     red:    { name: '红', hex: '#ff4d4f', tag: 'tag-red' },
     yellow: { name: '黄', hex: '#d4b106', tag: 'tag-yellow' },
     purple: { name: '紫', hex: '#722ed1', tag: 'tag-purple' },
-    cyan:   { name: '青', hex: '#13c2c2', tag: 'tag-cyan' },
+    // common.css 未提供青色标签，色点仍按 16 进制展示真实颜色，标签底色回退为蓝色标签
+    cyan:   { name: '青', hex: '#13c2c2', tag: 'tag-blue' },
     gray:   { name: '灰', hex: '#86909c', tag: 'tag-default' },
 };
 
-// ===== 模拟数据：车辆主数据（与车辆资产管理一致） =====
+// ===== 模拟数据：车辆主数据（id 与车辆资产管理列表页保持一致，供详情页跳转使用） =====
 const vehicles = [
-    { vin:'LSVAU2A39EN000001', model_name:'麒麟清扫车', plate_no:'京ADG090', vehicle_status:'在库-正常使用', project:'鸠江项目' },
-    { vin:'LSVAU2A39EN000002', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'京ADG091', vehicle_status:'在库-正常使用', project:'椒北街道' },
-    { vin:'LSVAU2A39EN000003', model_name:'中联清洗车', plate_no:'浙JAR6538', vehicle_status:'在库-闲置留用', project:'镜湖区项目' },
-    { vin:'LSVAU2A39EN000004', model_name:'泰坦智能驾驶洒水车', plate_no:'京ADH066', vehicle_status:'待分配', project:'' },
-    { vin:'LSVAU2A39EN000005', model_name:'三力洒水车', plate_no:'浙JDB1062', vehicle_status:'在库-维修', project:'鸠江江北项目' },
-    { vin:'LSVAU2A39EN000006', model_name:'独角兽', plate_no:'沪AAB124', vehicle_status:'在库-正常使用', project:'嘉定研发' },
-    { vin:'LSVAU2A39EN000007', model_name:'麒麟无人化扫地车', plate_no:'京ADJ055', vehicle_status:'在库-正常使用', project:'鸠江开发区项目' },
-    { vin:'LSVAU2A39EN000008', model_name:'长城多用途货车', plate_no:'京ADJ056', vehicle_status:'在库-正常使用', project:'陵水项目' },
-    { vin:'LSVAU2A39EN000009', model_name:'麒麟清扫车', plate_no:'粤AEE077', vehicle_status:'在库-正常使用', project:'鸠江项目' },
-    { vin:'LSVAU2A39EN000010', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'粤AEE078', vehicle_status:'在库-闲置留用', project:'椒北街道' },
-    { vin:'LSVAU2A39EN000011', model_name:'中联清洗车', plate_no:'京ADK033', vehicle_status:'在库-正常使用', project:'镜湖区项目' },
-    { vin:'LSVAU2A39EN000012', model_name:'三力洒水车', plate_no:'京ADG092', vehicle_status:'在库-正常使用', project:'鸠江江北项目' },
+    { id:1, vin:'LSVAU2A39EN000001', model_name:'麒麟清扫车', plate_no:'京ADG090', vehicle_status:'在库-正常使用', project:'鸠江项目' },
+    { id:2, vin:'LSVAU2A39EN000002', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'京ADG091', vehicle_status:'在库-正常使用', project:'椒北街道' },
+    { id:3, vin:'LSVAU2A39EN000003', model_name:'中联清洗车', plate_no:'浙JAR6538', vehicle_status:'在库-闲置留用', project:'镜湖区项目' },
+    { id:4, vin:'LSVAU2A39EN000004', model_name:'泰坦智能驾驶洒水车', plate_no:'京ADH066', vehicle_status:'待分配', project:'' },
+    { id:5, vin:'LSVAU2A39EN000005', model_name:'三力洒水车', plate_no:'浙JDB1062', vehicle_status:'在库-维修', project:'鸠江江北项目' },
+    { id:6, vin:'LSVAU2A39EN000006', model_name:'独角兽', plate_no:'沪AAB124', vehicle_status:'在库-正常使用', project:'嘉定研发' },
+    { id:7, vin:'LSVAU2A39EN000007', model_name:'麒麟无人化扫地车', plate_no:'京ADJ055', vehicle_status:'在库-正常使用', project:'鸠江开发区项目' },
+    { id:8, vin:'LSVAU2A39EN000008', model_name:'长城多用途货车', plate_no:'京ADJ056', vehicle_status:'在库-正常使用', project:'陵水项目' },
+    { id:9, vin:'LSVAU2A39EN000009', model_name:'麒麟清扫车', plate_no:'粤AEE077', vehicle_status:'在库-正常使用', project:'鸠江项目' },
+    { id:10, vin:'LSVAU2A39EN000010', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'粤AEE078', vehicle_status:'在库-闲置留用', project:'椒北街道' },
+    { id:11, vin:'LSVAU2A39EN000011', model_name:'中联清洗车', plate_no:'京ADK033', vehicle_status:'在库-正常使用', project:'镜湖区项目' },
+    { id:12, vin:'LSVAU2A39EN000012', model_name:'三力洒水车', plate_no:'京ADG092', vehicle_status:'在库-正常使用', project:'鸠江江北项目' },
 ];
 
 // ===== 模拟数据：标签结构（两级） =====
@@ -505,17 +499,20 @@ let vehicleLabels = {
     'LSVAU2A39EN000011': [{labelId:'l3',time:'2026-03-13 14:50:00'}],
 };
 
-// ===== 状态标签映射 =====
+// ===== 状态标签映射（对应 common.css 的 .tag-* 公共类） =====
 const statusTagClass = {
-    '在库-正常使用':'green','在库-闲置留用':'blue','在库-闲置可调出':'orange',
-    '在库-维修':'red','在库-保养中':'yellow','在库-待报废':'gray',
-    '待分配':'purple','已报废':'gray','已处置':'gray'
+    '在库-正常使用':'tag-green','在库-闲置留用':'tag-blue','在库-闲置可调出':'tag-orange',
+    '在库-维修':'tag-red','在库-保养中':'tag-yellow','在库-待报废':'tag-default',
+    '待分配':'tag-purple','已报废':'tag-default','已处置':'tag-default'
 };
+// 右栏车辆状态筛选下拉枚举（与车辆资产管理保持一致）
+const vehicleStatusList = ['在库-正常使用','在库-闲置留用','在库-闲置可调出','在库-维修','在库-保养中','在库-待报废','待分配','已报废','已处置'];
 
 // ===== 全局状态 =====
 let currentSelect = null; // {type:'group'|'label', id}
 let currentVehiclePage = 1, vehiclePageSize = 10;
 let selectedVehicleVins = new Set(); // 右栏勾选
+let currentPageVins = []; // 右栏当前页车辆（表头全选仅作用于当前页）
 let groupEditMode = null; // null=新建，否则=编辑的groupId
 let groupEditSelectedColor = 'blue';
 let labelEditMode = null; // null=新建，否则=编辑的labelId
@@ -530,11 +527,13 @@ let importTargetLabelId = null;
 function getGroup(gid){ return labelGroups.find(g=>g.id===gid); }
 function getLabel(lid){ for(const g of labelGroups){ const l=g.labels.find(x=>x.id===lid); if(l) return {group:g,label:l}; } return null; }
 function getVinsByLabel(lid){
-    const vins=[];
-    for(const [vin,rels] of Object.entries(vehicleLabels)){
-        if(rels.some(r=>r.labelId===lid)) vins.push(vin);
+    const rels=[];
+    for(const [vin,list] of Object.entries(vehicleLabels)){
+        const r=list.find(x=>x.labelId===lid);
+        if(r) rels.push({vin,time:r.time||''});
     }
-    return vins;
+    // 默认按打标时间由近到远倒序（PRD《标签管理》3.5.5）
+    return rels.sort((a,b)=>b.time.localeCompare(a.time)).map(x=>x.vin);
 }
 function getVinsByGroup(gid){
     const group=getGroup(gid); if(!group) return [];
@@ -644,11 +643,13 @@ function renderPanel(){
     let vehiclesList=[], titleCrumb='';
     if(currentSelect.type==='group'){
         const g=getGroup(currentSelect.id);
+        // 分组/标签已被删除时清空右栏，避免残留上一次的内容
+        if(!g){ titleEl.textContent='—'; contentEl.innerHTML=''; return; }
         titleCrumb=`标签组：${g.name}（聚合，共 ${getVinsByGroup(g.id).length} 辆）`;
         vehiclesList=getVinsByGroup(g.id).map(vin=>getVehicleByVin(vin)).filter(Boolean);
     }else{
         const info=getLabel(currentSelect.id);
-        if(!info){ titleEl.textContent='—'; return; }
+        if(!info){ titleEl.textContent='—'; contentEl.innerHTML=''; return; }
         titleCrumb=`${info.group.name} / ${info.label.name}（${getVinsByLabel(currentSelect.id).length} 辆）`;
         vehiclesList=getVinsByLabel(currentSelect.id).map(vin=>getVehicleByVin(vin)).filter(Boolean);
     }
@@ -671,6 +672,7 @@ function renderVehiclePanel(list){
     const total=filtered.length;
     const start=(currentVehiclePage-1)*vehiclePageSize;
     const pageData=filtered.slice(start,start+vehiclePageSize);
+    currentPageVins=pageData.map(v=>v.vin); // 表头全选仅作用于当前页
     let html='';
     // 操作行：移入车辆、批量移出（仅子标签视图）、导出（导出当前标签下车辆）
     html+='<div class="panel-action-bar">';
@@ -681,75 +683,80 @@ function renderVehiclePanel(list){
     }else{
         html+='<span class="selected-tip">标签组聚合视图：仅支持查看与导出；移入/移出请在左侧选择具体子标签</span>';
     }
-    html+='<button class="btn btn-export" onclick="doExport()">导出</button>';
+    html+='<button class="btn push-right" onclick="doExport()">导出</button>';
     html+='</div>';
     // 查询区
     html+='<div class="panel-search">';
     html+='<div class="si"><label>车架号</label><input type="text" id="p_vin" placeholder="请输入车架号" value="'+(document.getElementById('p_vin')?document.getElementById('p_vin').value:'')+'"></div>';
     html+='<div class="si"><label>车型名称</label><input type="text" id="p_model" placeholder="请输入车型名称" value="'+(document.getElementById('p_model')?document.getElementById('p_model').value:'')+'"></div>';
     html+='<div class="si"><label>车牌号</label><input type="text" id="p_plate" placeholder="请输入车牌号" value="'+(document.getElementById('p_plate')?document.getElementById('p_plate').value:'')+'"></div>';
-    html+='<div class="si"><label>车辆状态</label><select id="p_status"><option value="">全部</option><option>在库-正常使用</option><option>在库-闲置留用</option><option>在库-闲置可调出</option><option>在库-维修</option><option>在库-保养中</option><option>在库-待报废</option><option>待分配</option><option>已报废</option><option>已处置</option></select></div>';
-    html+='<div class="si" style="margin-left:auto;"><button class="btn btn-primary" style="height:32px;" onclick="onVehicleSearch()">查询</button><button class="btn" style="height:32px;margin-left:8px;" onclick="onVehicleReset()">重置</button></div>';
+    html+='<div class="si"><label>车辆状态</label><select id="p_status"><option value="">全部</option>'+vehicleStatusList.map(s=>'<option'+(s===fs?' selected':'')+'>'+s+'</option>').join('')+'</select></div>';
+    // 查询（主按钮）与重置（次按钮）间距 12px（规范二.2）
+    html+='<div class="si" style="margin-left:auto;"><button class="btn btn-primary" onclick="onVehicleSearch()">查询</button><button class="btn" style="margin-left:12px;" onclick="onVehicleReset()">重置</button></div>';
     html+='</div>';
     // 表格
     if(total===0){ html+='<div class="empty-state"><div class="empty-icon">🚗</div><div class="empty-text">'+(currentSelect.type==='label'?'该标签下暂无车辆，可点击「移入车辆」添加':'该标签组下暂无车辆')+'</div></div>'; return html; }
+    // 表头全选状态：仅当当前页车辆全部被勾选时回显勾选（表头全选仅作用于当前页）
+    const allPageChecked = pageData.length>0 && pageData.every(v=>selectedVehicleVins.has(v.vin));
+    // 列宽/对齐依据 PRD《标签管理》3.5.5：文本列左对齐、编码列（车架号/打标时间）居中、操作与复选框列居中
     html+='<div class="table-wrapper"><table><thead><tr>';
-    if(currentSelect.type==='label'){ html+='<th style="width:50px;text-align:center"><input type="checkbox" onchange="vehicleCheckAll(this)"></th>'; }
-    html+='<th>车架号</th><th>车型名称（中）</th><th>车牌号</th><th>车辆状态</th><th>归属项目</th>';
-    if(currentSelect.type==='label'){ html+='<th>打标时间</th>'; }else{ html+='<th>所属子标签</th>'; }
-    html+='<th style="width:160px;text-align:center">操作</th></tr></thead><tbody>';
+    if(currentSelect.type==='label'){ html+='<th class="col-center" style="width:50px"><input type="checkbox" '+(allPageChecked?'checked':'')+' onchange="vehicleCheckAll(this)"></th>'; }
+    html+='<th class="col-center" style="width:200px">车架号</th><th class="col-left ellipsis" style="width:180px">车型名称（中）</th>'
+        +'<th class="col-left" style="width:120px">车牌号</th><th class="col-left" style="width:160px">车辆状态</th>'
+        +'<th class="col-left" style="width:160px">归属项目</th>';
+    if(currentSelect.type==='label'){ html+='<th class="col-center" style="width:180px">打标时间</th>'; }else{ html+='<th class="col-left" style="width:180px">所属子标签</th>'; }
+    html+='<th class="col-center" style="width:140px">操作</th></tr></thead><tbody>';
     pageData.forEach(v=>{
-        const tagCls=statusTagClass[v.vehicle_status]||'gray';
+        const tagCls=statusTagClass[v.vehicle_status]||'tag-default';
         const selCls=selectedVehicleVins.has(v.vin)?' selected':'';
         html+='<tr'+(selCls?' class="selected"':'')+'>';
         if(currentSelect.type==='label'){
             const ck=selectedVehicleVins.has(v.vin)?'checked':'';
-            html+=`<td style="text-align:center"><input type="checkbox" ${ck} onchange="vehicleCheck('${v.vin}',this)"></td>`;
+            html+=`<td class="col-center"><input type="checkbox" ${ck} onchange="vehicleCheck('${v.vin}',this)"></td>`;
         }
-        html+=`<td><a class="action-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${v.vin}">${v.vin}</a></td>`;
-        html+=`<td>${v.model_name}</td><td>${v.plate_no||'—'}</td>`;
-        html+=`<td><span class="status-tag ${tagCls}">${v.vehicle_status}</span></td>`;
-        html+=`<td>${v.project||'—'}</td>`;
+        html+=`<td class="col-center ellipsis" title="${v.vin}"><a class="btn-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${v.id}">${v.vin}</a></td>`;
+        html+=`<td class="col-left ellipsis" title="${v.model_name}">${v.model_name}</td><td class="col-left">${v.plate_no||'—'}</td>`;
+        html+=`<td class="col-left"><span class="tag ${tagCls}">${v.vehicle_status}</span></td>`;
+        html+=`<td class="col-left">${v.project||'—'}</td>`;
         if(currentSelect.type==='label'){
-            html+=`<td>${getLabelTime(v.vin,currentSelect.id)}</td>`;
+            html+=`<td class="col-center">${getLabelTime(v.vin,currentSelect.id)}</td>`;
         }else{
             // 标签组聚合：显示该车在该组下的子标签
             const g=getGroup(currentSelect.id);
             const lids=(vehicleLabels[v.vin]||[]).filter(r=>g.labels.some(l=>l.id===r.labelId)).map(r=>r.labelId);
             const tags=lids.map(lid=>{ const info=getLabel(lid); if(!info) return ''; const c=colorMap[info.label.color]||colorMap.gray; return `<span class="tag ${c.tag}">${info.label.name}</span>`; }).join(' ');
-            html+=`<td><div class="cell-tags">${tags||'—'}</div></td>`;
+            html+=`<td class="col-left"><div class="cell-tags">${tags||'—'}</div></td>`;
         }
-        html+=`<td style="text-align:center">`;
-        if(currentSelect.type==='label'){ html+=`<a class="action-link danger" onclick="removeSingle('${v.vin}')">移出</a>`; }
-        html+=`<a class="action-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${v.vin}" style="margin-left:12px;">详情</a>`;
+        html+=`<td class="col-center">`;
+        if(currentSelect.type==='label'){ html+=`<a class="btn-link link-danger" onclick="removeSingle('${v.vin}')">移出</a>`; }
+        html+=`<a class="btn-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${v.id}">详情</a>`;
         html+=`</td></tr>`;
     });
     html+='</tbody></table></div>';
-    // 分页
-    html+='<div class="pagination-area"><div class="pagination-info">共 <strong>'+total+'</strong> 条记录</div>';
+    // 分页：显示总记录数、当前页码、每页条数（规范二.3）
+    html+='<div class="pagination-area"><div class="pagination-left">';
+    html+='<div class="pagination-info">共 <strong>'+total+'</strong> 条记录</div>';
+    html+='<span class="pagination-pages" id="tagPageInfo"></span></div>';
     html+='<div style="display:flex;align-items:center;gap:8px"><div class="pagination" id="vehiclePagination"></div>';
-    html+='<select class="page-size-select" onchange="changeVehiclePageSize(this.value)"><option value="10" selected>10条/页</option><option value="20">20条/页</option><option value="50">50条/页</option><option value="100">100条/页</option></select></div></div>';
+    // 每页条数按当前 vehiclePageSize 回显，避免重渲染后选中项丢失
+    html+='<select class="page-size-select" onchange="changeVehiclePageSize(this.value)">'+[10,20,50,100].map(n=>'<option value="'+n+'"'+(n===vehiclePageSize?' selected':'')+'>'+n+'条/页</option>').join('')+'</select></div></div>';
     setTimeout(()=>{ renderVehiclePagination(total); },0);
     return html;
 }
 function renderVehiclePagination(total){
     const el=document.getElementById('vehiclePagination');
     if(!el) return;
-    Common.renderPagination({total,currentPage:currentVehiclePage,pageSize:vehiclePageSize,containerId:'vehiclePagination',onPageChange:p=>{currentVehiclePage=p;renderPanel();}});
+    Common.renderPagination({total,currentPage:currentVehiclePage,pageSize:vehiclePageSize,containerId:'vehiclePagination',pageInfoId:'tagPageInfo',onPageChange:p=>{currentVehiclePage=p;renderPanel();}});
 }
 function changeVehiclePageSize(v){ vehiclePageSize=parseInt(v); currentVehiclePage=1; renderPanel(); }
 function onVehicleSearch(){ currentVehiclePage=1; selectedVehicleVins.clear(); renderPanel(); }
 function onVehicleReset(){ ['p_vin','p_model','p_plate','p_status'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); currentVehiclePage=1; selectedVehicleVins.clear(); renderPanel(); }
+// 表头全选：仅勾选/取消当前页所有车辆（跨页已选项保留）
 function vehicleCheckAll(el){
-    const list=getCurrentPanelVins();
-    list.forEach(vin=>{ if(el.checked) selectedVehicleVins.add(vin); else selectedVehicleVins.delete(vin); });
+    currentPageVins.forEach(vin=>{ if(el.checked) selectedVehicleVins.add(vin); else selectedVehicleVins.delete(vin); });
     renderPanel();
 }
 function vehicleCheck(vin,el){ if(el.checked) selectedVehicleVins.add(vin); else selectedVehicleVins.delete(vin); renderPanel(); }
-function getCurrentPanelVins(){
-    if(currentSelect.type==='label') return getVinsByLabel(currentSelect.id);
-    return getVinsByGroup(currentSelect.id);
-}
 
 // ===== 颜色选择器 =====
 function buildColorPicker(containerId, selected){
@@ -874,6 +881,12 @@ function saveLabel(){
     if(dup){ showErr('l_name_err','该标签组下已存在同名子标签'); return; } hideErr('l_name_err');
     if(labelEditMode){
         const info=getLabel(labelEditMode);
+        // 编辑态切换「所属标签组」时，需先把子标签迁移到新分组再保存
+        if(info.group.id!==gid){
+            info.group.labels=info.group.labels.filter(l=>l.id!==labelEditMode);
+            g.labels.push(info.label);
+            labelEditGroupId=gid;
+        }
         info.label.name=name; info.label.color=labelEditSelectedColor; info.label.sort=sort; info.label.remark=remark;
     }else{
         g.labels.push({id:'l'+Date.now(),name,color:labelEditSelectedColor,sort,remark});
@@ -956,9 +969,9 @@ function renderImportTable(){
         if(isAdded) tr.className='added';
         // 当前标签
         const myLabels=(vehicleLabels[v.vin]||[]).map(r=>{ const info=getLabel(r.labelId); if(!info) return ''; const c=colorMap[info.label.color]||colorMap.gray; return `<span class="tag ${c.tag}">${info.label.name}</span>`; }).join(' ');
-        tr.innerHTML=`<td style="text-align:center">${isAdded?'<span class="added-mark">已添加</span>':'<input type="checkbox" data-vin="'+v.vin+'" '+ckd+' onchange="impToggle(this)">'}</td>
+        tr.innerHTML=`<td class="col-center">${isAdded?'<span class="added-mark">已添加</span>':'<input type="checkbox" data-vin="'+v.vin+'" '+ckd+' onchange="impToggle(this)">'}</td>
             <td>${v.vin}</td><td>${v.model_name}</td><td>${v.plate_no||'—'}</td>
-            <td><span class="status-tag ${statusTagClass[v.vehicle_status]||'gray'}">${v.vehicle_status}</span></td>
+            <td><span class="tag ${statusTagClass[v.vehicle_status]||'tag-default'}">${v.vehicle_status}</span></td>
             <td>${v.project||'—'}</td><td><div class="cell-tags">${myLabels||'—'}</div></td>`;
         tbody.appendChild(tr);
     });

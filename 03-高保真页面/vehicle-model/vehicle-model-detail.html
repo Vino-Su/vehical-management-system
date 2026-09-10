@@ -4,69 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>车型信息详情</title>
+    <!--
+      页面用途：车型信息详情页（查看态 / 编辑态切换）+ 变更日志
+      核心功能：查看态分组只读展示车型与版本字段；编辑态表单修改（不可编辑字段置灰）；顶部操作栏（关闭/编辑/新建版本）；
+                底部固定操作栏（取消/确定）；变更日志支持复选、导出（选中导出或全量导出）
+      交互逻辑：URL mode=edit 直接进入编辑态；编辑态校验必填项，失败在控件下方显示 .field-error 红字；
+                写操作日志按操作时间倒序；底部操作栏与内容区内边距复用 common.css .edit-footer-bar / .content.has-footer
+    -->
     <link rel="stylesheet" href="../components/common.css">
+    <link rel="stylesheet" href="../components/form.css">
     <style>
-        /* ===== 信息分组 ===== */
+        /* ===== 信息分组标题：H3 20px / 600（规范一.2） ===== */
         .info-section { margin-bottom: 28px; }
         .info-section-title {
-            font-size: 15px; font-weight: 600; color: var(--text-primary);
+            font-size: 20px; font-weight: 600; line-height: 30px; color: var(--text-primary);
             padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
             margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
         }
         .info-section-title::before {
             content: ''; display: inline-block; width: 3px; height: 16px; background: var(--primary); border-radius: 2px;
         }
+        /* 查看态字段：标签在上、值在下（只读展示，非输入控件） */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; }
         .info-grid.cols-1 { grid-template-columns: 1fr; }
         .info-field { display: flex; flex-direction: column; gap: 2px; }
         .info-field.col-span-2 { grid-column: span 2; }
-        .info-field .field-label { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-        .info-field .field-value { font-size: 14px; color: var(--text-primary); line-height: 1.6; min-height: 22px; }
+        .info-field .field-label { font-size: 14px; color: var(--text-secondary); line-height: 22px; }
+        .info-field .field-value { font-size: 14px; color: var(--text-primary); line-height: 22px; min-height: 22px; }
         .info-field .field-value.empty { color: var(--text-disabled); }
 
-        /* ===== 编辑态表单 ===== */
+        /* ===== 编辑态表单：分组标题 + 补充样式（标签左置外置、控件尺寸、错误提示复用 form.css .form-row） ===== */
         .form-section { margin-bottom: 28px; }
         .form-section .section-title {
-            font-size: 15px; font-weight: 600; color: var(--text-primary);
+            font-size: 20px; font-weight: 600; line-height: 30px; color: var(--text-primary);
             padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
             margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
         }
         .form-section .section-title::before {
             content: ''; display: inline-block; width: 3px; height: 16px; background: var(--primary); border-radius: 2px;
         }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
-        .form-grid.cols-1 { grid-template-columns: 1fr; }
-        .form-item { display: flex; flex-direction: column; gap: 6px; }
-        .form-item label { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
-        .form-item .required { color: var(--error); margin-right: 4px; }
-        .form-item input, .form-item select, .form-item textarea {
-            height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
-            padding: 0 12px; font-size: 14px; color: var(--text-primary); background: var(--bg-container);
-            outline: none; font-family: inherit;
-        }
-        .form-item input:focus, .form-item select:focus, .form-item textarea:focus {
-            border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
-        }
-        .form-item input::placeholder, .form-item textarea::placeholder { color: var(--text-disabled); }
-        .form-item input.readonly, .form-item select.readonly { background: #f5f5f5; color: var(--text-secondary); cursor: not-allowed; }
-        .form-item textarea { height: auto; min-height: 80px; padding: 8px 12px; resize: vertical; }
+        .form-row textarea { min-height: 80px; }
 
-        /* ===== 底部操作栏 ===== */
-        .edit-footer-bar {
-            position: fixed; bottom: 0; left: var(--sidebar-width); right: 0;
-            height: var(--footer-bar-height); background: var(--bg-container);
-            border-top: 1px solid var(--border-color);
-            display: none; align-items: center; justify-content: flex-end; gap: 12px;
-            padding-right: 24px; z-index: 5; box-shadow: 0 -2px 8px rgba(0,0,0,.06);
-        }
+        /* ===== 编辑态底部操作栏：布局复用 common.css .edit-footer-bar，此处仅控制显隐 ===== */
+        .edit-footer-bar { display: none; }
         .edit-footer-bar.show { display: flex; }
 
         /* ===== 变更日志 ===== */
-        .changelog-section { margin-top: 32px; padding-top: 24px; border-top: 2px solid var(--border-color); }
+        .changelog-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); }
         .changelog-section .section-title { margin-bottom: 16px; }
-        .sub-action-bar { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 12px; gap: 8px; }
-        .log-type-modify { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; line-height: 20px; background: #e6f4ff; color: #1677ff; }
-        .log-type-delete { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; line-height: 20px; background: #fff2f0; color: #ff4d4f; }
+        /* 表头对齐：common.css 中 .table-wrapper thead th 的 text-align:left 优先级更高，此处补齐 col-center */
+        .table-wrapper thead th.col-center { text-align: center; }
+        /* 变更日志表：宽度不足时横向滚动，禁止列挤压换行（规范二.4） */
+        .log-table { min-width: 1040px; }
+        .log-table td.num { white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -74,16 +64,13 @@
     <aside class="sidebar" id="sidebar"></aside>
     <div class="main-area">
         <div id="header"></div>
-        <div class="content">
+        <div class="content" id="contentArea">
             <div class="page-container">
-                <!-- 页面头部 -->
-                <div class="page-header">
-                    <div class="page-title" id="pageTitle">车型信息详情</div>
-                    <div style="display:flex;align-items:center;gap:8px">
-                        <button class="btn" onclick="goBack()">关闭</button>
-                        <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">编辑</button>
-                        <button class="btn btn-primary" id="newVersionBtn" onclick="goNewVersion()">新建版本</button>
-                    </div>
+                <!-- 顶部操作栏：不用页面大标题（规范二.5）；操作按钮组内间距 8px、主次按钮 12px -->
+                <div class="action-bar">
+                    <button class="btn push-right" onclick="goBack()">关闭</button>
+                    <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">编辑</button>
+                    <button class="btn btn-primary" id="newVersionBtn" onclick="goNewVersion()">新建版本</button>
                 </div>
 
                 <!-- 查看态 -->
@@ -141,23 +128,25 @@
                         </div>
                     </div>
 
-                    <!-- 变更日志 -->
+                    <!-- 变更日志：支持全选/单选（用于导出），默认按操作时间倒序 -->
                     <div class="changelog-section">
                         <div class="info-section-title">变更日志</div>
-                        <div class="sub-action-bar">
-                            <button class="btn" onclick="exportChangelog()"><span class="btn-icon">⤓</span>导出</button>
+                        <div class="action-bar">
+                            <button class="btn push-right" onclick="exportChangelog()"><span class="btn-icon">⤓</span>导出</button>
                         </div>
                         <div class="table-wrapper">
-                            <table>
+                            <table class="log-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:100px;text-align:center">操作类型</th>
-                                        <th style="width:160px">修改字段</th>
-                                        <th style="width:200px">修改前</th>
-                                        <th style="width:200px">修改后</th>
-                                        <th style="width:120px">操作人</th>
-                                        <th style="width:180px">操作时间</th>
-                                        <th style="width:120px">操作来源</th>
+                                        <th class="col-center" style="width:50px"><input type="checkbox" id="logCheckAll" onchange="toggleLogCheckAll(this)"></th>
+                                        <th class="col-left" style="width:180px">操作对象</th>
+                                        <th class="col-center" style="width:90px">操作类型</th>
+                                        <th class="col-left" style="width:130px">修改字段</th>
+                                        <th class="col-left" style="width:120px">修改前</th>
+                                        <th class="col-left" style="width:120px">修改后</th>
+                                        <th class="col-left" style="width:90px">操作人</th>
+                                        <th class="col-center" style="width:170px">操作时间</th>
+                                        <th class="col-left" style="width:90px">操作来源</th>
                                     </tr>
                                 </thead>
                                 <tbody id="logTableBody"></tbody>
@@ -173,17 +162,17 @@
                         <div class="form-section">
                             <div class="section-title">车型信息</div>
                             <div class="form-grid">
-                                <div class="form-item"><label>车型来源</label><input type="text" id="e_model_source" class="readonly" readonly></div>
-                                <div class="form-item"><label><span class="required">*</span> 车型名称（中）</label><input type="text" id="e_model_name"></div>
-                                <div class="form-item"><label>车型名称（英）</label><input type="text" id="e_model_name_en"></div>
-                                <div class="form-item"><label><span class="required">*</span> 车型别名</label>
-                                    <select id="e_model_alias"><option value="">请选择</option><option>扫路车</option><option>运输车</option><option>小型清洗机</option><option>小型扫路机</option><option>皮卡</option></select>
+                                <div class="form-row"><label>车型来源</label><div class="control"><input type="text" id="e_model_source" readonly></div></div>
+                                <div class="form-row"><label><span class="required">*</span>车型名称（中）</label><div class="control"><input type="text" id="e_model_name"></div></div>
+                                <div class="form-row"><label>车型名称（英）</label><div class="control"><input type="text" id="e_model_name_en"></div></div>
+                                <div class="form-row"><label><span class="required">*</span>车型别名</label>
+                                    <div class="control"><select id="e_model_alias"><option value="">请选择</option><option>扫路车</option><option>运输车</option><option>小型清洗机</option><option>小型扫路机</option><option>皮卡</option></select></div>
                                 </div>
-                                <div class="form-item"><label><span class="required">*</span> 用途分类</label>
-                                    <select id="e_vehicle_category"><option value="">请选择</option><option>作业机动车</option><option>非机动车</option><option>乘用车</option><option>其他</option></select>
+                                <div class="form-row"><label><span class="required">*</span>用途分类</label>
+                                    <div class="control"><select id="e_vehicle_category"><option value="">请选择</option><option>作业机动车</option><option>非机动车</option><option>乘用车</option><option>其他</option></select></div>
                                 </div>
-                                <div class="form-item"><label>车型编码</label><input type="text" id="e_model_code"></div>
-                                <div class="form-item"><label><span class="required">*</span> 编码头</label><input type="text" id="e_header_code" class="readonly" readonly></div>
+                                <div class="form-row"><label>车型编码</label><div class="control"><input type="text" id="e_model_code"></div></div>
+                                <div class="form-row"><label><span class="required">*</span>编码头</label><div class="control"><input type="text" id="e_header_code" readonly></div></div>
                             </div>
                         </div>
 
@@ -191,14 +180,14 @@
                         <div class="form-section">
                             <div class="section-title">版本信息</div>
                             <div class="form-grid">
-                                <div class="form-item"><label><span class="required">*</span> 车型版本</label><input type="text" id="e_version"></div>
-                                <div class="form-item"><label><span class="required">*</span> 车辆型号</label><input type="text" id="e_vehicle_model"></div>
-                                <div class="form-item"><label>历史车型编码</label><input type="text" id="e_old_model_code" class="readonly" readonly placeholder="暂不处理"></div>
-                                <div class="form-item"><label><span class="required">*</span> 动力类别</label>
-                                    <select id="e_power_type"><option value="">请选择</option><option>纯电动</option><option>柴油</option><option>汽油</option><option>混动</option><option>天然气</option></select>
+                                <div class="form-row"><label><span class="required">*</span>车型版本</label><div class="control"><input type="text" id="e_version"></div></div>
+                                <div class="form-row"><label><span class="required">*</span>车辆型号</label><div class="control"><input type="text" id="e_vehicle_model"></div></div>
+                                <div class="form-row"><label>历史车型编码</label><div class="control"><input type="text" id="e_old_model_code" readonly placeholder="暂不处理"></div></div>
+                                <div class="form-row"><label><span class="required">*</span>动力类别</label>
+                                    <div class="control"><select id="e_power_type"><option value="">请选择</option><option>纯电动</option><option>柴油</option><option>汽油</option><option>混动</option><option>天然气</option></select></div>
                                 </div>
-                                <div class="form-item"><label><span class="required">*</span> 排放标准</label>
-                                    <select id="e_emission_std"><option value="">请选择</option><option>国三</option><option>国四</option><option>国五</option><option>国六</option><option>纯电动</option><option>非道路移动机械</option></select>
+                                <div class="form-row"><label><span class="required">*</span>排放标准</label>
+                                    <div class="control"><select id="e_emission_std"><option value="">请选择</option><option>国三</option><option>国四</option><option>国五</option><option>国六</option><option>纯电动</option><option>非道路移动机械</option></select></div>
                                 </div>
                             </div>
                         </div>
@@ -207,26 +196,26 @@
                         <div class="form-section">
                             <div class="section-title">主要参数信息</div>
                             <div class="form-grid">
-                                <div class="form-item"><label><span class="required">*</span> 底盘厂商</label><input type="text" id="e_chassis_mfr"></div>
-                                <div class="form-item"><label>底盘型号</label><input type="text" id="e_chassis_model"></div>
-                                <div class="form-item"><label><span class="required">*</span> 整车厂商</label><input type="text" id="e_manufacturer"></div>
-                                <div class="form-item"><label>最大重量 (KG)</label><input type="number" id="e_max_weight" oninput="calcLoadClass()"></div>
-                                <div class="form-item"><label>整车质量 (KG)</label><input type="number" id="e_curb_weight"></div>
-                                <div class="form-item"><label>载重分类</label><input type="text" id="e_load_class" class="readonly" readonly placeholder="自动计算"></div>
-                                <div class="form-item"><label>主发动机厂家</label><input type="text" id="e_main_eng_mfr"></div>
-                                <div class="form-item"><label>主发动机型号/驱动电机型号</label><input type="text" id="e_main_eng_model"></div>
-                                <div class="form-item"><label>驱动电机峰值功率 (KW)</label><input type="number" id="e_peak_power"></div>
-                                <div class="form-item"><label>动力电池额定电压/容量(V/Ah)</label><input type="text" id="e_battery_spec"></div>
-                                <div class="form-item"><label>最大清扫宽度(mm)</label><input type="number" id="e_max_sweep"></div>
-                                <div class="form-item"><label>最大冲洗宽度(mm)</label><input type="number" id="e_max_wash"></div>
+                                <div class="form-row"><label><span class="required">*</span>底盘厂商</label><div class="control"><input type="text" id="e_chassis_mfr"></div></div>
+                                <div class="form-row"><label>底盘型号</label><div class="control"><input type="text" id="e_chassis_model"></div></div>
+                                <div class="form-row"><label><span class="required">*</span>整车厂商</label><div class="control"><input type="text" id="e_manufacturer"></div></div>
+                                <div class="form-row"><label>最大重量 (KG)</label><div class="control"><input type="number" id="e_max_weight" oninput="calcLoadClass()"></div></div>
+                                <div class="form-row"><label>整车质量 (KG)</label><div class="control"><input type="number" id="e_curb_weight"></div></div>
+                                <div class="form-row"><label>载重分类</label><div class="control"><input type="text" id="e_load_class" readonly placeholder="自动计算"></div></div>
+                                <div class="form-row"><label>主发动机厂家</label><div class="control"><input type="text" id="e_main_eng_mfr"></div></div>
+                                <div class="form-row"><label>主发动机型号/驱动电机型号</label><div class="control"><input type="text" id="e_main_eng_model"></div></div>
+                                <div class="form-row"><label>驱动电机峰值功率 (KW)</label><div class="control"><input type="number" id="e_peak_power"></div></div>
+                                <div class="form-row"><label>动力电池额定电压/容量(V/Ah)</label><div class="control"><input type="text" id="e_battery_spec"></div></div>
+                                <div class="form-row"><label>最大清扫宽度(mm)</label><div class="control"><input type="number" id="e_max_sweep"></div></div>
+                                <div class="form-row"><label>最大冲洗宽度(mm)</label><div class="control"><input type="number" id="e_max_wash"></div></div>
                             </div>
                         </div>
 
                         <!-- 其他信息 -->
                         <div class="form-section">
                             <div class="section-title">其他信息</div>
-                            <div class="form-grid cols-1">
-                                <div class="form-item"><label>备注</label><textarea id="e_remark" maxlength="500"></textarea></div>
+                            <div class="form-grid form-grid--full">
+                                <div class="form-row"><label>备注</label><div class="control"><textarea id="e_remark" maxlength="500"></textarea></div></div>
                             </div>
                         </div>
                     </form>
@@ -235,10 +224,10 @@
         </div>
     </div>
 
-    <!-- 编辑态底部操作栏 -->
+    <!-- 编辑态底部操作栏（复用 common.css .edit-footer-bar，默认隐藏由 .show 控制） -->
     <div class="edit-footer-bar" id="editFooterBar">
-        <button class="btn btn-lg" onclick="cancelEdit()">取消</button>
-        <button class="btn btn-primary btn-lg" onclick="saveEdit()">确定</button>
+        <button class="btn" onclick="cancelEdit()">取消</button>
+        <button class="btn btn-primary" onclick="saveEdit()">确定</button>
     </div>
 </div>
 
@@ -255,7 +244,6 @@ Common.initLayout({
     sidebarId: 'sidebar',
     activeMenuId: 'vehicle-model',
     headerId: 'header',
-    breadcrumbs: [{ label: '车辆管理', href: './vehicle-model-list.html' }, { label: '车型管理', href: './vehicle-model-list.html' }, { label: '车型信息详情' }],
     headerOptions: { showProject: false }
 });
 
@@ -364,21 +352,54 @@ function renderEditForm() {
     document.getElementById('e_remark').value = version.remark || '';
 }
 
-// 渲染变更日志
+// ===== 变更日志：复选框选中集（用于导出，不支持跨页/跨筛选保留） =====
+let selectedLogIds = new Set();
+// 操作对象：车型名称 + 版本号（PRD 4.6）
+const logTarget = model.model_name + ' ' + version.version;
+
+// 渲染变更日志：默认按操作时间由近到远倒序（PRD 3.2.5）
 function renderChangelog() {
     const tbody = document.getElementById('logTableBody');
-    tbody.innerHTML = mockChangelog.map(log => {
-        const typeClass = log.type === '修改' ? 'log-type-modify' : 'log-type-delete';
+    const logs = [...mockChangelog].sort((a, b) => b.time.localeCompare(a.time));
+    tbody.innerHTML = logs.map((log, idx) => {
+        const typeClass = log.type === '修改' ? 'tag tag-blue' : 'tag tag-red';
+        const ck = selectedLogIds.has(idx) ? 'checked' : '';
         return `<tr>
-            <td style="text-align:center"><span class="${typeClass}">${log.type}</span></td>
-            <td>${log.field || '—'}</td>
-            <td>${log.before || '—'}</td>
-            <td>${log.after || '—'}</td>
-            <td>${log.operator}</td>
-            <td>${log.time}</td>
-            <td>${log.source}</td>
+            <td class="col-center"><input type="checkbox" data-lidx="${idx}" ${ck} onchange="toggleLogCheck(${idx},this)"></td>
+            <td class="col-left ellipsis" title="${logTarget}" style="max-width:180px">${logTarget}</td>
+            <td class="col-center"><span class="${typeClass}">${log.type}</span></td>
+            <td class="col-left ellipsis" title="${log.field || ''}" style="max-width:160px">${log.field || '—'}</td>
+            <td class="col-left">${log.before || '—'}</td>
+            <td class="col-left">${log.after || '—'}</td>
+            <td class="col-left">${log.operator}</td>
+            <td class="col-center num">${log.time}</td>
+            <td class="col-left">${log.source}</td>
         </tr>`;
     }).join('');
+}
+
+// ===== 变更日志复选框：单选 / 全选 =====
+function toggleLogCheck(idx, cb) {
+    if (cb.checked) selectedLogIds.add(idx);
+    else selectedLogIds.delete(idx);
+    syncLogCheckAll();
+}
+
+function toggleLogCheckAll(cb) {
+    const boxes = document.querySelectorAll('#logTableBody input[type="checkbox"][data-lidx]');
+    boxes.forEach(box => {
+        box.checked = cb.checked;
+        const idx = parseInt(box.dataset.lidx, 10);
+        if (cb.checked) selectedLogIds.add(idx);
+        else selectedLogIds.delete(idx);
+    });
+}
+
+// 同步表头全选框状态
+function syncLogCheckAll() {
+    const boxes = document.querySelectorAll('#logTableBody input[type="checkbox"][data-lidx]');
+    const all = document.getElementById('logCheckAll');
+    if (all) all.checked = boxes.length > 0 && selectedLogIds.size === boxes.length;
 }
 
 function calcLoadClass() {
@@ -394,9 +415,10 @@ function toggleEdit() {
     document.getElementById('viewMode').style.display = 'none';
     document.getElementById('editMode').style.display = 'block';
     document.getElementById('editFooterBar').classList.add('show');
+    // 内容区底部预留固定操作栏高度，避免遮挡（common.css .content.has-footer）
+    document.getElementById('contentArea').classList.add('has-footer');
     document.getElementById('editBtn').style.display = 'none';
     document.getElementById('newVersionBtn').style.display = 'none';
-    document.getElementById('pageTitle').textContent = '编辑车型信息';
     renderEditForm();
 }
 
@@ -404,22 +426,61 @@ function cancelEdit() {
     document.getElementById('viewMode').style.display = 'block';
     document.getElementById('editMode').style.display = 'none';
     document.getElementById('editFooterBar').classList.remove('show');
+    document.getElementById('contentArea').classList.remove('has-footer');
     document.getElementById('editBtn').style.display = '';
     document.getElementById('newVersionBtn').style.display = '';
-    document.getElementById('pageTitle').textContent = '车型信息详情';
+    clearAllFieldErrors();
 }
 
+// ===== 表单校验：错误提示显示在控件下方（规范三.2）=====
+function getFieldLabel(el) {
+    const row = el.closest('.form-row');
+    const label = row ? row.querySelector('label') : null;
+    return label ? label.textContent.replace('*', '').trim() : '该项';
+}
+
+function clearFieldError(row) {
+    row.classList.remove('has-error');
+    const err = row.querySelector('.field-error');
+    if (err) err.remove();
+}
+
+function clearAllFieldErrors() {
+    document.querySelectorAll('#editForm .form-row.has-error').forEach(clearFieldError);
+}
+
+function showFieldError(el, msg) {
+    const row = el.closest('.form-row');
+    if (!row) return;
+    clearFieldError(row);
+    row.classList.add('has-error');
+    const err = document.createElement('div');
+    err.className = 'field-error';
+    err.textContent = msg;
+    (row.querySelector('.control') || row).appendChild(err);
+}
+
+// 输入/选择后即时清除该项错误提示
+document.querySelectorAll('#editForm .form-row .control').forEach(ctrl => {
+    ctrl.addEventListener('input', () => { const row = ctrl.closest('.form-row'); if (row) clearFieldError(row); });
+    ctrl.addEventListener('change', () => { const row = ctrl.closest('.form-row'); if (row) clearFieldError(row); });
+});
+
 function saveEdit() {
-    // 简单校验
+    clearAllFieldErrors();
+    // 必填校验
     const req = ['e_model_name','e_model_alias','e_vehicle_category','e_version','e_vehicle_model','e_power_type','e_emission_std','e_chassis_mfr','e_manufacturer'];
     for (const id of req) {
-        if (!document.getElementById(id).value.trim()) {
-            Common.toast('请填写必填项');
-            document.getElementById(id).focus();
+        const el = document.getElementById(id);
+        if (!el.value.trim()) {
+            const label = getFieldLabel(el);
+            showFieldError(el, (el.tagName === 'SELECT' ? '请选择' : '请输入') + label);
+            Common.showToast('请完善必填项：' + label, 'warning');
+            el.focus();
             return;
         }
     }
-    Common.toast('保存成功');
+    Common.showToast('保存成功', 'success');
     cancelEdit();
     renderView();
 }
@@ -432,8 +493,20 @@ function goNewVersion() {
     window.location.href = `./vehicle-model-new-version.html?modelId=${modelId}&baseVersionId=${versionId}`;
 }
 
+// ===== 变更日志导出：选中则导出选中记录，未选中则确认后全量导出（PRD 3.2.5） =====
 function exportChangelog() {
-    Common.toast('导出成功：车型变更日志_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.xlsx');
+    const fileName = '车型变更日志_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.xlsx';
+    if (selectedLogIds.size > 0) {
+        Common.showToast('导出成功：已导出选中的 ' + selectedLogIds.size + ' 条变更记录（' + fileName + '）', 'success');
+        return;
+    }
+    Common.confirm({
+        title: '提示',
+        content: '是否导出全部变更日志数据？',
+        okText: '是',
+        cancelText: '否',
+        onOk: () => Common.showToast('导出成功：已导出全部变更记录（' + fileName + '）', 'success')
+    });
 }
 
 // 初始化

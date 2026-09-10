@@ -67,8 +67,23 @@ const Common = {
    */
   initLayout(opts) {
     this._basePath = opts.basePath || '';
+    this._activeMenuId = opts.activeMenuId;
     if (opts.sidebarId) this.renderSidebar(opts.sidebarId, opts.activeMenuId);
-    if (opts.headerId) this.renderHeader(opts.headerId, opts.breadcrumbs, opts.headerOptions);
+    // 顶部导航左侧仅展示当前模块名（H3 20px），不展示面包屑（规范二.5 强制）
+    if (opts.headerId) {
+      this.renderHeader(
+        opts.headerId,
+        opts.moduleName || this.getModuleName(opts.activeMenuId),
+        opts.headerOptions
+      );
+    }
+    this.bindGlobalEvents();
+  },
+
+  // ===== 由 activeMenuId 反查所属一级模块名 =====
+  getModuleName(activeMenuId) {
+    const group = this.menuConfig.find(g => g.items.some(i => i.id === activeMenuId));
+    return group ? group.group : '';
   },
 
   // ===== 侧边栏渲染 =====
@@ -114,22 +129,13 @@ const Common = {
     group.classList.toggle('open');
   },
 
-  // ===== 头部渲染 =====
-  renderHeader(containerId, breadcrumbs, options) {
+  // ===== 头部渲染（规范二.5：禁止面包屑，左侧仅当前模块名 H3 20px）=====
+  renderHeader(containerId, moduleName, options) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
     let html = '<div class="header-left">';
-    if (breadcrumbs && breadcrumbs.length) {
-      breadcrumbs.forEach((bc, i) => {
-        if (i > 0) html += '<span class="breadcrumb-sep">/</span>';
-        if (bc.href) {
-          html += `<a class="breadcrumb-item" href="${bc.href}">${bc.label}</a>`;
-        } else {
-          html += `<span class="breadcrumb-item current">${bc.label}</span>`;
-        }
-      });
-    }
+    if (moduleName) html += `<span class="header-module-name">${moduleName}</span>`;
     html += '</div>';
 
     html += '<div class="header-right">';
@@ -143,20 +149,104 @@ const Common = {
     container.className = 'page-header-bar';
   },
 
+  // ===== 弹窗开关 & 全局交互（规范三.3：遮罩可关闭）=====
+  _eventsBound: false,
+  bindGlobalEvents() {
+    if (this._eventsBound) return;
+    this._eventsBound = true;
+
+    document.addEventListener('click', e => {
+      const overlay = e.target.closest && e.target.closest('.modal-overlay');
+      if (overlay && e.target === overlay) this.closeModal(overlay);
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const opened = document.querySelectorAll('.modal-overlay.active');
+      if (opened.length) this.closeModal(opened[opened.length - 1]);
+    });
+  },
+  openModal(id) {
+    const el = typeof id === 'string' ? document.getElementById(id) : id;
+    if (el) el.classList.add('active');
+  },
+  /**
+   * 关闭弹窗
+   * 关闭后会派发 `modal:close` 事件（bubbles），页面可通过
+   *   document.getElementById('xxxModal').addEventListener('modal:close', cleanupFn)
+   * 挂接清理逻辑（重置表单、清空已选集合等），
+   * 保证「点遮罩关闭」与「点 × / 取消关闭」行为一致。
+   */
+  closeModal(id) {
+    const el = typeof id === 'string' ? document.getElementById(id) : id;
+    if (!el) return;
+    // 防重入：已关闭的弹窗不再重复派发关闭事件
+    const wasActive = el.classList.contains('active');
+    if (el.dataset && el.dataset.transient) {
+      el.remove();
+      if (wasActive) el.dispatchEvent(new CustomEvent('modal:close', { bubbles: true }));
+      return;
+    }
+    if (!wasActive) return;
+    el.classList.remove('active');
+    el.dispatchEvent(new CustomEvent('modal:close', { bubbles: true }));
+  },
+
+  /**
+   * 规范化确认弹窗（替代原生 confirm）
+   * @param {Object} opts { title, content, okText, cancelText, danger, onOk }
+   */
+  confirm(opts) {
+    const o = Object.assign({ title: '提示', content: '', okText: '确定', cancelText: '取消', danger: false }, opts);
+    const old = document.getElementById('commonConfirmModal');
+    if (old) old.remove();
+
+    const wrap = document.createElement('div');
+    wrap.id = 'commonConfirmModal';
+    wrap.className = 'modal-overlay active';
+    wrap.dataset.transient = '1';
+    wrap.innerHTML =
+      '<div class="modal-box" style="width:420px">' +
+        '<div class="modal-header"><h3>' + o.title + '</h3>' +
+          '<button class="modal-close" type="button" data-act="cancel">×</button></div>' +
+        '<div class="modal-body" style="display:flex;gap:12px;align-items:flex-start">' +
+          '<span style="font-size:22px;color:var(--warning);line-height:1.2">⚠</span>' +
+          '<div style="font-size:14px;line-height:22px;color:var(--text-primary)">' + o.content + '</div>' +
+        '</div>' +
+        '<div class="modal-footer">' +
+          '<button class="btn" type="button" data-act="cancel">' + o.cancelText + '</button>' +
+          '<button class="btn ' + (o.danger ? 'btn-danger' : 'btn-primary') + '" type="button" data-act="ok">' + o.okText + '</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(wrap);
+
+    const close = () => wrap.remove();
+    wrap.addEventListener('click', e => {
+      const act = e.target.getAttribute && e.target.getAttribute('data-act');
+      if (act === 'ok') { close(); if (o.onOk) o.onOk(); }
+      else if (act === 'cancel') { close(); }
+    });
+  },
+
   // ===== 分页渲染 =====
+  // 规范二.3：表格下方显示数据总数、当前页码、每页显示数量、总页数
   _pageCallbacks: {},
-  _pageCallbackId: 0,
   renderPagination(opts) {
-    const { total, currentPage, pageSize, containerId, infoId, onPageChange } = opts;
+    const { total, currentPage, pageSize, containerId, infoId, pageInfoId, onPageChange } = opts;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const container = document.getElementById(containerId);
     const infoEl = infoId ? document.getElementById(infoId) : null;
 
     if (infoEl) infoEl.textContent = total;
+
+    // 当前页码 / 总页数
+    const pageInfoEl = pageInfoId ? document.getElementById(pageInfoId) : null;
+    if (pageInfoEl) pageInfoEl.textContent = `第 ${currentPage} / ${totalPages} 页`;
+
     if (!container) return;
 
-    // 注册回调
-    const cbId = 'pg_' + (++this._pageCallbackId);
+    // 回调以容器 ID 为键覆盖注册，避免重复渲染时回调累积
+    const cbId = containerId;
     this._pageCallbacks[cbId] = onPageChange;
 
     let html = '';

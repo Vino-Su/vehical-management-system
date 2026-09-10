@@ -5,10 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>调度申请详情</title>
     <link rel="stylesheet" href="../components/common.css">
+    <link rel="stylesheet" href="../components/form.css">
+    <!--
+      调度管理 - 调度申请详情页
+      页面用途：以步骤条展示单个调度申请的「调度申请 / 车辆出库 / 车辆交接」三个环节详情，
+                右侧展示审批流程日志，实现全流程可视化追踪（PRD F04）
+      核心功能：步骤条切换与选中态、申请信息与车辆清单展示、整批发车信息填写、单车出库/交接确认（行内展开表单）、
+                流程日志时间线、底部固定操作栏（始终由任务状态决定，与选中步骤解耦）
+      交互逻辑：底部按钮按任务状态渲染（已提交→出库审批；已撤回/退回→再次提交；待出库→确认出库；
+                已出库→交接审批；待交接→任务结束；已完成/已关闭→关闭）；操作后回写状态并追加流程日志
+    -->
     <style>
         /* ========== 详情页布局 ========== */
+        /* 卡片内边距 16px（规范二.2）：内容区 24px + 卡片 16px，故高度扣除 64(头部)+48(内容区)+32(卡片) */
         .detail-layout {
-            display: flex; gap: 16px; height: calc(100vh - 140px);
+            display: flex; gap: 16px; height: calc(100vh - 144px);
         }
         .detail-main {
             flex: 7; background: var(--bg-container); border-radius: var(--radius);
@@ -20,11 +31,11 @@
         }
 
         /* ========== 顶部操作栏 ========== */
+        /* 规范二.5：内容区不放置页面大标题，仅保留操作按钮并右对齐 */
         .detail-header {
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex; align-items: center; justify-content: flex-end;
             padding: 16px 24px; border-bottom: 1px solid var(--border-color);
         }
-        .detail-header h2 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; }
 
         /* ========== 步骤条 ========== */
         .step-bar {
@@ -99,43 +110,19 @@
         .detail-form-item textarea { height: 60px; padding: 8px 12px; resize: vertical; }
 
         /* ========== 车辆表格 ========== */
-        .vehicle-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        .vehicle-table thead th {
-            background: #fafafa; color: var(--text-secondary); font-weight: 600;
-            font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color);
-        }
-        .vehicle-table tbody td {
-            color: var(--text-primary); font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--border-color);
-        }
-        .vehicle-table tbody tr:hover { background: var(--bg-hover); }
-        .status-tag-inline {
-            display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; line-height: 18px;
-        }
-        .status-tag-inline.blue { background: #e6f4ff; color: #1677ff; }
-        .status-tag-inline.green { background: #f6ffed; color: #52c41a; }
-        .status-tag-inline.red { background: #fff2f0; color: #ff4d4f; }
-        .status-tag-inline.gray { background: #f2f3f5; color: #86909c; }
+        /* 行高 48px、内边距 16px、字号 14px、行 hover 由 common.css 的 .table-wrapper 统一提供 */
+        .vehicle-table { width: 100%; }
 
         /* ========== 单车展开表单（出库/交接共用） ========== */
+        /* 标签左置外置（规范一.1）：复用 form.css 的 .form-row，标签 120px、标签与控件间距 12px */
         .single-form-row {
             background: #f7f8fa; padding: 16px 24px; border-bottom: 1px solid var(--border-color);
         }
         .single-form-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 24px;
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 24px;
         }
-        .single-form-item {
-            display: flex; flex-direction: column; gap: 6px;
-        }
-        .single-form-item label {
-            font-size: 13px; color: var(--text-secondary);
-        }
-        .single-form-item label .required { color: var(--error); margin-right: 2px; }
-        .single-form-item input, .single-form-item select, .single-form-item textarea {
-            height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
-            padding: 0 12px; font-size: 14px; outline: none;
-        }
-        .single-form-item input:focus, .single-form-item select:focus { border-color: var(--primary); }
-        .single-form-item textarea { height: 60px; padding: 8px 12px; resize: vertical; }
+        .single-form-grid .form-row { margin-bottom: 0; }
+        .single-form-grid .form-row > label { flex: 0 0 106px; width: 106px; }
         .single-form-actions {
             display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;
         }
@@ -193,12 +180,11 @@
     <div class="main-area">
         <div id="header"></div>
         <div class="content">
-            <div class="page-container" style="padding:0;overflow:hidden">
+            <div class="page-container" style="overflow:hidden">
                 <div class="detail-layout">
                     <!-- 左侧详情区 -->
                     <div class="detail-main">
                         <div class="detail-header">
-                            <h2 id="pageTitle">调度申请详情</h2>
                             <button class="btn" onclick="window.history.back()">关闭</button>
                         </div>
                         <!-- 步骤条 -->
@@ -242,11 +228,6 @@ Common.initLayout({
     sidebarId: 'sidebar',
     activeMenuId: 'transfer-apply',
     headerId: 'header',
-    breadcrumbs: [
-        { label: '调度管理', href: '../vehicle-dispatch/dispatch-record-list.html' },
-        { label: '调度任务管理', href: '../vehicle-dispatch/dispatch-record-list.html' },
-        { label: '调度申请详情' }
-    ],
     headerOptions: { showProject: false }
 });
 
@@ -458,15 +439,29 @@ function renderApplyStep(content) {
                 <div class="detail-form-item"><label>接收人</label>${isEdit ? `<input type="text" value="${taskData.receiver}">` : `<div class="value">${taskData.receiver}</div>`}</div>
                 <div class="detail-form-item"><label>预计接收时间</label>${isEdit ? `<input type="date" value="${taskData.receive_time}">` : `<div class="value">${taskData.receive_time}</div>`}</div>
                 <div class="detail-form-item"><label>审批人</label>${isEdit ? `<input type="text" value="${taskData.approver}">` : `<div class="value">${taskData.approver}</div>`}</div>
-                <div class="detail-form-item"><label>任务状态</label><div class="value"><span class="status-tag-inline blue">${taskData.task_status}</span></div></div>
+                <div class="detail-form-item"><label>任务状态</label><div class="value"><span class="tag tag-blue">${taskData.task_status}</span></div></div>
             </div>
         </div>
         <div class="detail-section">
             <div class="detail-section-title">车辆清单</div>
-            <table class="vehicle-table">
-                <thead><tr><th>车辆编号</th><th>车架号</th><th>车型名称（中）</th><th>归属项目</th></tr></thead>
-                <tbody>${taskData.vehicles.map(v => `<tr><td>${v.vehicle_no}</td><td>${v.vin}</td><td>${v.model_name}</td><td>${v.project}</td></tr>`).join('')}</tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="vehicle-table">
+                    <thead>
+                        <tr>
+                            <th class="col-center" style="width:120px">车辆编号</th>
+                            <th class="col-center" style="width:200px">车架号</th>
+                            <th class="col-left" style="width:220px">车型名称（中）</th>
+                            <th class="col-left" style="width:160px">归属项目</th>
+                        </tr>
+                    </thead>
+                    <tbody>${taskData.vehicles.map(v => `<tr>
+                        <td class="col-center">${v.vehicle_no}</td>
+                        <td class="col-center">${v.vin}</td>
+                        <td class="col-left ellipsis" style="max-width:220px" title="${v.model_name}">${v.model_name}</td>
+                        <td class="col-left">${v.project}</td>
+                    </tr>`).join('')}</tbody>
+                </table>
+            </div>
         </div>
     `;
 }
@@ -498,27 +493,28 @@ function renderOutboundStep(content) {
         </div>
         <div class="detail-section">
             <div class="detail-section-title">车辆出库确认</div>
-            <table class="vehicle-table">
-                <thead>
-                    <tr>
-                        <th>车辆编号</th>
-                        <th>车架号</th>
-                        <th>车型名称（中）</th>
-                        <th>出库状态</th>
-                        <th style="width:120px;text-align:center">操作</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-wrapper">
+                <table class="vehicle-table">
+                    <thead>
+                        <tr>
+                            <th class="col-center" style="width:120px">车辆编号</th>
+                            <th class="col-center" style="width:200px">车架号</th>
+                            <th class="col-left" style="width:220px">车型名称（中）</th>
+                            <th class="col-left" style="width:130px">出库状态</th>
+                            <th class="col-center" style="width:120px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     `;
     taskData.vehicles.forEach(v => {
-        const statusClass = v.outbound_status === '已出库' ? 'green' : 'blue';
+        const statusClass = v.outbound_status === '已出库' ? 'tag-green' : 'tag-blue';
         html += `
             <tr>
-                <td>${v.vehicle_no}</td>
-                <td>${v.vin}</td>
-                <td>${v.model_name}</td>
-                <td><span class="status-tag-inline ${statusClass}">${v.outbound_status}</span></td>
-                <td style="text-align:center">
+                <td class="col-center">${v.vehicle_no}</td>
+                <td class="col-center">${v.vin}</td>
+                <td class="col-left ellipsis" style="max-width:220px" title="${v.model_name}">${v.model_name}</td>
+                <td class="col-left"><span class="tag ${statusClass}">${v.outbound_status}</span></td>
+                <td class="col-center">
                     ${isEditable ? `<a class="action-link" onclick="toggleOutboundForm(${v.id})">${expandedVehicleId === v.id ? '收起' : '出库确认'}</a>` : '—'}
                 </td>
             </tr>
@@ -529,17 +525,17 @@ function renderOutboundStep(content) {
                     <td colspan="5" style="padding:0">
                         <div class="single-form-row">
                             <div class="single-form-grid">
-                                <div class="single-form-item">
+                                <div class="form-row">
                                     <label><span class="required">*</span>移出前车辆照片</label>
-                                    <div class="upload-placeholder">+ 点击上传照片</div>
+                                    <div class="control"><div class="upload-placeholder">+ 点击上传照片</div></div>
                                 </div>
-                                <div class="single-form-item">
+                                <div class="form-row">
                                     <label><span class="required">*</span>车辆出库单</label>
-                                    <div class="upload-placeholder">+ 点击上传附件</div>
+                                    <div class="control"><div class="upload-placeholder">+ 点击上传附件</div></div>
                                 </div>
-                                <div class="single-form-item">
+                                <div class="form-row">
                                     <label>说明</label>
-                                    <textarea id="o_remark_${v.id}" placeholder="请输入说明">${v.outbound_remark || ''}</textarea>
+                                    <div class="control"><textarea id="o_remark_${v.id}" placeholder="请输入说明">${v.outbound_remark || ''}</textarea></div>
                                 </div>
                             </div>
                             <div class="single-form-actions">
@@ -552,7 +548,7 @@ function renderOutboundStep(content) {
             `;
         }
     });
-    html += `</tbody></table></div>`;
+    html += `</tbody></table></div></div>`;
     content.innerHTML = html;
 }
 
@@ -563,27 +559,28 @@ function renderHandoverStep(content) {
     let html = `
         <div class="detail-section">
             <div class="detail-section-title">车辆交接确认</div>
-            <table class="vehicle-table">
-                <thead>
-                    <tr>
-                        <th>车辆编号</th>
-                        <th>车架号</th>
-                        <th>车型名称（中）</th>
-                        <th>交接状态</th>
-                        <th style="width:120px;text-align:center">操作</th>
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="table-wrapper">
+                <table class="vehicle-table">
+                    <thead>
+                        <tr>
+                            <th class="col-center" style="width:120px">车辆编号</th>
+                            <th class="col-center" style="width:200px">车架号</th>
+                            <th class="col-left" style="width:220px">车型名称（中）</th>
+                            <th class="col-left" style="width:130px">交接状态</th>
+                            <th class="col-center" style="width:120px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     `;
     taskData.vehicles.forEach(v => {
-        const statusClass = v.handover_status === '已交接' ? 'green' : v.handover_status === '拒绝接收' ? 'red' : 'blue';
+        const statusClass = v.handover_status === '已交接' ? 'tag-green' : v.handover_status === '拒绝接收' ? 'tag-red' : 'tag-blue';
         html += `
             <tr>
-                <td>${v.vehicle_no}</td>
-                <td>${v.vin}</td>
-                <td>${v.model_name}</td>
-                <td><span class="status-tag-inline ${statusClass}">${v.handover_status}</span></td>
-                <td style="text-align:center">
+                <td class="col-center">${v.vehicle_no}</td>
+                <td class="col-center">${v.vin}</td>
+                <td class="col-left ellipsis" style="max-width:220px" title="${v.model_name}">${v.model_name}</td>
+                <td class="col-left"><span class="tag ${statusClass}">${v.handover_status}</span></td>
+                <td class="col-center">
                     ${isEditable ? `<a class="action-link" onclick="toggleHandoverForm(${v.id})">${expandedVehicleId === v.id ? '收起' : '交接确认'}</a>` : '—'}
                 </td>
             </tr>
@@ -594,21 +591,23 @@ function renderHandoverStep(content) {
                     <td colspan="5" style="padding:0">
                         <div class="single-form-row">
                             <div class="single-form-grid">
-                                <div class="single-form-item">
+                                <div class="form-row">
                                     <label><span class="required">*</span>接收时车辆照片</label>
-                                    <div class="upload-placeholder">+ 点击上传照片</div>
+                                    <div class="control"><div class="upload-placeholder">+ 点击上传照片</div></div>
                                 </div>
-                                <div class="single-form-item">
+                                <div class="form-row">
                                     <label>说明</label>
-                                    <textarea id="h_remark_${v.id}" placeholder="请输入说明">${v.handover_remark || ''}</textarea>
+                                    <div class="control"><textarea id="h_remark_${v.id}" placeholder="请输入说明">${v.handover_remark || ''}</textarea></div>
                                 </div>
-                                <div class="single-form-item">
+                                <div class="form-row">
                                     <label><span class="required">*</span>是否确认接收</label>
-                                    <select id="h_confirmed_${v.id}">
-                                        <option value="" ${v.confirmed === null ? 'selected' : ''}>请选择</option>
-                                        <option value="yes" ${v.confirmed === true ? 'selected' : ''}>是</option>
-                                        <option value="no" ${v.confirmed === false ? 'selected' : ''}>否</option>
-                                    </select>
+                                    <div class="control">
+                                        <select id="h_confirmed_${v.id}">
+                                            <option value="" ${v.confirmed === null ? 'selected' : ''}>请选择</option>
+                                            <option value="yes" ${v.confirmed === true ? 'selected' : ''}>是</option>
+                                            <option value="no" ${v.confirmed === false ? 'selected' : ''}>否</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                             <div class="single-form-actions">
@@ -621,7 +620,7 @@ function renderHandoverStep(content) {
             `;
         }
     });
-    html += `</tbody></table></div>`;
+    html += `</tbody></table></div></div>`;
     content.innerHTML = html;
 }
 
@@ -656,8 +655,9 @@ function renderFooter() {
             <button class="btn btn-primary" onclick="doOutboundApproveFromDetail(true)">同意出库</button>
         `;
     } else if (status === '已撤回' || status === '出库审批退回') {
+        // PRD 3.4.3：再次提交（主按钮）+ 取消（次按钮），取消后退出编辑态
         footer.innerHTML = `
-            <button class="btn" onclick="window.history.back()">关闭</button>
+            <button class="btn" onclick="cancelEdit()">取消</button>
             <button class="btn btn-primary" onclick="submitReapply()">再次提交</button>
         `;
     } else if (status === '待出库') {
@@ -786,14 +786,22 @@ function doHandoverApproveFromDetail(agree) {
 }
 
 function withdrawTask() {
-    if (confirm('确定要撤回该调度申请吗？')) {
-        taskData.task_status = '已撤回';
-        taskData.logs.push({ node: '撤回申请', approver: '王强', time: '2026-05-28 12:00:00', result: '已撤回', type: 'rejected' });
-        updateStepBar();
-        renderLogs();
-        Common.showToast('撤回成功', 'success');
-        switchStep('apply');
-    }
+    // 使用公共确认弹窗替代原生 confirm（撤回为危险操作，确定按钮用危险样式）
+    Common.confirm({
+        title: '撤回确认',
+        content: '确定要撤回该调度申请吗？撤回后可再次提交。',
+        okText: '确定撤回',
+        cancelText: '取消',
+        danger: true,
+        onOk: function () {
+            taskData.task_status = '已撤回';
+            taskData.logs.push({ node: '撤回申请', approver: '王强', time: '2026-05-28 12:00:00', result: '已撤回', type: 'rejected' });
+            updateStepBar();
+            renderLogs();
+            Common.showToast('撤回成功', 'success');
+            switchStep('apply');
+        }
+    });
 }
 
 function cancelEdit() {

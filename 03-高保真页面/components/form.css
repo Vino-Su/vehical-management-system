@@ -1,7 +1,99 @@
 /* ============================================
    车辆管理系统 - 表单页专用样式
    用于二级详情/新增页面（整页滚动布局）
+   规范依据：UI_design_WEB.md 一.1 / 二.2 / 三.2
    ============================================ */
+
+/* ============================================
+   表单布局（规范 一.1 强制）：
+   输入框采用前置外置文字标签 —— 标签文字在输入框左侧外部
+   标签与控件间距 12px；表单项垂直间距 16px
+   ============================================ */
+.form-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.form-row > label,
+.form-row > .form-label {
+  flex: 0 0 120px;
+  width: 120px;
+  padding-top: 5px;            /* 与 32px 高控件垂直居中对齐 */
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--text-primary);
+  text-align: right;
+}
+.form-row > label .required,
+.form-row > .form-label .required {
+  color: var(--error);
+  margin-right: 4px;
+}
+.form-row > .control {
+  flex: 1;
+  min-width: 0;
+}
+.form-row--wide > label,
+.form-row--wide > .form-label { flex-basis: 160px; width: 160px; }
+
+/* 表单控件（规范二.3：高 32px、内边距 0 12px、圆角 6px） */
+.form-row .control input[type="text"],
+.form-row .control input[type="number"],
+.form-row .control input[type="date"],
+.form-row .control input[type="datetime-local"],
+.form-row .control input[type="password"],
+.form-row .control select,
+.form-row .control textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-container);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.form-row .control input,
+.form-row .control select { height: 32px; padding: 0 12px; }
+.form-row .control textarea { padding: 6px 12px; line-height: 22px; resize: vertical; }
+.form-row .control input:focus,
+.form-row .control select:focus,
+.form-row .control textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(22,119,255,.1);
+}
+.form-row .control input::placeholder,
+.form-row .control textarea::placeholder { color: var(--text-disabled); }
+.form-row .control input:disabled,
+.form-row .control select:disabled,
+.form-row .control textarea:disabled,
+.form-row .control input[readonly] {
+  background: #f5f5f5;
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* 错误提示：红色文字，位于控件下方（规范三.2 强制） */
+.field-error {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--error);
+  margin-top: 4px;
+}
+.form-row.has-error .control input,
+.form-row.has-error .control select,
+.form-row.has-error .control textarea { border-color: var(--error); }
+.form-row.has-error > label { color: var(--error); }
+
+/* 栅格：24 栅格系统，表单项垂直间距 16px（规范二.2） */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+}
+.form-grid--full { grid-template-columns: minmax(0, 1fr); }
 
 /* 表单页需要整页滚动，覆盖layout的固定高度和overflow */
 .layout.form-layout {

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车辆管理系统 · 高保真原型</title>
+<!--
+  页面用途：高保真原型入口页 / 页面索引（适配 GitHub Pages 静态托管）
+  核心功能：按业务模块列出全部高保真页面，点击直接进入对应页面
+  交互逻辑：纯静态跳转，使用相对路径，无需后端服务
+-->
+<style>
+  :root {
+    --primary: #1677ff;
+    --primary-hover: #4096ff;
+    --primary-bg: #e6f4ff;
+    --text-primary: #000000d9;
+    --text-secondary: #00000073;
+    --bg-layout: #f0f2f5;
+    --bg-container: #ffffff;
+    --border-color: #f0f0f0;
+    --radius: 6px;
+    --radius-lg: 8px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 10px rgba(0,0,0,.1);
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font-family);
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--text-primary);
+    background: var(--bg-layout);
+  }
+  a { text-decoration: none; }
+
+  /* 顶部导航：高 64px，浅色（UI_design_WEB 规范二.1） */
+  .topbar {
+    height: 64px;
+    background: var(--bg-container);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar .brand { font-size: 20px; font-weight: 600; line-height: 30px; }
+  .topbar .sub { font-size: 14px; color: var(--text-secondary); }
+  .topbar .enter {
+    margin-left: auto;
+    height: 32px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius);
+    background: var(--primary);
+    color: #fff;
+    font-size: 14px;
+    transition: background .2s;
+  }
+  .topbar .enter:hover { background: var(--primary-hover); }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+  .group { margin-bottom: 24px; }
+  .group-title {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 30px;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .group-title::before {
+    content: "";
+    width: 3px;
+    height: 18px;
+    border-radius: 2px;
+    background: var(--primary);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--bg-container);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 16px;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .card-name { font-size: 16px; font-weight: 500; line-height: 24px; }
+  .card-tag {
+    font-size: 12px;
+    line-height: 20px;
+    padding: 1px 8px;
+    border-radius: 4px;
+    background: var(--primary-bg);
+    color: var(--primary);
+    white-space: nowrap;
+  }
+  .card-tag.done { background: #f6ffed; color: #52c41a; }
+  .card-tag.wait { background: #f5f5f5; color: var(--text-secondary); }
+  .card-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .card-links a {
+    font-size: 14px;
+    line-height: 24px;
+    padding: 4px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    transition: all .2s;
+  }
+  .card-links a:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-bg);
+  }
+
+  .footer {
+    padding: 16px 24px 40px;
+    text-align: center;
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand">车辆管理系统</span>
+  <span class="sub">高保真原型 · 页面索引</span>
+  <a class="enter" href="./vehicle-register/vehicle-register-list.html">进入系统</a>
+</header>
+
+<main class="wrap">
+
+  <section class="group">
+    <h2 class="group-title">车辆管理</h2>
+    <div class="cards">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">车辆建档</span>
+          <span class="card-tag done">已实现</span>
+        </div>
+        <div class="card-links">
+          <a href="./vehicle-register/vehicle-register-list.html">列表页</a>
+          <a href="./vehicle-register/vehicle-register-add.html">新增页</a>
+          <a href="./vehicle-register/vehicle-register-detail.html">详情页</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">车辆资产管理</span>
+          <span class="card-tag done">已实现</span>
+        </div>
+        <div class="card-links">
+          <a href="./vehicle-asset/vehicle-asset-list.html">列表页</a>
+          <a href="./vehicle-asset/vehicle-asset-detail.html">详情页</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">标签管理</span>
+          <span class="card-tag done">已实现</span>
+        </div>
+        <div class="card-links">
+          <a href="./vehicle-tag/tag-manage-list.html">标签管理列表页</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">车型管理</span>
+          <span class="card-tag done">已实现</span>
+        </div>
+        <div class="card-links">
+          <a href="./vehicle-model/vehicle-model-list.html">列表页</a>
+          <a href="./vehicle-model/vehicle-model-add.html">新增页</a>
+          <a href="./vehicle-model/vehicle-model-detail.html">详情页</a>
+          <a href="./vehicle-model/vehicle-model-new-version.html">新建版本页</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">车辆资产盘点</span>
+          <span class="card-tag wait">未开发</span>
+        </div>
+        <div class="card-links">
+          <a href="javascript:;">敬请期待</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">车辆资产信息维护</span>
+          <span class="card-tag wait">未开发</span>
+        </div>
+        <div class="card-links">
+          <a href="javascript:;">敬请期待</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="group">
+    <h2 class="group-title">车辆调度管理</h2>
+    <div class="cards">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">可用车辆库</span>
+          <span class="card-tag done">已实现</span>
+        </div>
+        <div class="card-links">
+          <a href="./vehicle-dispatch/dispatch-vehicle-list.html">列表页</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">调度记录管理</span>
+          <span class="card-tag done">已实现</span>
+        </div>
+        <div class="card-links">
+          <a href="./vehicle-dispatch/dispatch-record-list.html">列表页</a>
+          <a href="./vehicle-dispatch/dispatch-detail.html">详情页</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="group">
+    <h2 class="group-title">其他模块</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-name">维保管理 / 合规管理 / 风险管理 / 费用管理 / 车辆退出管理</span>
+          <span class="card-tag wait">未开发</span>
+        </div>
+        <div class="card-links">
+          <a href="javascript:;">敬请期待</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  车辆管理系统 · 高保真原型（静态页面，数据为本地模拟数据）
+</footer>
+
+</body>
+</html>

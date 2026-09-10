@@ -27,53 +27,81 @@
 - 标签与车辆为多对多关系，不影响车辆状态与归属项目等既有业务字段。
 - 详细设计见《标签管理PRD》。
 
+### 5. 车辆调度管理
+- **可用车辆库列表页**：展示在库-闲置可调出车辆，支持多条件查询、新增调度申请、导出。
+- **调度记录管理列表页**：调度任务全流程管理（新建/编辑/提交/撤回/再次提交/删除/导出），支持出库审批、交接审批。
+- **调度申请详情页**：三环节步骤条（申请→出库→交接）与流程日志，按状态提供对应操作按钮。
+- 详细设计见《调度管理PRD》。
+
 ## 项目结构
 
 ```
 车辆管理系统/
-├── 00-项目规则/          # 项目规则与约束文档
-├── 01-需求文档/          # 业务需求文档及示例数据参考
-├── 02-产品文档/          # PRD 产品需求文档
-├── 03-高保真页面/        # 前端高保真页面（HTML）
-│   ├── index.html                        # 入口页，默认跳转车辆建档列表
-│   ├── vehicle-register/                 # 车辆建档模块
-│   │   ├── vehicle-register-list.html    # 车辆建档-列表页
-│   │   ├── vehicle-register-detail.html  # 车辆建档-详情页
-│   │   └── vehicle-register-add.html     # 车辆建档-新增页
-│   ├── vehicle-asset/                    # 车辆资产管理模块
-│   │   ├── vehicle-asset-list.html       # 车辆资产管理-列表页
-│   │   └── vehicle-asset-detail.html     # 车辆资产管理-详情页
-│   ├── system-management/                # 系统管理模块（车型管理）
-│   │   ├── vehicle-model-list.html       # 车型管理-列表页
-│   │   ├── vehicle-model-detail.html     # 车型管理-详情页
-│   │   ├── vehicle-model-add.html        # 车型管理-新增页
-│   │   └── vehicle-model-new-version.html# 车型管理-新建版本页
-│   └── components/                       # 公共组件
-│       ├── common.css                    # 公共样式（布局、组件、变量）
-│       ├── common.js                     # 公共脚本（布局初始化、分页、弹窗）
-│       └── form.css                      # 表单样式
-├── 04-交付材料/          # 交付相关文档
-├── 05-参考文件/          # 参考文件
-├── 06-备份/              # 自动备份（不上传 Git）
-├── 07-bugs/              # 测试截图（不上传 Git）
-├── .gitignore            # Git 忽略配置
-└── README.md             # 项目说明
+├── index.html                # 入口文件（跳转至 03-高保真页面/index.html）
+├── README.md                 # 项目说明
+├── 01-需求文档/              # 业务需求文档及示例数据参考
+├── 02-产品文档/              # PRD 产品需求文档
+├── 03-高保真页面/            # 前端高保真页面（HTML）
+│   ├── index.html            # 页面索引 / GitHub Pages 入口
+│   ├── components/           # 公共组件
+│   │   ├── common.css        # 公共样式（设计令牌、布局、组件）
+│   │   ├── common.js         # 公共脚本（布局初始化、分页、弹窗、Toast）
+│   │   └── form.css          # 表单样式（左置外置标签、字段校验提示）
+│   ├── vehicle-register/     # 车辆建档模块
+│   │   ├── vehicle-register-list.html    # 列表页
+│   │   ├── vehicle-register-add.html     # 新增页
+│   │   └── vehicle-register-detail.html  # 详情页（预留入口）
+│   ├── vehicle-asset/        # 车辆资产管理模块
+│   │   ├── vehicle-asset-list.html       # 列表页
+│   │   └── vehicle-asset-detail.html     # 详情页
+│   ├── vehicle-tag/          # 标签管理模块
+│   │   └── tag-manage-list.html          # 标签管理列表页
+│   ├── vehicle-model/        # 车型管理模块
+│   │   ├── vehicle-model-list.html       # 列表页
+│   │   ├── vehicle-model-add.html        # 新增页
+│   │   ├── vehicle-model-detail.html     # 详情页
+│   │   └── vehicle-model-new-version.html# 新建版本页
+│   └── vehicle-dispatch/     # 车辆调度管理模块
+│       ├── dispatch-vehicle-list.html    # 可用车辆库列表页
+│       ├── dispatch-record-list.html     # 调度记录管理列表页
+│       └── dispatch-detail.html          # 调度申请详情页
+├── 06-备份/                  # 交付前快照（Git 忽略）
+├── 07-bugs/                  # 自测截图（Git 忽略）
+└── .gitignore                # Git 忽略配置
 ```
+
+## 公共组件（components/）
+
+| 组件 | 文件 | 说明 |
+|:---|:---|:---|
+| 设计令牌 | `common.css` | 颜色、字号、圆角、间距变量，严格对齐 UI 设计规范 |
+| 布局框架 | `common.css` | 侧边栏（224px，浅色）+ 主内容区（padding 24px） |
+| 按钮 | `common.css` | `.btn`（32px）、`.btn-primary`、`.btn-danger`、`.btn-sm`（24px）、`.btn-link` |
+| 表格 | `common.css` | `.table-wrapper`（横向滚动）、48px 行高、`.col-left/.col-center/.col-right` 对齐类、`.ellipsis`、`.num` |
+| 标签 | `common.css` | `.tag` 及 `.tag-blue/green/orange/red/default/purple/yellow` |
+| 分页 | `common.css` + `common.js` | `Common.renderPagination()`，展示总数、当前页/总页数、每页条数 |
+| 弹窗 | `common.css` + `common.js` | `.modal-overlay/.modal-box`（600px）与 `.modal-box--lg`（800px）；`Common.openModal/closeModal/confirm` |
+| Toast | `common.js` | `Common.showToast(msg, type)` |
+| 表单 | `form.css` | `.form-row`（标签左置外置）、`.field-error`（控件下方红字）、`.form-grid` |
+| 侧边栏 / 顶部导航 | `common.js` | `Common.initLayout()`，按 `activeMenuId` 自动渲染菜单与顶部模块名 |
 
 ## 使用方式
 
 1. 克隆或下载本项目到本地。
-2. 进入 `03-高保真页面` 目录。
-3. 打开 `index.html` 或直接打开任意页面文件，即可在浏览器中预览。
+2. 直接用浏览器打开根目录的 `index.html`（会自动跳转到 `03-高保真页面/index.html` 页面索引）。
+3. 在页面索引中点击任意模块/页面即可预览。
 
 > 说明：本系统为纯前端静态页面，数据为本地模拟数据，无需后端服务即可运行预览。
+> 已适配 GitHub Pages：开启 Pages 后访问仓库根地址即可打开页面索引；所有页面均使用相对路径，可脱离服务器直接双击打开。
 
 ## 技术说明
 
-- **技术栈**：HTML5 + CSS3 + 原生 JavaScript（无框架依赖）。
-- **布局方案**：左侧固定侧边栏 + 右侧主内容区，响应式内容区域。
-- **公共组件**：`common.css` 提供统一的 CSS 变量、布局框架、按钮、表格、分页、弹窗等样式；`common.js` 提供侧边栏、顶部面包屑、分页组件的初始化与渲染逻辑。
-- **浏览器兼容**：推荐 Chrome / Edge 等现代浏览器。
+- **技术栈**：HTML5 + CSS3 + 原生 JavaScript（无框架依赖，无任何 CDN / 外部资源）。
+- **布局方案**：左侧固定侧边栏（224px，浅色）+ 右侧主内容区，响应式内容区域。
+- **公共组件**：见上方「公共组件」表。
+- **UI 设计规范**：所有页面严格遵循 `.claude/UI_design_WEB.md`，包括设计令牌、字号层级、8px 间距体系、表格对齐规则、弹窗按钮布局等。
+  - 注：该规范「技术栈」条款要求 Tailwind CSS v3，本项目实际采用**手写 CSS + 设计令牌变量**实现同等视觉与交互效果，以避免对既有页面的大规模重写；此为已知的有意偏离。
+- **浏览器兼容**：推荐 Chrome / Edge 等现代浏览器；已在 1366×768 与 1920×1080 下验证。
 
 ## 注意事项
 

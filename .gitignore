@@ -7,6 +7,10 @@ screenshot_*.png
 
 # Claude 配置
 .claude/
+.agents/
+
+# 临时/中间产物（含 node_modules 与构建脚本）
+.codex_tmp/
 
 # 系统文件
 .DS_Store

@@ -5,22 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>车辆资产管理 - 列表页</title>
     <link rel="stylesheet" href="../components/common.css">
-    <link rel="stylesheet" href="../components/form.css">
+    <!--
+      车辆资产管理 - 资产台账列表页
+      页面用途：车辆资产台账的分页列表，支持多条件筛选、车辆分配、状态变更、批量打标签/移出标签、删除与导出
+      核心功能：展开/收起筛选、标签树多选筛选、列表分页（10/20/50/100 条每页）、行内详情/编辑/删除、
+                批量选择后的车辆分配弹窗、车辆状态变更弹窗、批量打标签弹窗、批量移出标签弹窗
+      交互逻辑：列表默认按注册时间由近到远倒序；查询/重置回到第 1 页；删除走二次确认弹窗；
+                弹窗统一由 common.css 的 .modal-* 提供，支持点击遮罩与 ESC 关闭
+    -->
     <style>
-        /* ========== 查询筛选区 ========== */
-        .search-bar {
-            background: var(--bg-container);
-            border-radius: var(--radius);
-            padding: 20px 24px 16px;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow-sm);
-        }
-        .search-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            gap: 16px;
-        }
+        /* ========== 查询筛选区 ==========
+           卡片外观、筛选区与表格区间距 24px、按钮组间距统一由
+           common.css 的 .search-bar / .search-row / .action-bar 提供（规范二.2） */
         .search-item {
             display: none;
             align-items: center;
@@ -41,8 +37,9 @@
         .search-item select:focus { border-color: var(--primary); }
         .search-item input::placeholder { color: var(--text-disabled); }
         .search-item .date-sep { color: var(--text-disabled); margin: 0 4px; }
+        /* 查询（主按钮）与重置（次按钮）间距 12px（规范二.2） */
         .search-actions {
-            display: flex; align-items: center; gap: 8px; margin-left: auto;
+            display: flex; align-items: center; gap: 12px; margin-left: auto;
         }
         .toggle-expand {
             color: var(--primary); font-size: 14px; cursor: pointer;
@@ -52,28 +49,15 @@
         .toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
         .toggle-expand.expanded .arrow { transform: rotate(180deg); }
 
-        /* ========== 操作栏 ========== */
-        .action-bar {
-            display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
-        }
-        .btn-export { margin-left: auto; }
+        /* ========== 操作栏：由 common.css 的 .action-bar 提供（gap 8px + flex-wrap，规范二.2） ========== */
 
-        /* ========== 状态标签 ========== */
-        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; line-height: 20px; white-space: nowrap; }
-        .status-tag.green { background: #f6ffed; color: #52c41a; }
-        .status-tag.blue { background: #e6f4ff; color: #1677ff; }
-        .status-tag.orange { background: #fff7e6; color: #fa8c16; }
-        .status-tag.red { background: #fff2f0; color: #ff4d4f; }
-        .status-tag.yellow { background: #fffbe6; color: #d4b106; }
-        .status-tag.gray { background: #f2f3f5; color: #86909c; }
-        .status-tag.purple { background: #f5e8ff; color: #722ed1; }
+        /* ========== 状态标签：改用 common.css 的 .tag / .tag-*（圆角 4px、Ant Design 标准色值） ========== */
 
-        /* ========== 操作链接 ========== */
-        .action-link { color: var(--primary); font-size: 13px; cursor: pointer; text-decoration: none; }
-        .action-link:hover { color: var(--primary-hover); }
-        .action-link + .action-link { margin-left: 12px; }
-        .action-link.danger { color: var(--error); }
-        .action-link.danger:hover { color: #ff7875; }
+        /* ========== 操作链接：复用 common.css 的 .btn-link ========== */
+        /* 操作按钮组内间距 8px（规范二.2） */
+        td .btn-link + .btn-link { margin-left: 8px; }
+        .link-danger { color: var(--error); }
+        .link-danger:hover { color: #ff7875; }
 
         /* ========== 分配弹窗 ========== */
         .assign-batch {
@@ -82,7 +66,7 @@
         }
         .assign-batch label { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
         .assign-batch select {
-            height: 30px; border: 1px solid var(--border-input);
+            height: 32px; border: 1px solid var(--border-input);
             border-radius: var(--radius); padding: 0 8px; font-size: 13px; outline: none; min-width: 160px;
         }
         .assign-table { width: 100%; border-collapse: collapse; }
@@ -94,12 +78,11 @@
             color: var(--text-primary); font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--border-color);
         }
         .assign-table select {
-            height: 30px; border: 1px solid var(--border-input);
+            height: 32px; border: 1px solid var(--border-input);
             border-radius: var(--radius); padding: 0 8px; font-size: 13px; outline: none; min-width: 140px;
         }
 
         /* ========== 标签筛选器 ========== */
-        .tag-cyan { background: #e6fffb; color: #13c2c2; }
         .tag-filter { position: relative; }
         .tag-filter-display {
             height: 32px; min-width: 180px; border: 1px solid var(--border-input);
@@ -160,7 +143,8 @@
                                 <option>V1.0</option><option>V2.0</option><option>V3.0</option>
                             </select>
                         </div>
-                        <div class="search-item visible" data-idx="3">
+                        <!-- 默认仅展示前 3 个查询条件（车架号 / 车型名称 / 车型版本），其余点击「展开」后显示 -->
+                        <div class="search-item" data-idx="3">
                             <label>网联编号</label>
                             <input type="text" id="s_iot_code" placeholder="请输入网联编号">
                         </div>
@@ -229,28 +213,30 @@
                     <button class="btn" id="btnStatusChange" onclick="openStatusChangeModal()">状态变更</button>
                     <button class="btn" id="btnTagAdd" onclick="openBatchTagModal()">批量打标签</button>
                     <button class="btn" id="btnTagRemove" onclick="openBatchRemoveTagModal()">批量移出标签</button>
-                    <button class="btn btn-export" onclick="doExport()">导出</button>
+                    <button class="btn push-right" onclick="doExport()">导出</button>
                 </div>
 
-                <!-- 数据列表 -->
+                <!-- 数据列表（列宽依据 PRD 3.1.4）
+                     对齐规则（规范二.3）：文本列左对齐、固定宽度编码列（车架号/网联编号/车型编码/注册时间）居中、
+                     操作列与复选框列居中；th 与 td 使用相同对齐类 -->
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
-                                <th style="width:50px;text-align:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
-                                <th>车架号</th>
-                                <th>车型名称（中）</th>
-                                <th>车型版本</th>
-                                <th>网联编号</th>
-                                <th>车型编码</th>
-                                <th>车牌号</th>
-                                <th>车辆型号</th>
-                                <th>车辆来源</th>
-                                <th>车辆状态</th>
-                                <th>标签</th>
-                                <th>归属项目</th>
-                                <th>注册时间</th>
-                                <th style="width:140px;text-align:center">操作</th>
+                                <th class="col-center" style="width:50px"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
+                                <th class="col-center" style="width:200px">车架号</th>
+                                <th class="col-left ellipsis" style="width:180px">车型名称（中）</th>
+                                <th class="col-left" style="width:140px">车型版本</th>
+                                <th class="col-center" style="width:120px">网联编号</th>
+                                <th class="col-center" style="width:140px">车型编码</th>
+                                <th class="col-left" style="width:120px">车牌号</th>
+                                <th class="col-left" style="width:140px">车辆型号</th>
+                                <th class="col-left" style="width:120px">车辆来源</th>
+                                <th class="col-left" style="width:160px">车辆状态</th>
+                                <th class="col-left" style="width:200px">标签</th>
+                                <th class="col-left" style="width:160px">归属项目</th>
+                                <th class="col-center" style="width:180px">注册时间</th>
+                                <th class="col-center" style="width:140px">操作</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
@@ -259,7 +245,10 @@
 
                 <!-- 分页 -->
                 <div class="pagination-area">
-                    <div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div>
+                    <div class="pagination-left">
+                        <div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div>
+                        <span class="pagination-pages" id="assetPageInfo"></span>
+                    </div>
                     <div style="display:flex;align-items:center;gap:8px">
                         <div class="pagination" id="paginationEl"></div>
                         <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
@@ -275,9 +264,9 @@
     </div>
 </div>
 
-<!-- 车辆分配弹窗 -->
+<!-- 车辆分配弹窗（表格类弹窗使用 .modal-box--lg 800px，规范二.3） -->
 <div class="modal-overlay" id="assignModal">
-    <div class="modal-box" style="width:700px">
+    <div class="modal-box modal-box--lg">
         <div class="modal-header"><h3>车辆分配</h3><span class="modal-close" onclick="closeAssignModal()">×</span></div>
         <div class="modal-body">
             <div class="assign-batch">
@@ -287,10 +276,12 @@
                     <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
                 </select>
             </div>
-            <table class="assign-table">
-                <thead><tr><th>车架号</th><th>网联编号</th><th>别名</th><th>当前所属项目</th><th>分配至项目</th></tr></thead>
-                <tbody id="assignTableBody"></tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="assign-table">
+                    <thead><tr><th>车架号</th><th>网联编号</th><th>别名</th><th>当前所属项目</th><th>分配至项目</th></tr></thead>
+                    <tbody id="assignTableBody"></tbody>
+                </table>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="closeAssignModal()">取消</button>
@@ -299,9 +290,9 @@
     </div>
 </div>
 
-<!-- 车辆状态变更弹窗 -->
+<!-- 车辆状态变更弹窗（表格类弹窗使用 .modal-box--lg 800px，规范二.3） -->
 <div class="modal-overlay" id="statusChangeModal">
-    <div class="modal-box" style="width:700px">
+    <div class="modal-box modal-box--lg">
         <div class="modal-header"><h3>车辆状态变更</h3><span class="modal-close" onclick="closeStatusChangeModal()">×</span></div>
         <div class="modal-body">
             <div class="assign-batch">
@@ -310,10 +301,12 @@
                     <option value="">请选择状态</option>
                 </select>
             </div>
-            <table class="assign-table">
-                <thead><tr><th>车架号</th><th>网联编号</th><th>别名</th><th>当前车辆状态</th><th>变更后状态</th></tr></thead>
-                <tbody id="statusChangeTableBody"></tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="assign-table">
+                    <thead><tr><th>车架号</th><th>网联编号</th><th>别名</th><th>当前车辆状态</th><th>变更后状态</th></tr></thead>
+                    <tbody id="statusChangeTableBody"></tbody>
+                </table>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="closeStatusChangeModal()">取消</button>
@@ -332,7 +325,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="closeDeleteModal()">取消</button>
-            <button class="btn btn-primary" onclick="confirmDelete()">确定</button>
+            <button class="btn btn-danger" onclick="confirmDelete()">确定</button>
         </div>
     </div>
 </div>
@@ -352,9 +345,9 @@
     </div>
 </div>
 
-<!-- 批量打标签弹窗 -->
+<!-- 批量打标签弹窗（选择类弹窗使用默认 600px，规范二.3） -->
 <div class="modal-overlay" id="batchTagModal">
-    <div class="modal-box" style="width:700px">
+    <div class="modal-box">
         <div class="modal-header"><h3>批量打标签</h3><span class="modal-close" onclick="closeBatchTagModal()">×</span></div>
         <div class="modal-body">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
@@ -371,16 +364,18 @@
     </div>
 </div>
 
-<!-- 批量移出标签弹窗 -->
+<!-- 批量移出标签弹窗（表格类弹窗使用 .modal-box--lg 800px，规范二.3） -->
 <div class="modal-overlay" id="batchRemoveTagModal">
-    <div class="modal-box" style="width:700px">
+    <div class="modal-box modal-box--lg">
         <div class="modal-header"><h3>批量移出标签</h3><span class="modal-close" onclick="closeBatchRemoveTagModal()">×</span></div>
         <div class="modal-body">
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">勾选每辆车要移出的标签（仅显示该车当前已有的标签）：</p>
-            <table class="assign-table">
-                <thead><tr><th>车架号</th><th>网联编号</th><th>车型名称</th><th>移出标签</th></tr></thead>
-                <tbody id="batchRemoveTableBody"></tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="assign-table">
+                    <thead><tr><th>车架号</th><th>网联编号</th><th>车型名称</th><th>移出标签</th></tr></thead>
+                    <tbody id="batchRemoveTableBody"></tbody>
+                </table>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn" onclick="closeBatchRemoveTagModal()">取消</button>
@@ -397,10 +392,6 @@ Common.initLayout({
     sidebarId: 'sidebar',
     activeMenuId: 'asset-manage',
     headerId: 'header',
-    breadcrumbs: [
-        { label: '车辆管理' },
-        { label: '车辆资产管理' },
-    ],
     headerOptions: { showProject: false }
 });
 
@@ -434,7 +425,8 @@ const colorMap = {
     blue:{name:'蓝',hex:'#1677ff',tag:'tag-blue'}, green:{name:'绿',hex:'#52c41a',tag:'tag-green'},
     orange:{name:'橙',hex:'#fa8c16',tag:'tag-orange'}, red:{name:'红',hex:'#ff4d4f',tag:'tag-red'},
     yellow:{name:'黄',hex:'#d4b106',tag:'tag-yellow'}, purple:{name:'紫',hex:'#722ed1',tag:'tag-purple'},
-    cyan:{name:'青',hex:'#13c2c2',tag:'tag-cyan'}, gray:{name:'灰',hex:'#86909c',tag:'tag-default'},
+    // common.css 未提供青色标签，色点仍按 16 进制展示真实颜色，标签底色回退为蓝色标签
+    cyan:{name:'青',hex:'#13c2c2',tag:'tag-blue'}, gray:{name:'灰',hex:'#86909c',tag:'tag-default'},
 };
 // 车辆-标签关联 vin -> [labelId,...]
 const vehicleLabels = {
@@ -450,17 +442,22 @@ const vehicleLabels = {
 let tagFilterLabelIds = new Set();   // 查询区标签筛选已选
 let batchTagSelected = new Set();    // 批量打标签已选
 
+// ===== 排序：默认按注册时间由近到远倒序（PRD 3.1.4） =====
+function sortByRegisterDesc(list) {
+    return [...list].sort((a, b) => (b.register_time || '').localeCompare(a.register_time || ''));
+}
+
 // ===== 状态 =====
 let currentPage = 1, pageSize = 10;
-let filteredData = [...mockData];
+let filteredData = sortByRegisterDesc(mockData);
 let selectedIds = new Set();
 let deleteTargetId = null;
 
-// ===== 状态标签映射 =====
+// ===== 状态标签映射（对应 common.css 的 .tag-* 公共类） =====
 const statusTagClass = {
-    '在库-正常使用':'green', '在库-闲置留用':'blue', '在库-闲置可调出':'orange',
-    '在库-维修':'red', '在库-保养中':'yellow', '在库-待报废':'gray',
-    '待分配':'purple', '已报废':'gray', '已处置':'gray'
+    '在库-正常使用':'tag-green', '在库-闲置留用':'tag-blue', '在库-闲置可调出':'tag-orange',
+    '在库-维修':'tag-red', '在库-保养中':'tag-yellow', '在库-待报废':'tag-default',
+    '待分配':'tag-purple', '已报废':'tag-default', '已处置':'tag-default'
 };
 
 // ===== 渲染表格 =====
@@ -472,27 +469,27 @@ function renderTable() {
     pageData.forEach(item => {
         const ck = selectedIds.has(item.id) ? 'checked' : '';
         const selCls = selectedIds.has(item.id) ? ' selected' : '';
-        const tagCls = statusTagClass[item.vehicle_status] || 'gray';
+        const tagCls = statusTagClass[item.vehicle_status] || 'tag-default';
         const tr = document.createElement('tr');
         if (selCls) tr.className = selCls;
         tr.innerHTML = `
-            <td style="text-align:center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
-            <td title="${item.vin}">${item.vin}</td>
-            <td>${item.model_name}</td>
-            <td>${item.model_version}</td>
-            <td>${item.iot_code}</td>
-            <td>${item.model_code}</td>
-            <td>${item.plate_no}</td>
-            <td>${item.vehicle_model}</td>
-            <td>${item.asset_source}</td>
-            <td><span class="status-tag ${tagCls}">${item.vehicle_status}</span></td>
-            <td>${renderVehicleTags(item.vin)}</td>
-            <td>${item.project || '—'}</td>
-            <td>${item.register_time}</td>
-            <td style="text-align:center">
-                <a class="action-link" href="./vehicle-asset-detail.html?id=${item.id}">详情</a>
-                <a class="action-link" href="./vehicle-asset-detail.html?mode=edit&id=${item.id}">编辑</a>
-                <a class="action-link danger" onclick="openDeleteModal(${item.id})">删除</a>
+            <td class="col-center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
+            <td class="col-center ellipsis" title="${item.vin}">${item.vin}</td>
+            <td class="col-left ellipsis" title="${item.model_name}">${item.model_name}</td>
+            <td class="col-left">${item.model_version}</td>
+            <td class="col-center">${item.iot_code}</td>
+            <td class="col-center">${item.model_code}</td>
+            <td class="col-left">${item.plate_no}</td>
+            <td class="col-left ellipsis" title="${item.vehicle_model}">${item.vehicle_model}</td>
+            <td class="col-left">${item.asset_source}</td>
+            <td class="col-left"><span class="tag ${tagCls}">${item.vehicle_status}</span></td>
+            <td class="col-left">${renderVehicleTags(item.vin)}</td>
+            <td class="col-left">${item.project || '—'}</td>
+            <td class="col-center">${item.register_time}</td>
+            <td class="col-center">
+                <a class="btn-link" href="./vehicle-asset-detail.html?id=${item.id}">详情</a>
+                <a class="btn-link" href="./vehicle-asset-detail.html?mode=edit&id=${item.id}">编辑</a>
+                <a class="btn-link link-danger" onclick="openDeleteModal(${item.id})">删除</a>
             </td>`;
         tbody.appendChild(tr);
     });
@@ -504,7 +501,7 @@ function renderPagination() {
     const total = filteredData.length;
     Common.renderPagination({
         total, currentPage, pageSize,
-        containerId: 'paginationEl', infoId: 'totalCount',
+        containerId: 'paginationEl', infoId: 'totalCount', pageInfoId: 'assetPageInfo',
         onPageChange: p => { currentPage = p; renderTable(); }
     });
 }
@@ -539,7 +536,7 @@ function doSearch() {
     const spr = document.getElementById('s_project').value;
     const srs = document.getElementById('s_reg_start').value;
     const sre = document.getElementById('s_reg_end').value;
-    filteredData = mockData.filter(item => {
+    filteredData = sortByRegisterDesc(mockData.filter(item => {
         if (sv && !item.vin.toLowerCase().includes(sv)) return false;
         if (sm && !item.model_name.toLowerCase().includes(sm)) return false;
         if (smv && item.model_version !== smv) return false;
@@ -559,7 +556,7 @@ function doSearch() {
             if (!hit) return false;
         }
         return true;
-    });
+    }));
     currentPage = 1; selectedIds.clear(); renderTable();
 }
 function doReset() {
@@ -568,17 +565,17 @@ function doReset() {
         else if (el.tagName === 'SELECT') el.selectedIndex = 0;
         else el.value = '';
     });
-    filteredData = [...mockData]; currentPage = 1; selectedIds.clear(); renderTable();
+    filteredData = sortByRegisterDesc(mockData); currentPage = 1; selectedIds.clear(); renderTable();
     tagFilterLabelIds.clear(); renderTagFilterPanel();
 }
 
-// ===== 展开/收起 =====
+// ===== 展开/收起（默认展示前 3 个查询条件，其余 idx>=3 的收起） =====
 let expanded = false;
 function toggleSearchExpand() {
     expanded = !expanded;
     document.querySelectorAll('.search-item[data-idx]').forEach(el => {
         const idx = parseInt(el.dataset.idx);
-        if (idx >= 4) el.classList.toggle('visible', expanded);
+        if (idx >= 3) el.classList.toggle('visible', expanded);
     });
     const toggle = document.getElementById('toggleExpand');
     toggle.innerHTML = expanded ? '收起 <span class="arrow">▼</span>' : '展开 <span class="arrow">▼</span>';
@@ -670,7 +667,7 @@ function openStatusChangeModal() {
     const tbody = document.getElementById('statusChangeTableBody');
     tbody.innerHTML = '';
     selectedItems.forEach(item => {
-        const tagCls = statusTagClass[item.vehicle_status] || 'gray';
+        const tagCls = statusTagClass[item.vehicle_status] || 'tag-default';
         const tr = document.createElement('tr');
         // 构建排除当前状态的下拉选项
         let selectOptions = '<option value="">请选择状态</option>';
@@ -683,7 +680,7 @@ function openStatusChangeModal() {
             <td>${item.vin}</td>
             <td>${item.iot_code}</td>
             <td>${item.alias}</td>
-            <td><span class="status-tag ${tagCls}">${item.vehicle_status}</span></td>
+            <td><span class="tag ${tagCls}">${item.vehicle_status}</span></td>
             <td><select class="status-change-select" data-current="${item.vehicle_status}">${selectOptions}</select></td>`;
         tbody.appendChild(tr);
     });

@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>资产详情 - 车辆管理系统</title>
+<!--
+  页面用途：车辆资产管理 — 车辆资产详情页，展示单台车辆的完整档案。
+  核心功能：1) Tab 分区展示：基础信息 / 调度信息 / BOM清单 / 售后维保 / 变更日志（合规、风险、费用暂未开放）；
+            2) 基础信息与售后信息支持查看态 ↔ 编辑态切换（编辑态底部固定操作栏，必填项校验 + 控件下方红字提示）；
+            3) 调度信息、BOM清单、变更记录、变更日志均支持筛选、分页（默认 10 条/页）与导出（导出前二次确认）；
+            4) 调度历史详情弹窗（步骤条 + 流程日志）、零部件变更时间线弹窗、图片预览。
+  交互逻辑：编辑态由「编辑」按钮进入，需先保存或取消才能切换 Tab；
+            弹窗统一使用公共 .modal-overlay（.active 显示），点击遮罩 / ESC / 右上角 × 关闭；
+            顶部导航仅展示模块名（H3 20px），无面包屑、无页面大标题。
+  依赖：../components/common.css、../components/form.css、../components/common.js（无 CDN、无外部资源）
+-->
 <link rel="stylesheet" href="../components/common.css">
 <link rel="stylesheet" href="../components/form.css">
 <style>
@@ -69,63 +80,29 @@
 }
 .info-field .field-value.empty { color: var(--text-disabled); }
 
-/* === 调拨信息搜索区 === */
+/* === 调拨信息搜索区（规范一.1：标签左置外置，复用公共 .form-row） === */
 .transfer-search {
-  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
-  margin-bottom: 20px; padding-bottom: 20px;
+  display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-start;
+  margin-bottom: 24px; padding-bottom: 20px;
   border-bottom: 1px solid var(--border-color);
 }
-.transfer-search .filter-item { display: flex; flex-direction: column; gap: 4px; }
-.transfer-search .filter-item label { font-size: 14px; color: var(--text-secondary); }
-.transfer-search .filter-item input,
-.transfer-search .filter-item select {
-  height: 32px; padding: 0 12px;
-  border: 1px solid var(--border-input); border-radius: var(--radius);
-  font-size: 14px; color: var(--text-primary); background: var(--bg-container);
-  outline: none; font-family: inherit;
-}
-.transfer-search .filter-item input { width: 200px; }
-.transfer-search .filter-item select { width: 160px; }
-.transfer-search .filter-item input:focus,
-.transfer-search .filter-item select:focus {
-  border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
-}
-.transfer-search .filter-item input::placeholder { color: var(--text-disabled); }
+.transfer-search .form-row { margin-bottom: 0; }
+.transfer-search .form-row > .control { flex: 0 0 200px; width: 200px; }
+.transfer-search .form-row > .control.is-range { flex-basis: 340px; width: 340px; }
 .transfer-search .date-range { display: flex; align-items: center; gap: 8px; }
-.transfer-search .date-range input { width: 150px; }
+.transfer-search .date-range input { flex: 1; min-width: 0; }
 .transfer-search .date-range .sep { color: var(--text-disabled); }
-.transfer-search .filter-actions { display: flex; gap: 8px; margin-left: auto; align-self: flex-end; }
+.transfer-search .filter-actions { display: flex; gap: 8px; margin-left: auto; }
 
-/* === 操作栏（导出等） === */
-.sub-action-bar {
-  display: flex; align-items: center; justify-content: flex-end;
-  margin-bottom: 12px; gap: 8px;
-}
-
-/* === 变更日志操作类型标签 === */
+/* === 变更日志操作类型标签 ===
+   青色（cyan）标签底色由 common.css 未提供，渲染时统一回退到 tag-blue（与其他页面一致） */
 .log-type-modify { background: #e6f4ff; color: #1677ff; }
 .log-type-delete { background: #fff2f0; color: #ff4d4f; }
-.tag-cyan { background: #e6fffb; color: #13c2c2; }
 
-/* === 编辑态底部操作栏 === */
-.edit-footer-bar {
-  position: fixed; bottom: 0; left: var(--sidebar-width); right: 0;
-  height: var(--footer-bar-height);
-  background: var(--bg-container);
-  border-top: 1px solid var(--border-color);
-  display: none;
-  align-items: center; justify-content: flex-end; gap: 12px;
-  padding-right: 24px; z-index: 5;
-  box-shadow: 0 -2px 8px rgba(0,0,0,.06);
-}
-.edit-footer-bar.show { display: flex; }
+/* === 编辑态底部操作栏 ===
+   复用公共组件 .edit-footer-bar（common.css）；查看态由 JS 置 display:none，编辑态置 display:flex */
 
-/* === 页面头部操作区 === */
-.page-header-actions {
-  display: flex; align-items: center; gap: 8px;
-}
-
-/* === 编辑态表单样式（引用建档新增页） === */
+/* === 编辑态表单样式（规范一.1：标签左置外置，使用公共 .form-row） === */
 .form-section { margin-bottom: 28px; }
 .form-section .section-title {
   font-size: 15px; font-weight: 600; color: var(--text-primary);
@@ -135,23 +112,12 @@
 .form-section .section-title::before {
   content: ''; display: inline-block; width: 3px; height: 16px; background: var(--primary); border-radius: 2px;
 }
+/* 24 栅格：表单项垂直间距 16px（由网格行距统一控制，.form-row 自带下间距置零） */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
 .form-grid.cols-1 { grid-template-columns: 1fr; }
-.form-item { display: flex; flex-direction: column; gap: 6px; }
-.form-item label { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
-.form-item .required { color: var(--error); margin-right: 4px; }
-.form-item input, .form-item select, .form-item textarea {
-  height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
-  padding: 0 12px; font-size: 14px; color: var(--text-primary); background: var(--bg-container);
-  outline: none; font-family: inherit;
-}
-.form-item input:focus, .form-item select:focus, .form-item textarea:focus {
-  border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
-}
-.form-item input::placeholder, .form-item textarea::placeholder { color: var(--text-disabled); }
-.form-item input.readonly, .form-item select.readonly { background: #f5f5f5; color: var(--text-secondary); cursor: not-allowed; }
-.form-item textarea { height: auto; min-height: 80px; padding: 8px 12px; resize: vertical; }
-.form-item .hint { font-size: 12px; color: var(--text-disabled); margin-top: 2px; }
+.form-grid .form-row { margin-bottom: 0; }
+.form-grid .form-row textarea { min-height: 80px; }
+.hint { font-size: 12px; color: var(--text-disabled); margin-top: 4px; }
 .radio-group { display: flex; align-items: center; gap: 20px; height: 32px; }
 .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-primary); cursor: pointer; }
 .radio-group input[type="radio"] { accent-color: var(--primary); }
@@ -184,39 +150,24 @@
 .add-row-btn { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: 14px; cursor: pointer; padding: 8px 0; }
 .add-row-btn:hover { color: var(--primary-hover); }
 
-/* === 调度历史详情弹窗 === */
-.dispatch-modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 2000;
-  display: none; align-items: center; justify-content: center;
-}
-.dispatch-modal-overlay.show { display: flex; }
-.dispatch-modal-box {
-  width: 1100px; max-width: 90vw; max-height: 85vh;
-  background: var(--bg-container); border-radius: var(--radius-lg);
-  display: flex; flex-direction: column; box-shadow: var(--shadow-md);
-}
-.dispatch-modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 24px; border-bottom: 1px solid var(--border-color); flex-shrink: 0;
-}
-.dispatch-modal-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
-.dispatch-modal-header .close-btn { font-size: 20px; color: var(--text-secondary); cursor: pointer; background: none; border: none; }
-.dispatch-modal-header .close-btn:hover { color: var(--text-primary); }
-.dispatch-modal-vehicle-info {
+/* === 调度历史详情弹窗 ===
+   外壳复用公共组件 .modal-overlay / .modal-box / .modal-header / .modal-body / .modal-footer，
+   此处仅保留弹窗内部布局类 */
+.dispatch-vehicle-info {
   display: flex; align-items: center; gap: 12px; padding: 12px 24px;
   background: #fafafa; border-bottom: 1px solid var(--border-color); flex-shrink: 0;
   font-size: 13px; color: var(--text-secondary);
 }
-.dispatch-modal-vehicle-info .value { font-size: 14px; color: var(--text-primary); font-weight: 500; }
-.dispatch-modal-vehicle-info .sep { color: var(--text-disabled); margin: 0 4px; }
-.dispatch-modal-body {
-  display: flex; flex: 1; overflow: hidden; min-height: 0;
+.dispatch-vehicle-info .value { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+.dispatch-vehicle-info .sep { color: var(--text-disabled); margin: 0 4px; }
+.dispatch-body {
+  display: flex; flex: 1; overflow: hidden; min-height: 0; padding: 0;
 }
-.dispatch-modal-main {
+.dispatch-main {
   flex: 7; display: flex; flex-direction: column; overflow: hidden;
   border-right: 1px solid var(--border-color);
 }
-.dispatch-modal-sidebar {
+.dispatch-sidebar {
   flex: 3; display: flex; flex-direction: column; overflow: hidden;
 }
 .dispatch-step-bar {
@@ -247,11 +198,7 @@
 .dispatch-step-label { font-size: 13px; white-space: nowrap; }
 .dispatch-step-line { width: 32px; height: 2px; background: var(--border-color); flex-shrink: 0; }
 .dispatch-step-line.d-step-done { background: var(--success); }
-.dispatch-modal-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
-.dispatch-modal-footer {
-  display: flex; align-items: center; justify-content: flex-end; gap: 12px;
-  padding: 12px 24px; border-top: 1px solid var(--border-color); flex-shrink: 0;
-}
+.dispatch-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
 .dispatch-log-sidebar-header {
   padding: 16px 20px 12px; font-size: 14px; font-weight: 600;
   border-bottom: 1px solid var(--border-color); flex-shrink: 0;
@@ -276,15 +223,15 @@
 .dispatch-log-node { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
 .dispatch-log-item.d-log-latest .dispatch-log-node { color: var(--primary); }
 .dispatch-log-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
-.dispatch-modal-vehicle-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-.dispatch-modal-vehicle-table thead th {
+.dispatch-vehicle-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.dispatch-vehicle-table thead th {
   background: #fafafa; color: var(--text-secondary); font-weight: 600;
   font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color);
 }
-.dispatch-modal-vehicle-table tbody td {
+.dispatch-vehicle-table tbody td {
   padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border-color);
 }
-.dispatch-modal-vehicle-table tbody tr.d-current-vehicle { background: #e6f4ff; }
+.dispatch-vehicle-table tbody tr.d-current-vehicle { background: #e6f4ff; }
 .d-current-tag {
   display: inline-block; padding: 1px 6px; border-radius: 10px;
   background: #1677ff; color: #fff; font-size: 11px; margin-left: 6px; line-height: 18px;
@@ -393,23 +340,18 @@
 .bom-view-tab:hover { color: var(--primary); }
 .bom-view-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 
+/* BOM 查询区（规范一.1：标签左置外置，复用公共 .form-row） */
 .bom-search {
-  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
-  margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);
+  display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-start;
+  margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);
 }
-.bom-search .filter-item { display: flex; flex-direction: column; gap: 4px; }
-.bom-search .filter-item label { font-size: 14px; color: var(--text-secondary); }
-.bom-search .filter-item input,
-.bom-search .filter-item select {
-  height: 32px; padding: 0 12px; border: 1px solid var(--border-input); border-radius: var(--radius);
-  font-size: 14px; color: var(--text-primary); background: var(--bg-container); outline: none; font-family: inherit;
-}
-.bom-search .filter-item input { width: 200px; }
-.bom-search .filter-item select { width: 160px; }
-.bom-search .filter-item input:focus,
-.bom-search .filter-item select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1); }
-.bom-search .filter-item input::placeholder { color: var(--text-disabled); }
-.bom-search .filter-actions { display: flex; gap: 8px; margin-left: auto; align-self: flex-end; }
+.bom-search .form-row { margin-bottom: 0; }
+.bom-search .form-row > .control { flex: 0 0 200px; width: 200px; }
+.bom-search .form-row > .control.is-range { flex-basis: 340px; width: 340px; }
+.bom-search .date-range { display: flex; align-items: center; gap: 8px; }
+.bom-search .date-range input { flex: 1; min-width: 0; }
+.bom-search .date-range .sep { color: var(--text-disabled); }
+.bom-search .filter-actions { display: flex; gap: 8px; margin-left: auto; }
 
 .bom-table-wrapper {
   overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius);
@@ -459,8 +401,6 @@
   display: flex; gap: 8px; justify-content: flex-end;
   padding: 10px 16px; border-top: 1px solid var(--border-color);
 }
-.btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
-
 .bom-change-stats {
   display: flex; gap: 16px; padding: 12px 0; font-size: 13px; color: var(--text-secondary);
   border-top: 1px solid var(--border-color); margin-top: 12px;
@@ -468,63 +408,53 @@
 .bom-change-stats .cs-value { font-weight: 600; color: var(--text-primary); margin: 0 2px; }
 .bom-change-stats .cs-sep { color: var(--border-color); margin: 0 4px; }
 
-/* === 零部件变更时间线弹窗 === */
-.bom-timeline-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 2000;
-  display: none; align-items: center; justify-content: center;
-}
-.bom-timeline-overlay.show { display: flex; }
-.bom-timeline-box {
-  width: 640px; max-width: 90vw; max-height: 70vh;
-  background: var(--bg-container); border-radius: var(--radius-lg);
-  display: flex; flex-direction: column; box-shadow: var(--shadow-md);
-}
-.bom-timeline-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 24px; border-bottom: 1px solid var(--border-color); flex-shrink: 0;
-}
-.bom-timeline-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
-.bom-timeline-header .close-btn { font-size: 20px; color: var(--text-secondary); cursor: pointer; background: none; border: none; }
-.bom-timeline-header .close-btn:hover { color: var(--text-primary); }
-.bom-timeline-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
-.bom-timeline-empty-hint {
+/* === 零部件变更时间线弹窗 ===
+   外壳复用公共组件 .modal-overlay / .modal-box / .modal-header / .modal-footer */
+.change-timeline-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.change-timeline-empty-hint {
   font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;
   padding: 8px 12px; background: #f6f6f6; border-radius: var(--radius);
 }
-.bom-timeline-item {
+.change-timeline-item {
   position: relative; padding: 0 0 24px 24px; border-left: 2px solid var(--border-color);
 }
-.bom-timeline-item:last-child { padding-bottom: 0; border-left-color: transparent; }
-.bom-timeline-dot {
+.change-timeline-item:last-child { padding-bottom: 0; border-left-color: transparent; }
+.change-timeline-dot {
   position: absolute; left: -7px; top: 2px; width: 12px; height: 12px;
   border-radius: 50%; background: var(--primary); border: 2px solid #fff;
 }
-.bom-timeline-item.type-factory .bom-timeline-dot { background: var(--text-disabled); }
-.bom-timeline-node-head {
+.change-timeline-item.type-factory .change-timeline-dot { background: var(--text-disabled); }
+.change-timeline-node-head {
   display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
 }
-.bom-timeline-time { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-.bom-timeline-tag {
+.change-timeline-time { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.change-timeline-tag {
   display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; line-height: 20px;
 }
-.bom-timeline-tag.tag-aftermarket { background: #e6f4ff; color: #1677ff; }
-.bom-timeline-tag.tag-factory { background: #f0f0f0; color: #8c8c8c; }
-.bom-timeline-compare { margin-bottom: 8px; }
-.bom-timeline-compare-row {
+.change-timeline-tag.tag-aftermarket { background: #e6f4ff; color: #1677ff; }
+.change-timeline-tag.tag-factory { background: #f0f0f0; color: #8c8c8c; }
+.change-timeline-compare { margin-bottom: 8px; }
+.change-timeline-compare-row {
   display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.8;
 }
-.bom-timeline-compare-row .cmp-label { color: var(--text-secondary); min-width: 56px; text-align: right; flex-shrink: 0; }
-.bom-timeline-compare-row .cmp-before { color: var(--text-disabled); }
-.bom-timeline-compare-row .cmp-arrow { color: var(--text-disabled); }
-.bom-timeline-compare-row .cmp-after { color: var(--text-primary); font-weight: 500; }
-.bom-timeline-compare-row .cmp-single { color: var(--text-primary); }
-.bom-timeline-footer-info { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
-.bom-timeline-footer-info .work-order-link { color: var(--primary); cursor: pointer; }
-.bom-timeline-footer-info .work-order-link:hover { text-decoration: underline; }
-.bom-timeline-footer {
-  display: flex; align-items: center; justify-content: flex-end;
-  padding: 12px 24px; border-top: 1px solid var(--border-color); flex-shrink: 0;
-}
+.change-timeline-compare-row .cmp-label { color: var(--text-secondary); min-width: 56px; text-align: right; flex-shrink: 0; }
+.change-timeline-compare-row .cmp-before { color: var(--text-disabled); }
+.change-timeline-compare-row .cmp-arrow { color: var(--text-disabled); }
+.change-timeline-compare-row .cmp-after { color: var(--text-primary); font-weight: 500; }
+.change-timeline-compare-row .cmp-single { color: var(--text-primary); }
+.change-timeline-footer-info { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+.change-timeline-footer-info .work-order-link { color: var(--primary); cursor: pointer; }
+.change-timeline-footer-info .work-order-link:hover { text-decoration: underline; }
+
+/* === 表格对齐类补强（规范二.3 强制：表头与内容对齐方式一致）===
+   公共层 .col-* 的优先级低于 .table-wrapper thead th / .bom-table thead th 的 text-align:left，
+   此处提升优先级，保证 th / td 上同时添加的同名对齐类生效 */
+.table-wrapper th.col-left,      .table-wrapper td.col-left,
+.bom-table-wrapper th.col-left,  .bom-table-wrapper td.col-left { text-align: left; }
+.table-wrapper th.col-center,    .table-wrapper td.col-center,
+.bom-table-wrapper th.col-center,.bom-table-wrapper td.col-center { text-align: center; }
+.table-wrapper th.col-right,     .table-wrapper td.col-right,
+.bom-table-wrapper th.col-right, .bom-table-wrapper td.col-right { text-align: right; }
 </style>
 </head>
 <body>
@@ -534,13 +464,10 @@
     <div id="header"></div>
     <div class="content" id="contentArea">
       <div class="page-container">
-        <!-- Page Header -->
-        <div class="page-header">
-          <div class="page-title">资产详情</div>
-          <div class="page-header-actions">
-            <button class="btn" onclick="goBack()">关闭</button>
-            <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">编辑</button>
-          </div>
+        <!-- 页面操作区（规范二.5：禁止页面大标题与面包屑，内容直接呈现） -->
+        <div class="action-bar" style="justify-content:flex-end">
+          <button class="btn" onclick="goBack()">关闭</button>
+          <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">编辑</button>
         </div>
 
         <!-- Tab Bar -->
@@ -564,39 +491,47 @@
         <!-- Tab Content: 调拨信息 -->
         <div class="tab-content" id="tab-transfer" style="display:none">
           <div class="transfer-search">
-            <div class="filter-item">
+            <div class="form-row">
               <label>调度申请时间</label>
-              <div class="date-range">
-                <input type="date" id="t_apply_start">
-                <span class="sep">~</span>
-                <input type="date" id="t_apply_end">
+              <div class="control is-range">
+                <div class="date-range">
+                  <input type="date" id="t_apply_start">
+                  <span class="sep">~</span>
+                  <input type="date" id="t_apply_end">
+                </div>
               </div>
             </div>
-            <div class="filter-item">
+            <div class="form-row">
               <label>确认交接时间</label>
-              <div class="date-range">
-                <input type="date" id="t_confirm_start">
-                <span class="sep">~</span>
-                <input type="date" id="t_confirm_end">
+              <div class="control is-range">
+                <div class="date-range">
+                  <input type="date" id="t_confirm_start">
+                  <span class="sep">~</span>
+                  <input type="date" id="t_confirm_end">
+                </div>
               </div>
             </div>
-            <div class="filter-item">
+            <div class="form-row">
               <label>申请人</label>
-              <input type="text" id="t_applicant" placeholder="请输入申请人">
+              <div class="control"><input type="text" id="t_applicant" placeholder="请输入申请人"></div>
             </div>
-            <div class="filter-item">
+            <div class="form-row">
               <label>流转前项目</label>
-              <select id="t_from_project">
-                <option value="">请选择</option>
-                <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
-              </select>
+              <div class="control">
+                <select id="t_from_project">
+                  <option value="">请选择</option>
+                  <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                </select>
+              </div>
             </div>
-            <div class="filter-item">
+            <div class="form-row">
               <label>流转后项目</label>
-              <select id="t_to_project">
-                <option value="">请选择</option>
-                <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
-              </select>
+              <div class="control">
+                <select id="t_to_project">
+                  <option value="">请选择</option>
+                  <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
+                </select>
+              </div>
             </div>
             <div class="filter-actions">
               <button class="btn" onclick="resetTransferSearch()">重置</button>
@@ -604,7 +539,7 @@
             </div>
           </div>
 
-          <div class="sub-action-bar">
+          <div class="action-bar">
             <button class="btn" onclick="exportTransfer()"><span class="btn-icon">⤓</span>导出</button>
           </div>
 
@@ -612,15 +547,15 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width:50px;text-align:center"><input type="checkbox" id="transferCheckAll" onchange="toggleTransferCheckAll(this)"></th>
-                  <th style="width:160px">任务编号</th>
-                  <th style="width:120px">任务状态</th>
-                  <th style="width:180px">调度申请时间</th>
-                  <th style="width:180px">确认交接时间</th>
-                  <th style="width:120px">申请人</th>
-                  <th style="width:160px">流转前项目</th>
-                  <th style="width:160px">流转后项目</th>
-                  <th style="width:100px;text-align:center">操作</th>
+                  <th class="col-center" style="width:50px"><input type="checkbox" id="transferCheckAll" onchange="toggleTransferCheckAll(this)"></th>
+                  <th class="col-center" style="width:160px">任务编号</th>
+                  <th class="col-left" style="width:120px">任务状态</th>
+                  <th class="col-center" style="width:180px">调度申请时间</th>
+                  <th class="col-center" style="width:180px">确认交接时间</th>
+                  <th class="col-left" style="width:120px">申请人</th>
+                  <th class="col-left" style="width:160px">流转前项目</th>
+                  <th class="col-left" style="width:160px">流转后项目</th>
+                  <th class="col-center" style="width:100px">操作</th>
                 </tr>
               </thead>
               <tbody id="transferTableBody"></tbody>
@@ -628,7 +563,10 @@
           </div>
 
           <div class="pagination-area">
-            <div class="pagination-info">共 <strong id="transferTotalCount">0</strong> 条记录</div>
+            <div class="pagination-left">
+              <div class="pagination-info">共 <strong id="transferTotalCount">0</strong> 条记录</div>
+              <span class="pagination-pages" id="transferPageInfo"></span>
+            </div>
             <div style="display:flex;align-items:center;gap:8px">
               <div class="pagination" id="transferPagination"></div>
               <select class="page-size-select" id="transferPageSizeSelect" onchange="changeTransferPageSize()">
@@ -659,38 +597,42 @@
           <!-- 当前BOM视图 -->
           <div id="bomCurrentView">
             <div class="bom-search">
-              <div class="filter-item">
+              <div class="form-row">
                 <label>件号/名字</label>
-                <input type="text" id="bom_keyword" placeholder="请输入件号或名字">
+                <div class="control"><input type="text" id="bom_keyword" placeholder="请输入件号或名字"></div>
               </div>
-              <div class="filter-item">
+              <div class="form-row">
                 <label>供应商</label>
-                <input type="text" id="bom_supplier" placeholder="请输入供应商">
+                <div class="control"><input type="text" id="bom_supplier" placeholder="请输入供应商"></div>
               </div>
-              <div class="filter-item">
+              <div class="form-row">
                 <label>级别</label>
-                <select id="bom_level">
-                  <option value="">全部</option>
-                  <option>L1</option><option>L2</option><option>L3</option>
-                </select>
+                <div class="control">
+                  <select id="bom_level">
+                    <option value="">全部</option>
+                    <option>L1</option><option>L2</option><option>L3</option>
+                  </select>
+                </div>
               </div>
-              <div class="filter-item">
+              <div class="form-row">
                 <label>变更状态</label>
-                <select id="bom_change_status">
-                  <option value="">全部</option>
-                  <option value="changed">仅已变更</option>
-                  <option value="unchanged">仅未变更</option>
-                </select>
+                <div class="control">
+                  <select id="bom_change_status">
+                    <option value="">全部</option>
+                    <option value="changed">仅已变更</option>
+                    <option value="unchanged">仅未变更</option>
+                  </select>
+                </div>
               </div>
               <div class="filter-actions">
                 <button class="btn" onclick="resetBomSearch()">重置</button>
                 <button class="btn btn-primary" onclick="searchBom()">查询</button>
               </div>
             </div>
-            <div class="sub-action-bar">
+            <div class="action-bar">
               <button class="btn" onclick="exportBom()"><span class="btn-icon">⤓</span>导出</button>
               <button class="btn" onclick="refreshBom()"><span class="btn-icon">↻</span>手动刷新</button>
-              <div class="col-setting-wrap" style="position:relative;margin-left:auto">
+              <div class="col-setting-wrap push-right">
                 <button class="btn" onclick="toggleBomColSetting()"><span class="btn-icon">⛀</span>列设置</button>
                 <div class="col-setting-panel" id="bomColSettingPanel">
                   <div class="col-setting-title">列展示设置</div>
@@ -711,11 +653,15 @@
               </table>
             </div>
             <div class="pagination-area">
-              <div class="pagination-info">共 <strong id="bomTotal">0</strong> 条记录</div>
+              <div class="pagination-left">
+                <div class="pagination-info">共 <strong id="bomTotal">0</strong> 条记录</div>
+                <span class="pagination-pages" id="bomPageInfo"></span>
+              </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="pagination" id="bomPagination"></div>
                 <select class="page-size-select" id="bomPageSizeSelect" onchange="changeBomPageSize()">
-                  <option value="50" selected>50条/页</option>
+                  <option value="10" selected>10条/页</option>
+                  <option value="50">50条/页</option>
                   <option value="100">100条/页</option>
                   <option value="200">200条/页</option>
                 </select>
@@ -726,51 +672,55 @@
           <!-- 变更记录视图 -->
           <div id="bomHistoryView" style="display:none">
             <div class="bom-search">
-              <div class="filter-item">
+              <div class="form-row">
                 <label>变更时间范围</label>
-                <div class="date-range">
-                  <input type="date" id="bh_time_start" style="width:150px">
-                  <span class="sep">~</span>
-                  <input type="date" id="bh_time_end" style="width:150px">
+                <div class="control is-range">
+                  <div class="date-range">
+                    <input type="date" id="bh_time_start">
+                    <span class="sep">~</span>
+                    <input type="date" id="bh_time_end">
+                  </div>
                 </div>
               </div>
-              <div class="filter-item">
+              <div class="form-row">
                 <label>件号/名字</label>
-                <input type="text" id="bh_keyword" placeholder="请输入件号或名字">
+                <div class="control"><input type="text" id="bh_keyword" placeholder="请输入件号或名字"></div>
               </div>
-              <div class="filter-item">
+              <div class="form-row">
                 <label>工单号</label>
-                <input type="text" id="bh_workorder" placeholder="请输入工单号">
+                <div class="control"><input type="text" id="bh_workorder" placeholder="请输入工单号"></div>
               </div>
-              <div class="filter-item">
+              <div class="form-row">
                 <label>变更类型</label>
-                <select id="bh_change_type">
-                  <option value="">全部</option>
-                  <option value="更换">更换</option>
-                  <option value="新增">新增</option>
-                  <option value="移除">移除</option>
-                </select>
+                <div class="control">
+                  <select id="bh_change_type">
+                    <option value="">全部</option>
+                    <option value="更换">更换</option>
+                    <option value="新增">新增</option>
+                    <option value="移除">移除</option>
+                  </select>
+                </div>
               </div>
               <div class="filter-actions">
                 <button class="btn" onclick="resetBomHistorySearch()">重置</button>
                 <button class="btn btn-primary" onclick="searchBomHistory()">查询</button>
               </div>
             </div>
-            <div class="sub-action-bar">
+            <div class="action-bar">
               <button class="btn" onclick="exportBomHistory()"><span class="btn-icon">⤓</span>导出</button>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th style="width:120px">变更时间</th>
-                    <th style="width:130px">件号</th>
-                    <th style="width:150px">名字</th>
-                    <th style="width:80px;text-align:center">变更类型</th>
-                    <th style="width:180px">变更前信息</th>
-                    <th style="width:180px">变更后信息</th>
-                    <th style="width:160px">工单号</th>
-                    <th style="width:140px">变更原因</th>
+                    <th class="col-center" style="width:120px">变更时间</th>
+                    <th class="col-center" style="width:130px">件号</th>
+                    <th class="col-left" style="width:150px">名字</th>
+                    <th class="col-center" style="width:80px">变更类型</th>
+                    <th class="col-left" style="width:180px">变更前信息</th>
+                    <th class="col-left" style="width:180px">变更后信息</th>
+                    <th class="col-center" style="width:160px">工单号</th>
+                    <th class="col-left" style="width:140px">变更原因</th>
                   </tr>
                 </thead>
                 <tbody id="bomHistoryTableBody"></tbody>
@@ -778,12 +728,15 @@
             </div>
             <div class="bom-change-stats" id="bomChangeStats"></div>
             <div class="pagination-area">
-              <div class="pagination-info">共 <strong id="bhTotalCount">0</strong> 条记录</div>
+              <div class="pagination-left">
+                <div class="pagination-info">共 <strong id="bhTotalCount">0</strong> 条记录</div>
+                <span class="pagination-pages" id="bhPageInfo"></span>
+              </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="pagination" id="bhPagination"></div>
                 <select class="page-size-select" id="bhPageSizeSelect" onchange="changeBhPageSize()">
-                  <option value="20" selected>20条/页</option>
-                  <option value="10">10条/页</option>
+                  <option value="10" selected>10条/页</option>
+                  <option value="20">20条/页</option>
                   <option value="50">50条/页</option>
                   <option value="100">100条/页</option>
                 </select>
@@ -820,7 +773,7 @@
 
         <!-- Tab Content: 变更日志 -->
         <div class="tab-content" id="tab-changelog" style="display:none">
-          <div class="sub-action-bar">
+          <div class="action-bar">
             <button class="btn" onclick="exportChangelog()"><span class="btn-icon">⤓</span>导出</button>
           </div>
 
@@ -828,14 +781,14 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width:50px;text-align:center"><input type="checkbox" id="logCheckAll" onchange="toggleLogCheckAll(this)"></th>
-                  <th style="width:100px;text-align:center">操作类型</th>
-                  <th style="width:160px">修改字段</th>
-                  <th style="width:200px">修改前</th>
-                  <th style="width:200px">修改后</th>
-                  <th style="width:120px">操作人</th>
-                  <th style="width:180px">操作时间</th>
-                  <th style="width:120px">操作来源</th>
+                  <th class="col-center" style="width:50px"><input type="checkbox" id="logCheckAll" onchange="toggleLogCheckAll(this)"></th>
+                  <th class="col-center" style="width:100px">操作类型</th>
+                  <th class="col-left" style="width:160px">修改字段</th>
+                  <th class="col-left" style="width:200px">修改前</th>
+                  <th class="col-left" style="width:200px">修改后</th>
+                  <th class="col-left" style="width:120px">操作人</th>
+                  <th class="col-center" style="width:180px">操作时间</th>
+                  <th class="col-left" style="width:120px">操作来源</th>
                 </tr>
               </thead>
               <tbody id="logTableBody"></tbody>
@@ -843,7 +796,10 @@
           </div>
 
           <div class="pagination-area">
-            <div class="pagination-info">共 <strong id="logTotalCount">0</strong> 条记录</div>
+            <div class="pagination-left">
+              <div class="pagination-info">共 <strong id="logTotalCount">0</strong> 条记录</div>
+              <span class="pagination-pages" id="logPageInfo"></span>
+            </div>
             <div style="display:flex;align-items:center;gap:8px">
               <div class="pagination" id="logPagination"></div>
               <select class="page-size-select" id="logPageSizeSelect" onchange="changeLogPageSize()">
@@ -858,27 +814,22 @@
       </div>
     </div>
 
-    <!-- 编辑态底部操作栏 -->
-    <div class="edit-footer-bar" id="editFooterBar">
-      <button class="btn btn-lg" onclick="cancelEdit()">取消</button>
-      <button class="btn btn-primary btn-lg" onclick="saveEdit()">确定</button>
+    <!-- 编辑态底部操作栏（公共组件 .edit-footer-bar，查看态隐藏） -->
+    <div class="edit-footer-bar" id="editFooterBar" style="display:none">
+      <button class="btn" onclick="cancelEdit()">取消</button>
+      <button class="btn btn-primary" onclick="saveEdit()">确定</button>
     </div>
   </div>
 </div>
 
 <script src="../components/common.js"></script>
 <script>
-// ===== 初始化布局 =====
+// ===== 初始化布局（规范二.5：顶部导航仅展示模块名，不展示面包屑） =====
 Common.initLayout({
-    basePath: '../',
+  basePath: '../',
   sidebarId: 'sidebar',
   activeMenuId: 'asset-manage',
   headerId: 'header',
-  breadcrumbs: [
-    { label: '车辆管理', href: './vehicle-asset-list.html' },
-    { label: '车辆资产管理', href: './vehicle-asset-list.html' },
-    { label: '资产详情' },
-  ],
   headerOptions: { showProject: false }
 });
 
@@ -930,7 +881,7 @@ const labelGroups = [
 ];
 const colorMap = {
     blue:{tag:'tag-blue'}, green:{tag:'tag-green'}, orange:{tag:'tag-orange'}, red:{tag:'tag-red'},
-    yellow:{tag:'tag-yellow'}, purple:{tag:'tag-purple'}, cyan:{tag:'tag-cyan'}, gray:{tag:'tag-default'},
+    yellow:{tag:'tag-yellow'}, purple:{tag:'tag-purple'}, cyan:{tag:'tag-blue'}, gray:{tag:'tag-default'},
 };
 // 查看态：渲染当前车辆标签
 function renderDetailTags() {
@@ -1133,128 +1084,128 @@ function renderBasicEdit() {
   document.getElementById('basicEditMode').innerHTML = `
     <form id="editForm" onsubmit="return false">
       <div class="form-section"><div class="section-title">车辆基础信息</div><div class="form-grid">
-        <div class="form-item"><label><span class="required">*</span> 车架号</label><input type="text" value="${d.vin}" maxlength="17"></div>
-        <div class="form-item"><label>国标车架号</label><input type="text" value="${d.gbt_vin}"></div>
-        <div class="form-item"><label>车牌号</label><input type="text" value="${d.plate_no}"></div>
-        <div class="form-item"><label>出厂编号</label><input type="text" value="${d.factory_no}"></div>
-        <div class="form-item"><label><span class="required">*</span> 是否为测试车</label><div class="radio-group"><label><input type="radio" name="isTest" value="1" ${d.is_test==='是'?'checked':''}> 是</label><label><input type="radio" name="isTest" value="0" ${d.is_test==='否'?'checked':''}> 否</label></div></div>
-        <div class="form-item"><label><span class="required">*</span> 是否支持联网</label><div class="radio-group"><label><input type="radio" name="isNetwork" value="1" ${d.is_network==='是'?'checked':''}> 是</label><label><input type="radio" name="isNetwork" value="0" ${d.is_network==='否'?'checked':''}> 否</label></div></div>
-        <div class="form-item"><label>网联编号</label><input type="text" value="${d.iot_code}"></div>
+        <div class="form-row" data-required="1" data-label="车架号"><label><span class="required">*</span>车架号</label><div class="control"><input type="text" data-field="vin" value="${d.vin}" maxlength="17"></div></div>
+        <div class="form-row"><label>国标车架号</label><div class="control"><input type="text" data-field="gbt_vin" value="${d.gbt_vin}"></div></div>
+        <div class="form-row"><label>车牌号</label><div class="control"><input type="text" data-field="plate_no" value="${d.plate_no}"></div></div>
+        <div class="form-row"><label>出厂编号</label><div class="control"><input type="text" data-field="factory_no" value="${d.factory_no}"></div></div>
+        <div class="form-row" data-required="1" data-label="是否为测试车"><label><span class="required">*</span>是否为测试车</label><div class="control"><div class="radio-group"><label><input type="radio" name="isTest" data-field="is_test" value="1" ${d.is_test==='是'?'checked':''}> 是</label><label><input type="radio" name="isTest" data-field="is_test" value="0" ${d.is_test==='否'?'checked':''}> 否</label></div></div></div>
+        <div class="form-row" data-required="1" data-label="是否支持联网"><label><span class="required">*</span>是否支持联网</label><div class="control"><div class="radio-group"><label><input type="radio" name="isNetwork" data-field="is_network" value="1" ${d.is_network==='是'?'checked':''}> 是</label><label><input type="radio" name="isNetwork" data-field="is_network" value="0" ${d.is_network==='否'?'checked':''}> 否</label></div></div></div>
+        <div class="form-row"><label>网联编号</label><div class="control"><input type="text" data-field="iot_code" value="${d.iot_code}"></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">归属信息</div><div class="form-grid">
-        <div class="form-item"><label>所在城市</label><input type="text" value="${d.city}"></div>
-        <div class="form-item"><label><span class="required">*</span> 归属项目</label><select><option value="">请选择</option>${sel(d.project,['嘉定研发','椒北街道','经开东区项目','镜湖区项目','鸠江江北项目','鸠江开发区项目','鸠江项目','陵水项目'])}</select></div>
-        <div class="form-item"><label><span class="required">*</span> 运营负责人</label><input type="text" value="${d.operator}"></div>
-        <div class="form-item"><label><span class="required">*</span> 资产来源</label><select><option value="">请选择</option>${sel(d.asset_source,['外购','租赁','融资租赁','借用','自研'])}</select></div>
-        <div class="form-item"><label><span class="required">*</span> 资产分类</label><select><option value="">请选择</option>${sel(d.asset_class,['固定资产'])}</select></div>
-        <div class="form-item"><label>合同主体</label><select><option value="">请选择</option>${sel(d.contract_entity,['北京XXX科技有限公司','上海XXX信息技术有限公司'])}</select></div>
-        <div class="form-item"><label>固定资产编码</label><input type="text" value="${d.fixed_asset_code}"></div>
-        <div class="form-item"><label><span class="required">*</span> 资产属性</label><select><option value="">请选择</option>${sel(d.asset_attr,['非机动车','运营车辆-电动','运营车辆-油动','运营车辆-气动','智能驾驶设备','运输设备','乘用车'])}</select></div>
-        <div class="form-item"><label><span class="required">*</span> 车辆状态</label><select><option value="">请选择</option>${sel(d.vehicle_status,['在库-正常使用','在库-闲置留用','在库-闲置可调出','在库-维修','在库-保养中','在库-待报废','待分配','已报废','已处置'])}</select></div>
+        <div class="form-row"><label>所在城市</label><div class="control"><input type="text" data-field="city" value="${d.city}"></div></div>
+        <div class="form-row" data-required="1" data-label="归属项目"><label><span class="required">*</span>归属项目</label><div class="control"><select data-field="project"><option value="">请选择</option>${sel(d.project,['嘉定研发','椒北街道','经开东区项目','镜湖区项目','鸠江江北项目','鸠江开发区项目','鸠江项目','陵水项目'])}</select></div></div>
+        <div class="form-row" data-required="1" data-label="运营负责人"><label><span class="required">*</span>运营负责人</label><div class="control"><input type="text" data-field="operator" value="${d.operator}"></div></div>
+        <div class="form-row" data-required="1" data-label="资产来源"><label><span class="required">*</span>资产来源</label><div class="control"><select data-field="asset_source"><option value="">请选择</option>${sel(d.asset_source,['外购','租赁','融资租赁','借用','自研'])}</select></div></div>
+        <div class="form-row" data-required="1" data-label="资产分类"><label><span class="required">*</span>资产分类</label><div class="control"><select data-field="asset_class"><option value="">请选择</option>${sel(d.asset_class,['固定资产'])}</select></div></div>
+        <div class="form-row"><label>合同主体</label><div class="control"><select data-field="contract_entity"><option value="">请选择</option>${sel(d.contract_entity,['北京XXX科技有限公司','上海XXX信息技术有限公司'])}</select></div></div>
+        <div class="form-row"><label>固定资产编码</label><div class="control"><input type="text" data-field="fixed_asset_code" value="${d.fixed_asset_code}"></div></div>
+        <div class="form-row" data-required="1" data-label="资产属性"><label><span class="required">*</span>资产属性</label><div class="control"><select data-field="asset_attr"><option value="">请选择</option>${sel(d.asset_attr,['非机动车','运营车辆-电动','运营车辆-油动','运营车辆-气动','智能驾驶设备','运输设备','乘用车'])}</select></div></div>
+        <div class="form-row" data-required="1" data-label="车辆状态"><label><span class="required">*</span>车辆状态</label><div class="control"><select data-field="vehicle_status"><option value="">请选择</option>${sel(d.vehicle_status,['在库-正常使用','在库-闲置留用','在库-闲置可调出','在库-维修','在库-保养中','在库-待报废','待分配','已报废','已处置'])}</select></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">车辆照片</div><div class="form-grid">
-        <div class="form-item"><label>车辆正面</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>车头45°</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-row"><label>车辆正面</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>车头45°</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">行驶证信息</div><div class="form-grid">
-        <div class="form-item"><label>行驶证正面照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>行驶证背面照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>注册日期</label><input type="date" value="${d.reg_date}"></div>
-        <div class="form-item"><label>车龄</label><input type="text" value="${d.car_age}" readonly class="readonly"></div>
+        <div class="form-row"><label>行驶证正面照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>行驶证背面照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>注册日期</label><div class="control"><input type="date" data-field="reg_date" value="${d.reg_date}"></div></div>
+        <div class="form-row"><label>车龄</label><div class="control"><input type="text" value="${d.car_age}" readonly></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">车型信息</div><div class="form-grid">
-        <div class="form-item"><label><span class="required">*</span> 车型名称（中）</label><select><option value="">请选择</option>${sel(d.model_name,['爱瑞特纯电动高压冲洗车','长城多用途货车','独角兽','麒麟清扫车','麒麟无人化扫地车','三力洒水车','泰坦智能驾驶洒水车','中联清洗车'])}</select></div>
-        <div class="form-item"><label>车型版本</label><select><option value="">请选择</option>${sel(d.model_version,['V1.0','V2.0','V3.0'])}</select></div>
-        <div class="form-item"><label>车辆类别</label><input type="text" value="${d.vehicle_category}" readonly class="readonly"></div>
-        <div class="form-item"><label>车型别名</label><select><option value="">请选择</option>${sel(d.model_alias,['扫路车','运输车','小型清洗机','小型扫路机','皮卡'])}</select></div>
-        <div class="form-item"><label>车型分类</label><input type="text" value="${d.model_class}" readonly class="readonly"></div>
-        <div class="form-item"><label>动力类别</label><input type="text" value="${d.power_type}" readonly class="readonly"></div>
-        <div class="form-item"><label>排放标准</label><input type="text" value="${d.emission}" readonly class="readonly"></div>
-        <div class="form-item"><label>总质量（KG）</label><input type="text" value="${d.total_weight}" readonly class="readonly"></div>
-        <div class="form-item"><label>整备质量（KG）</label><input type="text" value="${d.curb_weight}" readonly class="readonly"></div>
-        <div class="form-item"><label>整车厂商</label><input type="text" value="${d.vehicle_mfr}" readonly class="readonly"></div>
-        <div class="form-item"><label>整车型号</label><input type="text" value="${d.vehicle_model_no}" readonly class="readonly"></div>
-        <div class="form-item"><label>底盘厂家</label><input type="text" value="${d.chassis_mfr}" readonly class="readonly"></div>
-        <div class="form-item"><label>底盘型号</label><input type="text" value="${d.chassis_model_no}" readonly class="readonly"></div>
-        <div class="form-item"><label>主发动机厂家</label><input type="text" value="${d.engine_mfr}" readonly class="readonly"></div>
-        <div class="form-item"><label>主发动机型号/驱动电机型号</label><input type="text" value="${d.engine_model}" readonly class="readonly"></div>
-        <div class="form-item"><label>驱动电机峰值功率 (KW)</label><input type="text" value="${d.motor_power}" readonly class="readonly"></div>
+        <div class="form-row" data-required="1" data-label="车型名称（中）"><label><span class="required">*</span>车型名称（中）</label><div class="control"><select data-field="model_name"><option value="">请选择</option>${sel(d.model_name,['爱瑞特纯电动高压冲洗车','长城多用途货车','独角兽','麒麟清扫车','麒麟无人化扫地车','三力洒水车','泰坦智能驾驶洒水车','中联清洗车'])}</select></div></div>
+        <div class="form-row"><label>车型版本</label><div class="control"><select data-field="model_version"><option value="">请选择</option>${sel(d.model_version,['V1.0','V2.0','V3.0'])}</select></div></div>
+        <div class="form-row"><label>车辆类别</label><div class="control"><input type="text" value="${d.vehicle_category}" readonly></div></div>
+        <div class="form-row"><label>车型别名</label><div class="control"><select data-field="model_alias"><option value="">请选择</option>${sel(d.model_alias,['扫路车','运输车','小型清洗机','小型扫路机','皮卡'])}</select></div></div>
+        <div class="form-row"><label>车型分类</label><div class="control"><input type="text" value="${d.model_class}" readonly></div></div>
+        <div class="form-row"><label>动力类别</label><div class="control"><input type="text" value="${d.power_type}" readonly></div></div>
+        <div class="form-row"><label>排放标准</label><div class="control"><input type="text" value="${d.emission}" readonly></div></div>
+        <div class="form-row"><label>总质量（KG）</label><div class="control"><input type="text" value="${d.total_weight}" readonly></div></div>
+        <div class="form-row"><label>整备质量（KG）</label><div class="control"><input type="text" value="${d.curb_weight}" readonly></div></div>
+        <div class="form-row"><label>整车厂商</label><div class="control"><input type="text" value="${d.vehicle_mfr}" readonly></div></div>
+        <div class="form-row"><label>整车型号</label><div class="control"><input type="text" value="${d.vehicle_model_no}" readonly></div></div>
+        <div class="form-row"><label>底盘厂家</label><div class="control"><input type="text" value="${d.chassis_mfr}" readonly></div></div>
+        <div class="form-row"><label>底盘型号</label><div class="control"><input type="text" value="${d.chassis_model_no}" readonly></div></div>
+        <div class="form-row"><label>主发动机厂家</label><div class="control"><input type="text" value="${d.engine_mfr}" readonly></div></div>
+        <div class="form-row"><label>主发动机型号/驱动电机型号</label><div class="control"><input type="text" value="${d.engine_model}" readonly></div></div>
+        <div class="form-row"><label>驱动电机峰值功率 (KW)</label><div class="control"><input type="text" value="${d.motor_power}" readonly></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">整车信息</div><div class="form-grid">
-        <div class="form-item"><label>整车铭牌/合格证照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>整车制造日期</label><input type="date" value="${d.whole_vehicle_date}"></div>
+        <div class="form-row"><label>整车铭牌/合格证照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>整车制造日期</label><div class="control"><input type="date" data-field="whole_vehicle_date" value="${d.whole_vehicle_date}"></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">底盘信息</div><div class="form-grid">
-        <div class="form-item"><label>底盘铭牌/合格证照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>轮胎型号</label><input type="text" value="${d.tire_model}"></div>
+        <div class="form-row"><label>底盘铭牌/合格证照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>轮胎型号</label><div class="control"><input type="text" data-field="tire_model" value="${d.tire_model}"></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">主发动机信息</div><div class="form-grid cols-1" style="max-width:400px">
-        <div class="form-item"><label>主发动机铭牌照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+        <div class="form-row"><label>主发动机铭牌照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">副发动机信息</div><div class="form-grid">
-        <div class="form-item"><label>副发动机铭牌照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>副发动机厂家</label><input type="text" value="${d.sub_engine_mfr}"></div>
-        <div class="form-item"><label>副发动机型号</label><input type="text" value="${d.sub_engine_model}"></div>
-        <div class="form-item"><label>副发动机功率（KW）</label><input type="number" value="${d.sub_engine_power}" min="0"></div>
+        <div class="form-row"><label>副发动机铭牌照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>副发动机厂家</label><div class="control"><input type="text" data-field="sub_engine_mfr" value="${d.sub_engine_mfr}"></div></div>
+        <div class="form-row"><label>副发动机型号</label><div class="control"><input type="text" data-field="sub_engine_model" value="${d.sub_engine_model}"></div></div>
+        <div class="form-row"><label>副发动机功率（KW）</label><div class="control"><input type="number" data-field="sub_engine_power" value="${d.sub_engine_power}" min="0"></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">变速箱信息</div><div class="form-grid">
-        <div class="form-item"><label>变速箱铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>变速箱厂家</label><input type="text" value="${d.gearbox_mfr}"></div>
-        <div class="form-item"><label>变速箱型号</label><input type="text" value="${d.gearbox_model}"></div>
+        <div class="form-row"><label>变速箱铭牌</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>变速箱厂家</label><div class="control"><input type="text" data-field="gearbox_mfr" value="${d.gearbox_mfr}"></div></div>
+        <div class="form-row"><label>变速箱型号</label><div class="control"><input type="text" data-field="gearbox_model" value="${d.gearbox_model}"></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">上装信息</div><div class="form-grid">
-        <div class="form-item"><label>风机铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>风机型号/厂家</label><input type="text" value="${d.fan_model}"></div>
-        <div class="form-item"><label>高压水泵铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>高压水泵型号/厂家</label><input type="text" value="${d.hp_pump_model}"></div>
-        <div class="form-item"><label>低压水泵铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-        <div class="form-item"><label>低压水泵型号/厂家</label><input type="text" value="${d.lp_pump_model}"></div>
+        <div class="form-row"><label>风机铭牌</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>风机型号/厂家</label><div class="control"><input type="text" data-field="fan_model" value="${d.fan_model}"></div></div>
+        <div class="form-row"><label>高压水泵铭牌</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>高压水泵型号/厂家</label><div class="control"><input type="text" data-field="hp_pump_model" value="${d.hp_pump_model}"></div></div>
+        <div class="form-row"><label>低压水泵铭牌</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+        <div class="form-row"><label>低压水泵型号/厂家</label><div class="control"><input type="text" data-field="lp_pump_model" value="${d.lp_pump_model}"></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">其他</div><div class="form-grid">
-        <div class="form-item"><label>其他配置</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传文件</span></div></div><div class="hint">支持jpg/png/pdf，单文件不超过10MB，可上传多个</div></div>
-        <div class="form-item"><label>备注</label><textarea maxlength="500">${d.remark}</textarea></div>
+        <div class="form-row"><label>其他配置</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传文件</span></div></div><div class="hint">支持jpg/png/pdf，单文件不超过10MB，可上传多个</div></div></div>
+        <div class="form-row"><label>备注</label><div class="control"><textarea data-field="remark" maxlength="500">${d.remark}</textarea></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">硬件信息</div>
-        <table class="dynamic-table" id="editHwTable"><thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th><th style="width:10%">操作</th></tr></thead>
-        <tbody>${d.hw_list.map(h=>`<tr><td><input type="text" value="${h.name}"></td><td><input type="text" value="${h.code}"></td><td><input type="text" value="${h.status}"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table>
+        <div class="table-wrapper"><table class="dynamic-table" id="editHwTable"><thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th><th style="width:10%">操作</th></tr></thead>
+        <tbody>${d.hw_list.map(h=>`<tr><td><input type="text" value="${h.name}"></td><td><input type="text" value="${h.code}"></td><td><input type="text" value="${h.status}"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table></div>
         <div class="add-row-btn" onclick="addEditHwRow()">＋ 添加硬件</div>
       </div>
 
       <div class="form-section"><div class="section-title">软件信息</div>
-        <table class="dynamic-table" id="editSwTable"><thead><tr><th style="width:45%">软件名称</th><th style="width:45%">具体值</th><th style="width:10%">操作</th></tr></thead>
-        <tbody>${d.sw_list.map(s=>`<tr><td><input type="text" value="${s.name}"></td><td><input type="text" value="${s.value}"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table>
+        <div class="table-wrapper"><table class="dynamic-table" id="editSwTable"><thead><tr><th style="width:45%">软件名称</th><th style="width:45%">具体值</th><th style="width:10%">操作</th></tr></thead>
+        <tbody>${d.sw_list.map(s=>`<tr><td><input type="text" value="${s.name}"></td><td><input type="text" value="${s.value}"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table></div>
         <div class="add-row-btn" onclick="addEditSwRow()">＋ 添加软件</div>
       </div>
 
       <div class="form-section"><div class="section-title">摄像头信息</div>
-        <table class="dynamic-table" id="editCamTable"><thead><tr><th>名称</th><th>Track_ID</th><th>最小码率</th><th>最大码率</th><th>是否固定码率</th><th>帧率</th><th>分辨率</th><th>优先级</th><th>应用平台</th><th>操作</th></tr></thead>
-        <tbody>${d.cam_list.map(c=>`<tr><td><input type="text" value="${c.name}"></td><td><input type="number" value="${c.tid}"></td><td><input type="number" value="${c.minbr}"></td><td><input type="number" value="${c.maxbr}"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.fixed==='是'?'selected':''}>是</option><option ${c.fixed==='否'?'selected':''}>否</option></select></td><td><input type="number" value="${c.fps}"></td><td><input type="text" value="${c.res}"></td><td><input type="text" value="${c.pri}"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.platform==='均支持'?'selected':''}>均支持</option><option ${c.platform==='云平台'?'selected':''}>云平台</option><option ${c.platform==='自动驾驶'?'selected':''}>自动驾驶</option></select></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table>
+        <div class="table-wrapper"><table class="dynamic-table" id="editCamTable"><thead><tr><th>名称</th><th>Track_ID</th><th>最小码率</th><th>最大码率</th><th>是否固定码率</th><th>帧率</th><th>分辨率</th><th>优先级</th><th>应用平台</th><th>操作</th></tr></thead>
+        <tbody>${d.cam_list.map(c=>`<tr><td><input type="text" value="${c.name}"></td><td><input type="number" value="${c.tid}"></td><td><input type="number" value="${c.minbr}"></td><td><input type="number" value="${c.maxbr}"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.fixed==='是'?'selected':''}>是</option><option ${c.fixed==='否'?'selected':''}>否</option></select></td><td><input type="number" value="${c.fps}"></td><td><input type="text" value="${c.res}"></td><td><input type="text" value="${c.pri}"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.platform==='均支持'?'selected':''}>均支持</option><option ${c.platform==='云平台'?'selected':''}>云平台</option><option ${c.platform==='自动驾驶'?'selected':''}>自动驾驶</option></select></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table></div>
         <div class="add-row-btn" onclick="addEditCamRow()">＋ 添加摄像头</div>
       </div>
 
       <div class="form-section"><div class="section-title">车辆功能配置</div><div class="form-grid">
-        <div class="form-item"><label>历史图片</label><div class="radio-group"><label><input type="radio" name="historyImg" value="1" ${d.history_img==='是'?'checked':''}> 是</label><label><input type="radio" name="historyImg" value="0" ${d.history_img==='否'?'checked':''}> 否</label></div></div>
-        <div class="form-item"><label>历史视频</label><div class="radio-group"><label><input type="radio" name="historyVideo" value="1" ${d.history_video==='有'?'checked':''}> 有</label><label><input type="radio" name="historyVideo" value="0" ${d.history_video==='无'?'checked':''}> 无</label></div></div>
-        <div class="form-item"><label>实时视频</label><select><option value="">请选择</option>${sel(d.realtime_video,['腾讯云','WebRTC','GB28181','新GB28181','无'])}</select></div>
-        <div class="form-item"><label>平行驾驶座舱通话</label><div class="radio-group"><label><input type="radio" name="parallelCockpit" value="1" ${d.parallel_cockpit==='有'?'checked':''}> 有</label><label><input type="radio" name="parallelCockpit" value="0" ${d.parallel_cockpit==='无'?'checked':''}> 无</label></div></div>
-        <div class="form-item"><label>网联协议</label><select><option value="">请选择</option>${sel(d.network_protocol,['新网联','旧网联','无'])}</select></div>
-        <div class="form-item"><label>推拉流类型</label><select><option value="">请选择</option>${sel(d.stream_type,['WebRTC','ZLMediaKit','其他'])}</select></div>
+        <div class="form-row"><label>历史图片</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyImg" data-field="history_img" value="1" ${d.history_img==='是'?'checked':''}> 是</label><label><input type="radio" name="historyImg" data-field="history_img" value="0" ${d.history_img==='否'?'checked':''}> 否</label></div></div></div>
+        <div class="form-row"><label>历史视频</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyVideo" data-field="history_video" value="1" ${d.history_video==='有'?'checked':''}> 有</label><label><input type="radio" name="historyVideo" data-field="history_video" value="0" ${d.history_video==='无'?'checked':''}> 无</label></div></div></div>
+        <div class="form-row"><label>实时视频</label><div class="control"><select data-field="realtime_video"><option value="">请选择</option>${sel(d.realtime_video,['腾讯云','WebRTC','GB28181','新GB28181','无'])}</select></div></div>
+        <div class="form-row"><label>平行驾驶座舱通话</label><div class="control"><div class="radio-group"><label><input type="radio" name="parallelCockpit" data-field="parallel_cockpit" value="1" ${d.parallel_cockpit==='有'?'checked':''}> 有</label><label><input type="radio" name="parallelCockpit" data-field="parallel_cockpit" value="0" ${d.parallel_cockpit==='无'?'checked':''}> 无</label></div></div></div>
+        <div class="form-row"><label>网联协议</label><div class="control"><select data-field="network_protocol"><option value="">请选择</option>${sel(d.network_protocol,['新网联','旧网联','无'])}</select></div></div>
+        <div class="form-row"><label>推拉流类型</label><div class="control"><select data-field="stream_type"><option value="">请选择</option>${sel(d.stream_type,['WebRTC','ZLMediaKit','其他'])}</select></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">摄像头图片配置</div>
-        <table class="dynamic-table" id="editCamImgTable"><thead><tr><th>名称</th><th>Track_ID</th><th>是否支持历史图片</th><th>历史图片质量</th><th>是否支持感知标记</th><th>感知标记图片质量</th><th>是否支持云端打标</th><th>云端打标图片质量</th><th>是否支持车端打标</th><th>车端打标图片质量</th><th>操作</th></tr></thead>
+        <div class="table-wrapper"><table class="dynamic-table" id="editCamImgTable"><thead><tr><th>名称</th><th>Track_ID</th><th>是否支持历史图片</th><th>历史图片质量</th><th>是否支持感知标记</th><th>感知标记图片质量</th><th>是否支持云端打标</th><th>云端打标图片质量</th><th>是否支持车端打标</th><th>车端打标图片质量</th><th>操作</th></tr></thead>
         <tbody>${d.cam_img_list.map(c=>`<tr>
           <td><input type="text" value="${c.name}"></td><td><input type="number" value="${c.tid}"></td>
           <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.support_history==='是'?'selected':''}>是</option><option ${c.support_history==='否'?'selected':''}>否</option></select></td>
@@ -1266,14 +1217,14 @@ function renderBasicEdit() {
           <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option ${c.support_vehicle==='是'?'selected':''}>是</option><option ${c.support_vehicle==='否'?'selected':''}>否</option></select></td>
           <td><input type="number" value="${c.vehicle_quality}" min="0"></td>
           <td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>
-        </tr>`).join('')}</tbody></table>
+        </tr>`).join('')}</tbody></table></div>
         <div class="add-row-btn" onclick="addEditCamImgRow()">＋ 添加摄像头图片配置</div>
       </div>
 
       <div class="form-section"><div class="section-title">平行驾驶配置</div><div class="form-grid">
-        <div class="form-item"><label>是否平行驾驶</label><div class="radio-group"><label><input type="radio" name="isParallel" value="1" ${d.is_parallel==='是'?'checked':''}> 是</label><label><input type="radio" name="isParallel" value="0" ${d.is_parallel==='否'?'checked':''}> 否</label></div></div>
-        <div class="form-item"><label>最大车速（km/h）</label><input type="number" value="${d.max_speed||''}" min="0"></div>
-        <div class="form-item"><label>最大转向角</label><input type="number" value="${d.max_steer||''}" min="0"></div>
+        <div class="form-row"><label>是否平行驾驶</label><div class="control"><div class="radio-group"><label><input type="radio" name="isParallel" data-field="is_parallel" value="1" ${d.is_parallel==='是'?'checked':''}> 是</label><label><input type="radio" name="isParallel" data-field="is_parallel" value="0" ${d.is_parallel==='否'?'checked':''}> 否</label></div></div></div>
+        <div class="form-row"><label>最大车速（km/h）</label><div class="control"><input type="number" data-field="max_speed" value="${d.max_speed||''}" min="0"></div></div>
+        <div class="form-row"><label>最大转向角</label><div class="control"><input type="number" data-field="max_steer" value="${d.max_steer||''}" min="0"></div></div>
       </div></div>
       <div class="form-section"><div class="section-title">车辆标签</div>
         <div id="detailTagEditor" style="padding:12px 0;">${renderDetailTagEditor()}</div>
@@ -1331,6 +1282,10 @@ function addEditCamImgRow() {
 }
 
 // ===== 编辑态切换 =====
+function showEditFooter(show) {
+  document.getElementById('editFooterBar').style.display = show ? 'flex' : 'none';
+}
+
 function toggleEdit() {
   if (isEditing) return;
   if (currentTab === 'basic') {
@@ -1339,18 +1294,20 @@ function toggleEdit() {
     document.getElementById('basicViewMode').style.display = 'none';
     document.getElementById('basicEditMode').style.display = '';
     document.getElementById('editBtn').style.display = 'none';
-    document.getElementById('editFooterBar').classList.add('show');
+    showEditFooter(true);
   } else if (currentTab === 'aftersales' && currentAfterSalesSubTab === 'warranty-info') {
     isEditing = true;
     renderWarrantyInfoEdit();
     document.getElementById('warrantyInfoViewMode').style.display = 'none';
     document.getElementById('warrantyInfoEditMode').style.display = '';
     document.getElementById('editBtn').style.display = 'none';
-    document.getElementById('editFooterBar').classList.add('show');
+    showEditFooter(true);
   }
 }
 
 function cancelEdit() {
+  const form = document.getElementById('editForm');
+  if (form) form.querySelectorAll('.form-row.has-error').forEach(clearFieldError);
   if (currentTab === 'basic') {
     document.getElementById('basicViewMode').style.display = '';
     document.getElementById('basicEditMode').style.display = 'none';
@@ -1360,25 +1317,106 @@ function cancelEdit() {
   }
   isEditing = false;
   document.getElementById('editBtn').style.display = '';
-  document.getElementById('editFooterBar').classList.remove('show');
+  showEditFooter(false);
+}
+
+// ===== 必填校验：错误提示为红色文字，位于控件下方（规范三.2） =====
+function clearFieldError(row) {
+  if (!row) return;
+  row.classList.remove('has-error');
+  const tip = row.querySelector('.field-error');
+  if (tip) tip.remove();
+}
+
+function validateEditForm() {
+  const form = document.getElementById('editForm');
+  if (!form) return null;
+  let firstError = null;
+  form.querySelectorAll('.form-row[data-required]').forEach(row => {
+    clearFieldError(row);
+    const label = row.dataset.label || '';
+    const radio = row.querySelector('.control input[type="radio"]');
+    const ctl = row.querySelector('.control input:not([type="radio"]), .control select, .control textarea');
+    const empty = radio ? !row.querySelector('.control input[type="radio"]:checked') : !(ctl && ctl.value.trim());
+    if (empty) {
+      row.classList.add('has-error');
+      const tip = document.createElement('div');
+      tip.className = 'field-error';
+      const isPick = radio || (ctl && ctl.tagName === 'SELECT');
+      tip.textContent = (isPick ? '请选择' : '请输入') + label;
+      const control = row.querySelector('.control');
+      if (control) control.appendChild(tip);
+      if (!firstError) firstError = row;
+    }
+  });
+  return firstError;
+}
+
+// 用户修改字段时即时清除该行错误提示
+document.addEventListener('input', e => { if (e.target.closest) clearFieldError(e.target.closest('.form-row.has-error')); });
+document.addEventListener('change', e => { if (e.target.closest) clearFieldError(e.target.closest('.form-row.has-error')); });
+
+// ===== 表单值写回模拟数据（保存后查看态展示最新值） =====
+function collectDynamicRows(tableId, fields) {
+  const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+  const list = [];
+  rows.forEach(tr => {
+    const item = {};
+    fields.forEach((f, i) => {
+      const cell = tr.children[i];
+      const el = cell ? cell.querySelector('input, select') : null;
+      item[f] = el ? el.value : '';
+    });
+    list.push(item);
+  });
+  return list;
+}
+
+function collectBasicFormData() {
+  const form = document.getElementById('editForm');
+  if (!form) return;
+  form.querySelectorAll('[data-field]').forEach(el => {
+    if (el.type === 'radio') {
+      if (!el.checked) return;
+      const wrap = el.closest('label');
+      vehicleData[el.dataset.field] = wrap ? wrap.textContent.trim() : el.value;
+    } else {
+      vehicleData[el.dataset.field] = el.value.trim();
+    }
+  });
+  // 动态子表（硬件/软件/摄像头/摄像头图片配置）写回
+  vehicleData.hw_list = collectDynamicRows('editHwTable', ['name', 'code', 'status']);
+  vehicleData.sw_list = collectDynamicRows('editSwTable', ['name', 'value']);
+  vehicleData.cam_list = collectDynamicRows('editCamTable', ['name', 'tid', 'minbr', 'maxbr', 'fixed', 'fps', 'res', 'pri', 'platform']);
+  vehicleData.cam_img_list = collectDynamicRows('editCamImgTable', ['name', 'tid', 'support_history', 'history_quality', 'support_perception', 'perception_quality', 'support_cloud', 'cloud_quality', 'support_vehicle', 'vehicle_quality']);
 }
 
 function saveEdit() {
-  Common.showToast('保存成功', 'success');
-  if (currentTab === 'aftersales') { saveAfterSalesData(); }
   if (currentTab === 'basic') {
+    const firstError = validateEditForm();
+    if (firstError) {
+      Common.showToast('请先完善必填项', 'error');
+      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    // 车辆标签
     const sel = [];
     document.querySelectorAll('#detailTagEditor input:checked').forEach(cb => sel.push(cb.value));
     vehicleData.labels = sel;
+    // 其余表单字段写回（保存前仅回写车辆标签的缺陷已修复）
+    collectBasicFormData();
+    initBomTab(); // 资产来源可能变化，同步 BOM 清单 Tab 显隐
     document.getElementById('basicViewMode').style.display = '';
     document.getElementById('basicEditMode').style.display = 'none';
   } else if (currentTab === 'aftersales') {
+    saveAfterSalesData();
     document.getElementById('warrantyInfoViewMode').style.display = '';
     document.getElementById('warrantyInfoEditMode').style.display = 'none';
   }
   isEditing = false;
   document.getElementById('editBtn').style.display = '';
-  document.getElementById('editFooterBar').classList.remove('show');
+  showEditFooter(false);
+  Common.showToast('保存成功', 'success');
   if (currentTab === 'basic') renderBasicView();
   if (currentTab === 'aftersales') renderWarrantyInfoView();
 }
@@ -1411,15 +1449,23 @@ function renderTransferTable() {
     const ck = transferSelected.has(d.id) ? 'checked' : '';
     const tag = statusTagMap2[d.status] || 'tag-default';
     return `<tr>
-      <td style="text-align:center"><input type="checkbox" data-id="${d.id}" ${ck} onchange="toggleTransferCheck('${d.id}',this)"></td>
-      <td>${d.id}</td><td><span class="tag ${tag}">${d.status}</span></td><td>${d.apply_time}</td><td>${d.confirm_time}</td>
-      <td>${d.applicant}</td><td>${d.from}</td><td>${d.to}</td>
-      <td style="text-align:center"><a class="btn-link" onclick="openDispatchModal('${d.id}')">详情</a></td>
+      <td class="col-center"><input type="checkbox" data-id="${d.id}" ${ck} onchange="toggleTransferCheck('${d.id}',this)"></td>
+      <td class="col-center">${d.id}</td>
+      <td class="col-left"><span class="tag ${tag}">${d.status}</span></td>
+      <td class="col-center num">${d.apply_time}</td>
+      <td class="col-center num">${d.confirm_time}</td>
+      <td class="col-left">${d.applicant}</td>
+      <td class="col-left ellipsis" title="${d.from}">${d.from}</td>
+      <td class="col-left ellipsis" title="${d.to}">${d.to}</td>
+      <td class="col-center"><a class="btn-link" onclick="openDispatchModal('${d.id}')">详情</a></td>
     </tr>`;
   }).join('');
+  // 表头全选态与当前页数据保持一致
+  const checkAll = document.getElementById('transferCheckAll');
+  if (checkAll) checkAll.checked = pageData.length > 0 && pageData.every(d => transferSelected.has(d.id));
   Common.renderPagination({
     total: transferData.length, currentPage: transferPage, pageSize: transferPageSize,
-    containerId: 'transferPagination', infoId: 'transferTotalCount',
+    containerId: 'transferPagination', infoId: 'transferTotalCount', pageInfoId: 'transferPageInfo',
     onPageChange: p => { transferPage = p; renderTransferTable(); }
   });
 }
@@ -1427,9 +1473,12 @@ function changeTransferPageSize() {
   transferPageSize = parseInt(document.getElementById('transferPageSizeSelect').value);
   transferPage = 1; renderTransferTable();
 }
+// 表头全选：仅选中/取消当前页所有行（不跨页）
 function toggleTransferCheckAll(el) {
-  transferSelected.clear();
-  if (el.checked) transferData.forEach(d => transferSelected.add(d.id));
+  const start = (transferPage - 1) * transferPageSize;
+  transferData.slice(start, start + transferPageSize).forEach(d => {
+    if (el.checked) transferSelected.add(d.id); else transferSelected.delete(d.id);
+  });
   renderTransferTable();
 }
 function toggleTransferCheck(id, el) {
@@ -1441,7 +1490,20 @@ function resetTransferSearch() {
   ['t_from_project','t_to_project'].forEach(id => document.getElementById(id).selectedIndex = 0);
   transferPage = 1; renderTransferTable();
 }
-function exportTransfer() { Common.showToast('导出成功','success'); }
+// 导出：已勾选则导出选中数据，否则二次确认是否导出全部
+function exportTransfer() {
+  if (transferSelected.size > 0) {
+    Common.showToast('已导出选中的 ' + transferSelected.size + ' 条数据', 'success');
+    return;
+  }
+  Common.confirm({
+    title: '导出确认',
+    content: '是否导出所有数据？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => Common.showToast('已导出所有数据（共 ' + transferData.length + ' 条）', 'success')
+  });
+}
 
 // ===== BOM清单 =====
 
@@ -1543,8 +1605,8 @@ function getMergedBomData() {
   });
 }
 
-let bomPage = 1, bomPageSize = 50, bomFilteredData = getMergedBomData();
-let bomHistoryPage = 1, bomHistoryPageSize = 20;
+let bomPage = 1, bomPageSize = 10, bomFilteredData = getMergedBomData();
+let bomHistoryPage = 1, bomHistoryPageSize = 10;
 let bomHistoryFilteredData = [...bomChangeData];
 
 // 初始化BOM Tab
@@ -1612,13 +1674,20 @@ function exportBom() { Common.showToast('导出成功：BOM清单_' + vehicleDat
 function refreshBom() { Common.showToast('刷新成功，已拉取最新售后变更数据','success'); renderBomTab(); }
 
 // 当前BOM - 表格渲染
+// 列对齐规则（规范二.3）：文本左对齐 / 用量等数字右对齐 / 件号等编码居中对齐
+const bomColAlign = {
+  level: 'col-left', part_no: 'col-center', part_name: 'col-left', material: 'col-left',
+  specification: 'col-left', quantity: 'col-right', unit: 'col-left', supplier: 'col-left',
+  material_category: 'col-left', purchase_option: 'col-left', part_category: 'col-left',
+  trace_category: 'col-left', manufacturing_strategy: 'col-left', workshop: 'col-left',
+  change_status: 'col-center'
+};
 function renderBomTable() {
-  // 根据可见列动态生成表头
+  // 根据可见列动态生成表头（th 与 td 使用相同对齐类）
   const visibleCols = bomAllColumns.filter(c => bomVisibleCols.includes(c.key));
   const thead = document.getElementById('bomTableHead');
   thead.innerHTML = '<tr>' + visibleCols.map(c => {
-    const align = c.key === 'change_status' ? 'text-align:center' : '';
-    return '<th style="width:' + c.width + ';' + align + '">' + c.label + '</th>';
+    return '<th class="' + (bomColAlign[c.key] || 'col-left') + '" style="width:' + c.width + '">' + c.label + '</th>';
   }).join('') + '</tr>';
 
   const tbody = document.getElementById('bomTableBody');
@@ -1628,32 +1697,40 @@ function renderBomTable() {
 
   // 字段值映射
   const colRender = {
-    level: (item, indent) => '<td class="' + indent + '">' + item.level + '</td>',
-    part_no: (item) => '<td>' + item.part_no + '</td>',
-    part_name: (item) => '<td>' + item.part_name + '</td>',
-    material: (item) => '<td>' + (item.material || '—') + '</td>',
-    specification: (item) => '<td>' + item.current_spec + '</td>',
-    quantity: (item) => '<td>' + item.quantity + '</td>',
-    unit: (item) => '<td>' + item.unit + '</td>',
-    supplier: (item) => '<td>' + item.current_supplier + '</td>',
-    material_category: (item) => '<td>' + (item.material_category || '—') + '</td>',
-    purchase_option: (item) => '<td>' + (item.purchase_option || '—') + '</td>',
-    part_category: (item) => '<td>' + (item.part_category || '—') + '</td>',
-    trace_category: (item) => '<td>' + (item.trace_category || '—') + '</td>',
-    manufacturing_strategy: (item) => '<td>' + (item.manufacturing_strategy || '—') + '</td>',
-    workshop: (item) => '<td>' + (item.workshop || '—') + '</td>',
+    level: (item, indent) => '<td class="col-left ' + indent + '">' + item.level + '</td>',
+    part_no: (item) => '<td class="col-center">' + item.part_no + '</td>',
+    part_name: (item) => '<td class="col-left ellipsis" title="' + item.part_name + '">' + item.part_name + '</td>',
+    material: (item) => '<td class="col-left">' + (item.material || '—') + '</td>',
+    specification: (item) => '<td class="col-left ellipsis" title="' + item.current_spec + '">' + item.current_spec + '</td>',
+    quantity: (item) => '<td class="col-right num">' + item.quantity + '</td>',
+    unit: (item) => '<td class="col-left">' + item.unit + '</td>',
+    supplier: (item) => '<td class="col-left ellipsis" title="' + item.current_supplier + '">' + item.current_supplier + '</td>',
+    material_category: (item) => '<td class="col-left">' + (item.material_category || '—') + '</td>',
+    purchase_option: (item) => '<td class="col-left">' + (item.purchase_option || '—') + '</td>',
+    part_category: (item) => '<td class="col-left">' + (item.part_category || '—') + '</td>',
+    trace_category: (item) => '<td class="col-left">' + (item.trace_category || '—') + '</td>',
+    manufacturing_strategy: (item) => '<td class="col-left">' + (item.manufacturing_strategy || '—') + '</td>',
+    workshop: (item) => '<td class="col-left">' + (item.workshop || '—') + '</td>',
     change_status: (item) => {
       const icon = item.has_change
         ? '<span class="bom-change-icon" onclick="openBomTimeline(\'' + item.part_no + '\')">🔄</span>'
         : '<span class="bom-no-change">—</span>';
-      return '<td style="text-align:center">' + icon + '</td>';
+      return '<td class="col-center">' + icon + '</td>';
     }
   };
 
-  tbody.innerHTML = pageData.map(item => {
-    const indent = levelIndent[item.level.charAt(0)+item.level.charAt(1)] || '';
-    return '<tr>' + visibleCols.map(c => colRender[c.key](item, indent)).join('') + '</tr>';
-  }).join('');
+  // 空态（规范：表格无数据时展示占位状态）
+  if (pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="' + visibleCols.length + '" style="padding:0">' +
+      '<div class="placeholder-state"><div class="placeholder-icon">📦</div>' +
+      '<div class="placeholder-text">暂无BOM数据</div>' +
+      '<div class="placeholder-hint">请调整筛选条件后重试</div></div></td></tr>';
+  } else {
+    tbody.innerHTML = pageData.map(item => {
+      const indent = levelIndent[item.level.charAt(0)+item.level.charAt(1)] || '';
+      return '<tr>' + visibleCols.map(c => colRender[c.key](item, indent)).join('') + '</tr>';
+    }).join('');
+  }
 
   // 动态计算min-width
   const table = document.querySelector('.bom-table');
@@ -1662,7 +1739,7 @@ function renderBomTable() {
 
   Common.renderPagination({
     total: bomFilteredData.length, currentPage: bomPage, pageSize: bomPageSize,
-    containerId: 'bomPagination', infoId: 'bomTotal',
+    containerId: 'bomPagination', infoId: 'bomTotal', pageInfoId: 'bomPageInfo',
     onPageChange: p => { bomPage = p; renderBomTable(); }
   });
 }
@@ -1705,21 +1782,30 @@ function renderBomHistoryTable() {
   const pageData = bomHistoryFilteredData.slice(start, start + bomHistoryPageSize);
   const typeColors = { '更换': 'tag-blue', '新增': 'tag-green', '移除': 'tag-red' };
 
-  tbody.innerHTML = pageData.map(item => {
-    const typeTag = '<span class="tag ' + (typeColors[item.change_type]||'tag-default') + '">' + item.change_type + '</span>';
-    const beforeInfo = item.change_type === '新增' ? '—' : item.before_part_no + '(' + item.before_spec + ')';
-    const afterInfo = item.change_type === '移除' ? '—' : item.after_part_no + '(' + item.after_spec + ')';
-    return '<tr>' +
-      '<td>' + item.change_time + '</td>' +
-      '<td>' + item.part_no + '</td>' +
-      '<td>' + item.part_name + '</td>' +
-      '<td style="text-align:center">' + typeTag + '</td>' +
-      '<td>' + beforeInfo + '</td>' +
-      '<td>' + afterInfo + '</td>' +
-      '<td><span style="color:var(--primary);cursor:pointer">' + item.work_order_no + '</span></td>' +
-      '<td>' + (item.change_reason || '—') + '</td>' +
-    '</tr>';
-  }).join('');
+  // 空态（规范：表格无数据时展示占位状态）
+  if (pageData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:0">' +
+      '<div class="placeholder-state"><div class="placeholder-icon">🔧</div>' +
+      '<div class="placeholder-text">暂无变更记录</div>' +
+      '<div class="placeholder-hint">请调整筛选条件后重试</div></div></td></tr>';
+  } else {
+    tbody.innerHTML = pageData.map(item => {
+      const typeTag = '<span class="tag ' + (typeColors[item.change_type]||'tag-default') + '">' + item.change_type + '</span>';
+      const beforeInfo = item.change_type === '新增' ? '—' : item.before_part_no + '(' + item.before_spec + ')';
+      const afterInfo = item.change_type === '移除' ? '—' : item.after_part_no + '(' + item.after_spec + ')';
+      const reason = item.change_reason || '—';
+      return '<tr>' +
+        '<td class="col-center num">' + item.change_time + '</td>' +
+        '<td class="col-center">' + item.part_no + '</td>' +
+        '<td class="col-left">' + item.part_name + '</td>' +
+        '<td class="col-center">' + typeTag + '</td>' +
+        '<td class="col-left ellipsis" title="' + beforeInfo + '">' + beforeInfo + '</td>' +
+        '<td class="col-left ellipsis" title="' + afterInfo + '">' + afterInfo + '</td>' +
+        '<td class="col-center"><span class="btn-link" onclick="Common.showToast(\'工单详情开发中\',\'info\')">' + item.work_order_no + '</span></td>' +
+        '<td class="col-left ellipsis" title="' + reason + '">' + reason + '</td>' +
+      '</tr>';
+    }).join('');
+  }
 
   // 统计
   const stats = { total: bomHistoryFilteredData.length, replace: 0, add: 0, remove: 0 };
@@ -1732,7 +1818,7 @@ function renderBomHistoryTable() {
 
   Common.renderPagination({
     total: bomHistoryFilteredData.length, currentPage: bomHistoryPage, pageSize: bomHistoryPageSize,
-    containerId: 'bhPagination', infoId: 'bhTotalCount',
+    containerId: 'bhPagination', infoId: 'bhTotalCount', pageInfoId: 'bhPageInfo',
     onPageChange: p => { bomHistoryPage = p; renderBomHistoryTable(); }
   });
 }
@@ -1755,51 +1841,49 @@ function openBomTimeline(partNo) {
   // 构建时间线HTML
   let html = '';
   if (changes.length === 0) {
-    html += '<div class="bom-timeline-empty-hint">该零部件尚未发生售后变更</div>';
+    html += '<div class="change-timeline-empty-hint">该零部件尚未发生售后变更</div>';
   }
 
   // 售后变更记录（时间倒序）
   changes.forEach(change => {
-    html += '<div class="bom-timeline-item">' +
-      '<div class="bom-timeline-dot"></div>' +
-      '<div class="bom-timeline-node-head">' +
-        '<span class="bom-timeline-time">' + change.change_time + '</span>' +
-        '<span class="bom-timeline-tag tag-aftermarket">售后更换</span>' +
+    html += '<div class="change-timeline-item">' +
+      '<div class="change-timeline-dot"></div>' +
+      '<div class="change-timeline-node-head">' +
+        '<span class="change-timeline-time">' + change.change_time + '</span>' +
+        '<span class="change-timeline-tag tag-aftermarket">售后更换</span>' +
       '</div>' +
-      '<div class="bom-timeline-compare">' +
-        '<div class="bom-timeline-compare-row"><span class="cmp-label">件号:</span><span class="cmp-before">' + change.before_part_no + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_part_no + '</span></div>' +
-        '<div class="bom-timeline-compare-row"><span class="cmp-label">供应商:</span><span class="cmp-before">' + change.before_supplier + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_supplier + '</span></div>' +
-        '<div class="bom-timeline-compare-row"><span class="cmp-label">规格:</span><span class="cmp-before">' + change.before_spec + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_spec + '</span></div>' +
+      '<div class="change-timeline-compare">' +
+        '<div class="change-timeline-compare-row"><span class="cmp-label">件号:</span><span class="cmp-before">' + change.before_part_no + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_part_no + '</span></div>' +
+        '<div class="change-timeline-compare-row"><span class="cmp-label">供应商:</span><span class="cmp-before">' + change.before_supplier + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_supplier + '</span></div>' +
+        '<div class="change-timeline-compare-row"><span class="cmp-label">规格:</span><span class="cmp-before">' + change.before_spec + '</span><span class="cmp-arrow">→</span><span class="cmp-after">' + change.after_spec + '</span></div>' +
       '</div>' +
-      '<div class="bom-timeline-footer-info">' +
-        '工单号: <span class="work-order-link">' + change.work_order_no + '</span><br>' +
+      '<div class="change-timeline-footer-info">' +
+        '工单号: <span class="work-order-link" onclick="Common.showToast(\'工单详情开发中\',\'info\')">' + change.work_order_no + '</span><br>' +
         '变更原因: ' + change.change_reason +
       '</div>' +
     '</div>';
   });
 
   // 出厂装机记录（始终在最后）
-  html += '<div class="bom-timeline-item type-factory">' +
-    '<div class="bom-timeline-dot"></div>' +
-    '<div class="bom-timeline-node-head">' +
-      '<span class="bom-timeline-time">2025-03-15</span>' +
-      '<span class="bom-timeline-tag tag-factory">出厂装机</span>' +
+  html += '<div class="change-timeline-item type-factory">' +
+    '<div class="change-timeline-dot"></div>' +
+    '<div class="change-timeline-node-head">' +
+      '<span class="change-timeline-time">2025-03-15</span>' +
+      '<span class="change-timeline-tag tag-factory">出厂装机</span>' +
     '</div>' +
-    '<div class="bom-timeline-compare">' +
-      '<div class="bom-timeline-compare-row"><span class="cmp-label">件号:</span><span class="cmp-single">' + originalItem.specification + '</span></div>' +
-      '<div class="bom-timeline-compare-row"><span class="cmp-label">供应商:</span><span class="cmp-single">' + originalItem.supplier + '</span></div>' +
-      '<div class="bom-timeline-compare-row"><span class="cmp-label">规格:</span><span class="cmp-single">' + originalItem.specification + '</span></div>' +
+    '<div class="change-timeline-compare">' +
+      '<div class="change-timeline-compare-row"><span class="cmp-label">件号:</span><span class="cmp-single">' + originalItem.specification + '</span></div>' +
+      '<div class="change-timeline-compare-row"><span class="cmp-label">供应商:</span><span class="cmp-single">' + originalItem.supplier + '</span></div>' +
+      '<div class="change-timeline-compare-row"><span class="cmp-label">规格:</span><span class="cmp-single">' + originalItem.specification + '</span></div>' +
     '</div>' +
   '</div>';
 
   document.getElementById('bomTimelineBody').innerHTML = html;
-  document.getElementById('bomTimelineOverlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
+  Common.openModal('bomTimelineOverlay');
 }
 
 function closeBomTimeline() {
-  document.getElementById('bomTimelineOverlay').classList.remove('show');
-  document.body.style.overflow = '';
+  Common.closeModal('bomTimelineOverlay');
 }
 
 // ===== 变更日志 =====
@@ -1813,25 +1897,36 @@ const logData = [
   { type:'删除', field:'—', before:'—', after:'—', user:'管理员', time:'2025-04-28 15:30:00', source:'Web端' },
   { type:'修改', field:'网联编号', before:'WL000', after:'14156', user:'王强', time:'2025-04-20 08:30:00', source:'APP端' },
 ];
+// 唯一键：避免使用页码内索引导致切页后勾选错位；并按操作时间倒序展示
+logData.forEach((d, i) => { d.id = 'LOG' + String(i + 1).padStart(3, '0'); });
+logData.sort((a, b) => b.time.localeCompare(a.time));
+
 let logPage = 1, logPageSize = 10, logSelected = new Set();
 
 function renderLogTable() {
   const tbody = document.getElementById('logTableBody');
   const start = (logPage - 1) * logPageSize;
   const pageData = logData.slice(start, start + logPageSize);
-  tbody.innerHTML = pageData.map((d, i) => {
-    const ck = logSelected.has(i) ? 'checked' : '';
+  tbody.innerHTML = pageData.map(d => {
+    const ck = logSelected.has(d.id) ? 'checked' : '';
     const typeTag = d.type === '修改' ? 'tag-blue log-type-modify' : 'tag-red log-type-delete';
     return `<tr>
-      <td style="text-align:center"><input type="checkbox" data-idx="${i}" ${ck} onchange="toggleLogCheck(${i},this)"></td>
-      <td style="text-align:center"><span class="tag ${typeTag}">${d.type}</span></td>
-      <td>${d.field}</td><td>${d.before}</td><td>${d.after}</td>
-      <td>${d.user}</td><td>${d.time}</td><td>${d.source}</td>
+      <td class="col-center"><input type="checkbox" data-id="${d.id}" ${ck} onchange="toggleLogCheck('${d.id}',this)"></td>
+      <td class="col-center"><span class="tag ${typeTag}">${d.type}</span></td>
+      <td class="col-left">${d.field}</td>
+      <td class="col-left ellipsis" title="${d.before}">${d.before}</td>
+      <td class="col-left ellipsis" title="${d.after}">${d.after}</td>
+      <td class="col-left">${d.user}</td>
+      <td class="col-center num">${d.time}</td>
+      <td class="col-left">${d.source}</td>
     </tr>`;
   }).join('');
+  // 表头全选态与当前页数据保持一致
+  const checkAll = document.getElementById('logCheckAll');
+  if (checkAll) checkAll.checked = pageData.length > 0 && pageData.every(d => logSelected.has(d.id));
   Common.renderPagination({
     total: logData.length, currentPage: logPage, pageSize: logPageSize,
-    containerId: 'logPagination', infoId: 'logTotalCount',
+    containerId: 'logPagination', infoId: 'logTotalCount', pageInfoId: 'logPageInfo',
     onPageChange: p => { logPage = p; renderLogTable(); }
   });
 }
@@ -1839,15 +1934,31 @@ function changeLogPageSize() {
   logPageSize = parseInt(document.getElementById('logPageSizeSelect').value);
   logPage = 1; renderLogTable();
 }
+// 表头全选：仅选中/取消当前页所有行（不跨页）
 function toggleLogCheckAll(el) {
-  logSelected.clear();
-  if (el.checked) logData.forEach((_, i) => logSelected.add(i));
+  const start = (logPage - 1) * logPageSize;
+  logData.slice(start, start + logPageSize).forEach(d => {
+    if (el.checked) logSelected.add(d.id); else logSelected.delete(d.id);
+  });
   renderLogTable();
 }
-function toggleLogCheck(idx, el) {
-  if (el.checked) logSelected.add(idx); else logSelected.delete(idx);
+function toggleLogCheck(id, el) {
+  if (el.checked) logSelected.add(id); else logSelected.delete(id);
 }
-function exportChangelog() { Common.showToast('导出成功','success'); }
+// 导出：已勾选则导出选中数据，否则二次确认是否导出全部
+function exportChangelog() {
+  if (logSelected.size > 0) {
+    Common.showToast('已导出选中的 ' + logSelected.size + ' 条数据', 'success');
+    return;
+  }
+  Common.confirm({
+    title: '导出确认',
+    content: '是否导出所有数据？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => Common.showToast('已导出所有数据（共 ' + logData.length + ' 条）', 'success')
+  });
+}
 
 // ===== 初始化 =====
 renderBasicView();
@@ -1946,15 +2057,21 @@ function openDispatchModal(taskId) {
   renderDispatchStepContent();
   // 渲染流程日志
   renderDispatchLogList();
-  // 显示弹窗
-  document.getElementById('dispatchModalOverlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
+  // 显示弹窗（遮罩点击 / ESC 关闭由 common.js 公共层统一处理）
+  Common.openModal('dispatchModalOverlay');
 }
 
 function closeDispatchModal() {
-  document.getElementById('dispatchModalOverlay').classList.remove('show');
-  document.body.style.overflow = '';
+  Common.closeModal('dispatchModalOverlay');
   dispatchModalData = null;
+}
+
+// 出库 / 交接状态标签映射（未出库、未交接 → 橙色；拒绝接收 → 红色；其余 → 绿色）
+function getDispatchStatusTag(status) {
+  if (!status) return 'tag-default';
+  if (status.indexOf('拒绝') >= 0 || status.indexOf('退回') >= 0) return 'tag-red';
+  if (status.indexOf('未') === 0) return 'tag-orange';
+  return 'tag-green';
 }
 
 function renderDispatchStepBar() {
@@ -1971,7 +2088,8 @@ function renderDispatchStepBar() {
     steps[1].status = 'disabled';
     steps[2].status = 'disabled';
   } else if (s === '待出库') {
-    steps[1].status = 'active';
+    // PRD 3.4.7.6：待出库/已出库/待交接/已完成/已关闭 时「车辆出库」步骤均为已完成（绿色）
+    steps[1].status = 'done';
     steps[2].status = 'disabled';
   } else if (s === '已出库') {
     steps[1].status = 'done';
@@ -2038,7 +2156,7 @@ function renderDispatchStepContent() {
         '<div class="info-field"><span class="field-label">申请时间</span><span class="field-value">' + a.applyTime + '</span></div>' +
       '</div></div>' +
       '<div class="info-section"><div class="info-section-title">车辆清单</div>' +
-        '<table class="dispatch-modal-vehicle-table"><thead><tr><th>车辆编号</th><th>车架号</th><th>车型名称（中）</th><th>归属项目</th></tr></thead>' +
+        '<table class="dispatch-vehicle-table"><thead><tr><th>车辆编号</th><th>车架号</th><th>车型名称（中）</th><th>归属项目</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table>' +
       '</div>';
   } else if (dispatchModalStep === 'outbound') {
@@ -2049,7 +2167,7 @@ function renderDispatchStepContent() {
         '<div class="info-field"><span class="field-label">发车方式</span><span class="field-value">' + o.departMethod + '</span></div>' +
       '</div></div>' +
       '<div class="info-section"><div class="info-section-title">当前车辆出库信息</div><div class="info-grid">' +
-        '<div class="info-field"><span class="field-label">出库状态</span><span class="field-value"><span class="tag tag-green">' + vo.status + '</span></span></div>' +
+        '<div class="info-field"><span class="field-label">出库状态</span><span class="field-value"><span class="tag ' + getDispatchStatusTag(vo.status) + '">' + vo.status + '</span></span></div>' +
         '<div class="info-field"><span class="field-label">出库说明</span><span class="field-value">' + (vo.remark || '—') + '</span></div>' +
         '<div class="info-field col-span-2"><span class="field-label">移出前车辆照片</span><span class="field-value"><span class="btn-link" onclick="previewDispatchImg()">点击预览</span></span></div>' +
         '<div class="info-field col-span-2"><span class="field-label">车辆出库单</span><span class="field-value"><span class="btn-link" onclick="Common.showToast(\'模拟下载: ' + vo.outboundDocName + '\',\'info\')">📎 ' + vo.outboundDocName + '</span></span></div>' +
@@ -2059,7 +2177,7 @@ function renderDispatchStepContent() {
     var accTag = vh.isAccepted === '是' ? 'tag-green' : 'tag-red';
     container.innerHTML =
       '<div class="info-section"><div class="info-section-title">当前车辆交接信息</div><div class="info-grid">' +
-        '<div class="info-field"><span class="field-label">交接状态</span><span class="field-value"><span class="tag tag-green">' + vh.status + '</span></span></div>' +
+        '<div class="info-field"><span class="field-label">交接状态</span><span class="field-value"><span class="tag ' + getDispatchStatusTag(vh.status) + '">' + vh.status + '</span></span></div>' +
         '<div class="info-field"><span class="field-label">是否确认接收</span><span class="field-value"><span class="tag ' + accTag + '">' + vh.isAccepted + '</span></span></div>' +
         '<div class="info-field"><span class="field-label">确认交接时间</span><span class="field-value">' + vh.confirmTime + '</span></div>' +
         '<div class="info-field"><span class="field-label">交接说明</span><span class="field-value">' + (vh.remark || '—') + '</span></div>' +
@@ -2096,16 +2214,11 @@ function closeDispatchImgPreview() {
   document.getElementById('dispatchImgPreview').classList.remove('show');
 }
 
-// 键盘ESC关闭弹窗
+// 键盘 ESC 关闭图片预览（调度详情弹窗、时间线弹窗的 ESC / 遮罩关闭由 common.js 公共层统一处理）
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    if (document.getElementById('dispatchModalOverlay').classList.contains('show')) {
-      closeDispatchModal();
-    }
-    if (document.getElementById('bomTimelineOverlay').classList.contains('show')) {
-      closeBomTimeline();
-    }
-  }
+  if (e.key !== 'Escape') return;
+  var preview = document.getElementById('dispatchImgPreview');
+  if (preview && preview.classList.contains('show')) closeDispatchImgPreview();
 });
 
 
@@ -2120,9 +2233,10 @@ document.addEventListener('keydown', function(e) {
       return '<div class="info-field"><span class="field-label">' + label + '</span><span class="field-value"' + sty + '>' + val + '</span></div>';
     }
 
+    // 编辑态字段：使用公共 .form-row（标签左置外置，规范一.1）
     function editField(label, dataPath, value, type) {
       const inputType = type || 'text';
-      return '<div class="form-item"><label>' + label + '</label><input type="' + inputType + '" data-field="' + dataPath + '" value="' + (value || '') + '"></div>';
+      return '<div class="form-row"><label>' + label + '</label><div class="control"><input type="' + inputType + '" data-field="' + dataPath + '" value="' + (value || '') + '"></div></div>';
     }
 
     // --- 售后维保数据 ---
@@ -2246,7 +2360,7 @@ document.addEventListener('keydown', function(e) {
       html += infoField('质保周期', d.vehicleWarranty.warrantyPeriod);
       html += infoField('质保截止日期', d.vehicleWarranty.warrantyEndDate);
       html += infoField('质保里程', d.vehicleWarranty.warrantyMileage);
-      html += infoField('剩余天数', d.vehicleWarranty.remainingDays + ' 天', d.vehicleWarranty.remainingDays <= 180 ? 'color:var(--danger)' : '');
+      html += infoField('剩余天数', d.vehicleWarranty.remainingDays + ' 天', d.vehicleWarranty.remainingDays <= 180 ? 'color:var(--error)' : '');
       html += infoField('质保状态', getWarrantyStatusTag(d.vehicleWarranty.status, d.vehicleWarranty.remainingDays));
       html += '</div></div>';
 
@@ -2307,7 +2421,7 @@ document.addEventListener('keydown', function(e) {
       let html = '';
 
       // 整车质保信息
-      html += '<div class="form-section"><div class="form-section-title">整车质保信息</div><div class="form-grid">';
+      html += '<div class="form-section"><div class="section-title">整车质保信息</div><div class="form-grid">';
       html += editField('质保起始日期', 'vehicleWarranty.warrantyStartDate', d.vehicleWarranty.warrantyStartDate, 'date');
       html += editField('质保周期', 'vehicleWarranty.warrantyPeriod', d.vehicleWarranty.warrantyPeriod, 'text');
       html += editField('质保截止日期', 'vehicleWarranty.warrantyEndDate', d.vehicleWarranty.warrantyEndDate, 'date');
@@ -2315,7 +2429,7 @@ document.addEventListener('keydown', function(e) {
       html += '</div></div>';
 
       // 三电质保信息
-      html += '<div class="form-section"><div class="form-section-title">三电质保信息</div><div class="form-grid">';
+      html += '<div class="form-section"><div class="section-title">三电质保信息</div><div class="form-grid">';
       html += editField('电池质保起始日期', 'batteryWarranty.warrantyStartDate', d.batteryWarranty.warrantyStartDate, 'date');
       html += editField('电池质保周期', 'batteryWarranty.warrantyPeriod', d.batteryWarranty.warrantyPeriod, 'text');
       html += editField('电池质保截止日期', 'batteryWarranty.warrantyEndDate', d.batteryWarranty.warrantyEndDate, 'date');
@@ -2331,7 +2445,7 @@ document.addEventListener('keydown', function(e) {
       html += '</div></div>';
 
       // 售后服务商信息
-      html += '<div class="form-section"><div class="form-section-title">售后服务商信息</div><div class="form-grid">';
+      html += '<div class="form-section"><div class="section-title">售后服务商信息</div><div class="form-grid">';
       html += editField('服务商名称', 'serviceProvider.providerName', d.serviceProvider.providerName, 'text');
       html += editField('联系人', 'serviceProvider.contactPerson', d.serviceProvider.contactPerson, 'text');
       html += editField('联系电话', 'serviceProvider.contactPhone', d.serviceProvider.contactPhone, 'text');
@@ -2343,7 +2457,7 @@ document.addEventListener('keydown', function(e) {
       html += '</div></div>';
 
       // 维保计划信息
-      html += '<div class="form-section"><div class="form-section-title">维保计划信息</div><div class="form-grid">';
+      html += '<div class="form-section"><div class="section-title">维保计划信息</div><div class="form-grid">';
       html += editField('计划名称', 'maintenancePlan.planName', d.maintenancePlan.planName, 'text');
       html += editField('计划周期', 'maintenancePlan.planCycle', d.maintenancePlan.planCycle, 'text');
       html += editField('上次维保日期', 'maintenancePlan.lastMaintenanceDate', d.maintenancePlan.lastMaintenanceDate, 'date');
@@ -2352,12 +2466,12 @@ document.addEventListener('keydown', function(e) {
       html += '</div></div>';
 
       // 售后政策附件
-      html += '<div class="form-section"><div class="form-section-title">售后政策附件</div><div style="display:flex;flex-direction:column;gap:8px;">';
+      html += '<div class="form-section"><div class="section-title">售后政策附件</div><div style="display:flex;flex-direction:column;gap:8px;">';
       for (var i = 0; i < d.attachments.length; i++) {
         var att = d.attachments[i];
         html += '<div class="file-item"><span class="file-icon">\u{1F4C4}</span><span class="file-name">' + att.name + '</span><span class="file-size">' + att.size + '</span><span class="file-link" onclick="Common.showToast(\'下载功能开发中\',\'info\')">下载</span></div>';
       }
-      html += '<div style="margin-top:8px;"><button class="btn btn-secondary" onclick="Common.showToast(\'上传功能开发中\',\'info\')" style="font-size:13px;padding:4px 12px;">+ 上传附件</button></div>';
+      html += '<div style="margin-top:8px;"><button class="btn" onclick="Common.showToast(\'上传功能开发中\',\'info\')">+ 上传附件</button></div>';
       html += '</div></div>';
 
       container.innerHTML = html;
@@ -2397,26 +2511,26 @@ document.addEventListener('keydown', function(e) {
     }
 </script>
 
-<!-- 调度历史详情弹窗 -->
-<div class="dispatch-modal-overlay" id="dispatchModalOverlay">
-  <div class="dispatch-modal-box">
-    <div class="dispatch-modal-header">
+<!-- 调度历史详情弹窗（详情弹窗：宽 1100px，由公共 .modal-overlay.active 控制显隐） -->
+<div class="modal-overlay" id="dispatchModalOverlay">
+  <div class="modal-box modal-box--lg" style="width:1100px;max-width:90vw;max-height:85vh">
+    <div class="modal-header">
       <h3 id="dispatchModalTitle">调度历史详情</h3>
-      <button class="close-btn" onclick="closeDispatchModal()">✕</button>
+      <button class="modal-close" onclick="closeDispatchModal()">✕</button>
     </div>
-    <div class="dispatch-modal-vehicle-info" id="dispatchVehicleInfo"></div>
-    <div class="dispatch-modal-body">
-      <div class="dispatch-modal-main">
+    <div class="dispatch-vehicle-info" id="dispatchVehicleInfo"></div>
+    <div class="modal-body dispatch-body">
+      <div class="dispatch-main">
         <div class="dispatch-step-bar" id="dispatchStepBar"></div>
-        <div class="dispatch-modal-content" id="dispatchStepContent"></div>
+        <div class="dispatch-content" id="dispatchStepContent"></div>
       </div>
-      <div class="dispatch-modal-sidebar">
+      <div class="dispatch-sidebar">
         <div class="dispatch-log-sidebar-header">流程日志</div>
         <div class="dispatch-log-list" id="dispatchLogList"></div>
       </div>
     </div>
-    <div class="dispatch-modal-footer">
-      <button class="btn btn-lg" onclick="closeDispatchModal()">关闭</button>
+    <div class="modal-footer modal-footer--right">
+      <button class="btn" onclick="closeDispatchModal()">关闭</button>
     </div>
   </div>
 </div>
@@ -2425,16 +2539,16 @@ document.addEventListener('keydown', function(e) {
   <img id="dispatchImgPreviewSrc" src="" alt="预览图片">
 </div>
 
-<!-- 零部件变更时间线弹窗 -->
-<div class="bom-timeline-overlay" id="bomTimelineOverlay">
-  <div class="bom-timeline-box">
-    <div class="bom-timeline-header">
+<!-- 零部件变更时间线弹窗（宽 640px） -->
+<div class="modal-overlay" id="bomTimelineOverlay">
+  <div class="modal-box" style="width:640px;max-width:90vw">
+    <div class="modal-header">
       <h3 id="bomTimelineTitle">零部件变更记录</h3>
-      <button class="close-btn" onclick="closeBomTimeline()">✕</button>
+      <button class="modal-close" onclick="closeBomTimeline()">✕</button>
     </div>
-    <div class="bom-timeline-body" id="bomTimelineBody"></div>
-    <div class="bom-timeline-footer">
-      <button class="btn btn-lg" onclick="closeBomTimeline()">关闭</button>
+    <div class="modal-body change-timeline-body" id="bomTimelineBody"></div>
+    <div class="modal-footer modal-footer--right">
+      <button class="btn" onclick="closeBomTimeline()">关闭</button>
     </div>
   </div>
 </div>

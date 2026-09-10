@@ -5,34 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>车辆建档 - 新增</title>
     <link rel="stylesheet" href="../components/common.css">
+    <link rel="stylesheet" href="../components/form.css">
+    <!--
+      车辆建档 - 新增页
+      页面用途：录入车辆档案全量信息（基础/归属/证照/车型/整车/底盘/发动机/上装/硬件/软件/摄像头/功能配置等分组）
+      核心功能：分组表单（标签左置外置）、照片与铭牌上传、多组动态表格增删行、提交校验与错误提示
+      交互逻辑：底部固定操作栏（取消/确定）；校验失败在控件下方显示红色错误文字；保存成功 Toast 后返回列表页
+    -->
     <style>
-        /* ===== 表单分组 ===== */
+        /* ===== 表单分组（布局与控件样式统一由 form.css 提供） ===== */
         .form-section { margin-bottom: 28px; }
+        /* 分组标题复用 common.css 的 .section-title（H3 20px/600），此处仅追加左侧色条与分隔线 */
         .form-section .section-title {
-            font-size: 15px; font-weight: 600; color: var(--text-primary);
             padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
             margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
         }
         .form-section .section-title::before {
             content: ''; display: inline-block; width: 3px; height: 16px; background: var(--primary); border-radius: 2px;
         }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; }
-        .form-grid.cols-1 { grid-template-columns: 1fr; }
-        .form-item { display: flex; flex-direction: column; gap: 6px; }
-        .form-item label { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
-        .form-item .required { color: var(--error); margin-right: 4px; }
-        .form-item input, .form-item select, .form-item textarea {
-            height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
-            padding: 0 12px; font-size: 14px; color: var(--text-primary); background: var(--bg-container);
-            outline: none; font-family: inherit;
-        }
-        .form-item input:focus, .form-item select:focus, .form-item textarea:focus {
-            border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
-        }
-        .form-item input::placeholder, .form-item textarea::placeholder { color: var(--text-disabled); }
-        .form-item input.readonly, .form-item select.readonly { background: #f5f5f5; color: var(--text-secondary); cursor: not-allowed; }
-        .form-item textarea { height: auto; min-height: 80px; padding: 8px 12px; resize: vertical; }
-        .form-item .hint { font-size: 12px; color: var(--text-disabled); margin-top: 2px; }
+        /* 两列表单栅格内由 grid gap 控制间距，避免与 .form-row 的下边距叠加（表单项垂直间距 16px） */
+        .form-grid .form-row { margin-bottom: 0; }
+        /* 辅助提示文字 12px（规范一.2 Body-Prompt） */
+        .hint { font-size: 12px; color: var(--text-disabled); margin-top: 2px; }
         .radio-group { display: flex; align-items: center; gap: 20px; height: 32px; }
         .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-primary); cursor: pointer; }
         .radio-group input[type="radio"] { accent-color: var(--primary); }
@@ -53,28 +47,27 @@
             font-size: 12px; cursor: pointer; line-height: 1;
         }
 
-        /* ===== 动态表格 ===== */
+        /* ===== 动态表格（行高 48px、字号 14px，与规范二.3 表格一致；列多保留紧凑内边距） ===== */
         .dynamic-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-        .dynamic-table thead th { background: #fafafa; color: var(--text-secondary); font-weight: 600; font-size: 13px; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        .dynamic-table thead th {
+            background: #fafafa; color: var(--text-primary); font-weight: 600; font-size: 14px;
+            height: var(--table-row-height); padding: 0 12px; text-align: left;
+            border-bottom: 1px solid var(--border-color); white-space: nowrap;
+        }
         .dynamic-table tbody td { padding: 6px 8px; border-bottom: 1px solid var(--border-color); }
         .dynamic-table tbody td input, .dynamic-table tbody td select {
-            width: 100%; height: 28px; border: 1px solid var(--border-input); border-radius: var(--radius-sm);
-            padding: 0 6px; font-size: 13px; color: var(--text-primary); outline: none; background: var(--bg-container);
+            width: 100%; height: 32px; border: 1px solid var(--border-input); border-radius: var(--radius);
+            padding: 0 8px; font-size: 14px; color: var(--text-primary); outline: none; background: var(--bg-container);
         }
-        .dynamic-table tbody td input:focus { border-color: var(--primary); }
-        .remove-row-btn { color: var(--error); font-size: 13px; cursor: pointer; }
+        .dynamic-table tbody td input:focus, .dynamic-table tbody td select:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
+        }
+        .remove-row-btn { color: var(--error); font-size: 14px; cursor: pointer; }
         .remove-row-btn:hover { text-decoration: underline; }
         .add-row-btn { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: 14px; cursor: pointer; padding: 8px 0; }
         .add-row-btn:hover { color: var(--primary-hover); }
 
-        /* ===== 底部操作栏 ===== */
-        .footer-bar {
-            position: fixed; bottom: 0; left: var(--sidebar-width); right: 0;
-            height: var(--footer-bar-height); background: var(--bg-container);
-            border-top: 1px solid var(--border-color);
-            display: flex; align-items: center; justify-content: flex-end; gap: 12px;
-            padding-right: 24px; z-index: 5; box-shadow: 0 -2px 8px rgba(0,0,0,.06);
-        }
+        /* 底部固定操作栏 .footer-bar 由 form.css 统一提供 */
     </style>
 </head>
 <body>
@@ -82,25 +75,20 @@
     <aside class="sidebar" id="sidebar"></aside>
     <div class="main-area">
         <div id="header"></div>
-        <div class="content">
+        <div class="content has-footer">
             <div class="page-container">
-                <div class="page-header">
-                    <div class="page-title">新增车辆信息</div>
-                    <div><button class="btn" onclick="window.location.href='./vehicle-register-list.html'">返回</button></div>
-                </div>
-
                 <form id="addForm" onsubmit="return false">
                     <!-- 车辆基础信息 -->
                     <div class="form-section">
                         <div class="section-title">车辆基础信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label><span class="required">*</span> 车架号</label><input type="text" id="f_vin" placeholder="请输入17位车架号" maxlength="17"></div>
-                            <div class="form-item"><label>国标车架号</label><input type="text" id="f_gbt_vin" placeholder="请输入国标车架号"></div>
-                            <div class="form-item"><label>车牌号</label><input type="text" id="f_plate" placeholder="请输入车牌号"></div>
-                            <div class="form-item"><label>出厂编号</label><input type="text" id="f_factory" placeholder="请输入出厂编号"></div>
-                            <div class="form-item"><label><span class="required">*</span> 是否为测试车</label><div class="radio-group"><label><input type="radio" name="isTest" value="1"> 是</label><label><input type="radio" name="isTest" value="0" checked> 否</label></div></div>
-                            <div class="form-item"><label><span class="required">*</span> 是否支持联网</label><div class="radio-group"><label><input type="radio" name="isNetwork" value="1" checked> 是</label><label><input type="radio" name="isNetwork" value="0"> 否</label></div></div>
-                            <div class="form-item"><label>网联编号</label><input type="text" id="f_iot" placeholder="请输入网联编号"></div>
+                            <div class="form-row"><label><span class="required">*</span>车架号</label><div class="control"><input type="text" id="f_vin" placeholder="请输入17位车架号" maxlength="17"></div></div>
+                            <div class="form-row"><label>国标车架号</label><div class="control"><input type="text" id="f_gbt_vin" placeholder="请输入国标车架号"></div></div>
+                            <div class="form-row"><label>车牌号</label><div class="control"><input type="text" id="f_plate" placeholder="请输入车牌号"></div></div>
+                            <div class="form-row"><label>出厂编号</label><div class="control"><input type="text" id="f_factory" placeholder="请输入出厂编号"></div></div>
+                            <div class="form-row"><label><span class="required">*</span>是否为测试车</label><div class="control"><div class="radio-group"><label><input type="radio" name="isTest" value="1"> 是</label><label><input type="radio" name="isTest" value="0" checked> 否</label></div></div></div>
+                            <div class="form-row"><label><span class="required">*</span>是否支持联网</label><div class="control"><div class="radio-group"><label><input type="radio" name="isNetwork" value="1" checked> 是</label><label><input type="radio" name="isNetwork" value="0"> 否</label></div></div></div>
+                            <div class="form-row"><label>网联编号</label><div class="control"><input type="text" id="f_iot" placeholder="请输入网联编号"></div></div>
                         </div>
                     </div>
 
@@ -108,14 +96,14 @@
                     <div class="form-section">
                         <div class="section-title">归属信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>所在城市</label><input type="text" id="f_city" placeholder="请输入所在城市"></div>
-                            <div class="form-item"><label><span class="required">*</span> 归属项目</label><select id="f_project"><option value="">请选择</option><option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option></select></div>
-                            <div class="form-item"><label><span class="required">*</span> 运营负责人</label><input type="text" id="f_operator" placeholder="请输入运营负责人"></div>
-                            <div class="form-item"><label><span class="required">*</span> 资产来源</label><select id="f_source"><option value="">请选择</option><option>外购</option><option>租赁</option><option>融资租赁</option><option>借用</option><option>自研</option></select></div>
-                            <div class="form-item"><label><span class="required">*</span> 资产分类</label><select id="f_class"><option value="">请选择</option><option>固定资产</option></select></div>
-                            <div class="form-item"><label>合同主体</label><select id="f_entity"><option value="">请选择</option><option>北京XXX科技有限公司</option><option>上海XXX信息技术有限公司</option></select></div>
-                            <div class="form-item"><label>固定资产编码</label><input type="text" id="f_asset_code" placeholder="请输入"></div>
-                            <div class="form-item"><label><span class="required">*</span> 资产属性</label><select id="f_attr"><option value="">请选择</option><option>非机动车</option><option>运营车辆-电动</option><option>运营车辆-油动</option><option>智能驾驶设备</option><option>运输设备</option><option>乘用车</option></select></div>
+                            <div class="form-row"><label>所在城市</label><div class="control"><input type="text" id="f_city" placeholder="请输入所在城市"></div></div>
+                            <div class="form-row"><label><span class="required">*</span>归属项目</label><div class="control"><select id="f_project"><option value="">请选择</option><option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option></select></div></div>
+                            <div class="form-row"><label><span class="required">*</span>运营负责人</label><div class="control"><input type="text" id="f_operator" placeholder="请输入运营负责人"></div></div>
+                            <div class="form-row"><label><span class="required">*</span>资产来源</label><div class="control"><select id="f_source"><option value="">请选择</option><option>外购</option><option>租赁</option><option>融资租赁</option><option>借用</option><option>自研</option></select></div></div>
+                            <div class="form-row"><label><span class="required">*</span>资产分类</label><div class="control"><select id="f_class"><option value="">请选择</option><option>固定资产</option></select></div></div>
+                            <div class="form-row"><label>合同主体</label><div class="control"><select id="f_entity"><option value="">请选择</option><option>北京XXX科技有限公司</option><option>上海XXX信息技术有限公司</option></select></div></div>
+                            <div class="form-row"><label>固定资产编码</label><div class="control"><input type="text" id="f_asset_code" placeholder="请输入"></div></div>
+                            <div class="form-row"><label><span class="required">*</span>资产属性</label><div class="control"><select id="f_attr"><option value="">请选择</option><option>非机动车</option><option>运营车辆-电动</option><option>运营车辆-油动</option><option>智能驾驶设备</option><option>运输设备</option><option>乘用车</option></select></div></div>
                         </div>
                     </div>
 
@@ -123,8 +111,8 @@
                     <div class="form-section">
                         <div class="section-title">车辆照片</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>车辆正面</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-                            <div class="form-item"><label>车头45°</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+                            <div class="form-row"><label>车辆正面</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+                            <div class="form-row"><label>车头45°</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
                         </div>
                     </div>
 
@@ -132,10 +120,10 @@
                     <div class="form-section">
                         <div class="section-title">行驶证信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>行驶证正面照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div><div class="hint">支持jpg/png，单文件不超过5MB</div></div>
-                            <div class="form-item"><label>行驶证背面照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div><div class="hint">支持jpg/png，单文件不超过5MB</div></div>
-                            <div class="form-item"><label>注册日期</label><input type="date" id="f_reg_date"></div>
-                            <div class="form-item"><label>车龄</label><input type="text" id="f_car_age" readonly class="readonly" placeholder="根据注册日期自动计算，精确到月"></div>
+                            <div class="form-row"><label>行驶证正面照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div><div class="hint">支持jpg/png，单文件不超过5MB</div></div></div>
+                            <div class="form-row"><label>行驶证背面照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div><div class="hint">支持jpg/png，单文件不超过5MB</div></div></div>
+                            <div class="form-row"><label>注册日期</label><div class="control"><input type="date" id="f_reg_date"></div></div>
+                            <div class="form-row"><label>车龄</label><div class="control"><input type="text" id="f_car_age" readonly class="readonly" placeholder="根据注册日期自动计算，精确到月"></div></div>
                         </div>
                     </div>
 
@@ -143,22 +131,22 @@
                     <div class="form-section">
                         <div class="section-title">车型信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label><span class="required">*</span> 车型名称（中）</label><select id="f_model_name"><option value="">请选择</option><option>爱瑞特纯电动高压冲洗车</option><option>长城多用途货车</option><option>独角兽</option><option>麒麟清扫车</option><option>麒麟无人化扫地车</option><option>三力洒水车</option><option>泰坦智能驾驶洒水车</option><option>中联清洗车</option></select></div>
-                            <div class="form-item"><label>车型版本</label><select id="f_model_ver"><option value="">请选择</option><option>标准版</option><option>加强版</option><option>豪华版</option></select></div>
-                            <div class="form-item"><label>车辆类别</label><input type="text" readonly class="readonly" id="f_category"></div>
-                            <div class="form-item"><label>车型别名</label><select id="f_alias"><option value="">请选择</option><option>扫路车</option><option>运输车</option><option>小型清洗机</option><option>小型扫路机</option><option>皮卡</option></select></div>
-                            <div class="form-item"><label>车型分类</label><input type="text" readonly class="readonly" id="f_mclass"></div>
-                            <div class="form-item"><label>动力类别</label><input type="text" readonly class="readonly" id="f_power"></div>
-                            <div class="form-item"><label>排放标准</label><input type="text" readonly class="readonly" id="f_emission"></div>
-                            <div class="form-item"><label>总质量（KG）</label><input type="text" readonly class="readonly" id="f_total_w"></div>
-                            <div class="form-item"><label>整备质量（KG）</label><input type="text" readonly class="readonly" id="f_curb_w"></div>
-                            <div class="form-item"><label>整车厂商</label><input type="text" readonly class="readonly" id="f_mfr"></div>
-                            <div class="form-item"><label>整车型号</label><input type="text" readonly class="readonly" id="f_mno"></div>
-                            <div class="form-item"><label>底盘厂家</label><input type="text" readonly class="readonly" id="f_chassis_mfr"></div>
-                            <div class="form-item"><label>底盘型号</label><input type="text" readonly class="readonly" id="f_chassis_no"></div>
-                            <div class="form-item"><label>主发动机厂家</label><input type="text" readonly class="readonly" id="f_eng_mfr"></div>
-                            <div class="form-item"><label>主发动机型号/驱动电机型号</label><input type="text" readonly class="readonly" id="f_eng_no"></div>
-                            <div class="form-item"><label>驱动电机峰值功率 (KW)</label><input type="text" readonly class="readonly" id="f_eng_power"></div>
+                            <div class="form-row"><label><span class="required">*</span>车型名称（中）</label><div class="control"><select id="f_model_name"><option value="">请选择</option><option>爱瑞特纯电动高压冲洗车</option><option>长城多用途货车</option><option>独角兽</option><option>麒麟清扫车</option><option>麒麟无人化扫地车</option><option>三力洒水车</option><option>泰坦智能驾驶洒水车</option><option>中联清洗车</option></select></div></div>
+                            <div class="form-row"><label>车型版本</label><div class="control"><select id="f_model_ver"><option value="">请选择</option><option>标准版</option><option>加强版</option><option>豪华版</option></select></div></div>
+                            <div class="form-row"><label>车辆类别</label><div class="control"><input type="text" readonly class="readonly" id="f_category"></div></div>
+                            <div class="form-row"><label>车型别名</label><div class="control"><select id="f_alias"><option value="">请选择</option><option>扫路车</option><option>运输车</option><option>小型清洗机</option><option>小型扫路机</option><option>皮卡</option></select></div></div>
+                            <div class="form-row"><label>车型分类</label><div class="control"><input type="text" readonly class="readonly" id="f_mclass"></div></div>
+                            <div class="form-row"><label>动力类别</label><div class="control"><input type="text" readonly class="readonly" id="f_power"></div></div>
+                            <div class="form-row"><label>排放标准</label><div class="control"><input type="text" readonly class="readonly" id="f_emission"></div></div>
+                            <div class="form-row"><label>总质量（KG）</label><div class="control"><input type="text" readonly class="readonly" id="f_total_w"></div></div>
+                            <div class="form-row"><label>整备质量（KG）</label><div class="control"><input type="text" readonly class="readonly" id="f_curb_w"></div></div>
+                            <div class="form-row"><label>整车厂商</label><div class="control"><input type="text" readonly class="readonly" id="f_mfr"></div></div>
+                            <div class="form-row"><label>整车型号</label><div class="control"><input type="text" readonly class="readonly" id="f_mno"></div></div>
+                            <div class="form-row"><label>底盘厂家</label><div class="control"><input type="text" readonly class="readonly" id="f_chassis_mfr"></div></div>
+                            <div class="form-row"><label>底盘型号</label><div class="control"><input type="text" readonly class="readonly" id="f_chassis_no"></div></div>
+                            <div class="form-row"><label>主发动机厂家</label><div class="control"><input type="text" readonly class="readonly" id="f_eng_mfr"></div></div>
+                            <div class="form-row form-row--wide"><label>主发动机型号/驱动电机型号</label><div class="control"><input type="text" readonly class="readonly" id="f_eng_no"></div></div>
+                            <div class="form-row form-row--wide"><label>驱动电机峰值功率 (KW)</label><div class="control"><input type="text" readonly class="readonly" id="f_eng_power"></div></div>
                         </div>
                     </div>
 
@@ -166,8 +154,8 @@
                     <div class="form-section">
                         <div class="section-title">整车信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>整车铭牌/合格证照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-                            <div class="form-item"><label>整车制造日期</label><input type="date" id="f_whole_date"></div>
+                            <div class="form-row form-row--wide"><label>整车铭牌/合格证照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+                            <div class="form-row"><label>整车制造日期</label><div class="control"><input type="date" id="f_whole_date"></div></div>
                         </div>
                     </div>
 
@@ -175,16 +163,16 @@
                     <div class="form-section">
                         <div class="section-title">底盘信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>底盘铭牌/合格证照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-                            <div class="form-item"><label>轮胎型号</label><input type="text" id="f_tire_model" placeholder="请输入轮胎型号"></div>
+                            <div class="form-row form-row--wide"><label>底盘铭牌/合格证照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+                            <div class="form-row"><label>轮胎型号</label><div class="control"><input type="text" id="f_tire_model" placeholder="请输入轮胎型号"></div></div>
                         </div>
                     </div>
 
                     <!-- 主发动机信息 -->
                     <div class="form-section">
                         <div class="section-title">主发动机信息</div>
-                        <div class="form-grid cols-1" style="max-width:400px">
-                            <div class="form-item"><label>主发动机铭牌照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
+                        <div class="form-grid form-grid--full" style="max-width:400px">
+                            <div class="form-row form-row--wide"><label>主发动机铭牌照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
                         </div>
                     </div>
 
@@ -192,10 +180,10 @@
                     <div class="form-section">
                         <div class="section-title">副发动机信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>副发动机铭牌照片</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-                            <div class="form-item"><label>副发动机厂家</label><input type="text" id="f_sub_eng_mfr" placeholder="请输入副发动机厂家"></div>
-                            <div class="form-item"><label>副发动机型号</label><input type="text" id="f_sub_eng_model" placeholder="请输入副发动机型号"></div>
-                            <div class="form-item"><label>副发动机功率（KW）</label><input type="number" id="f_sub_eng_power" placeholder="请输入功率" min="0"></div>
+                            <div class="form-row form-row--wide"><label>副发动机铭牌照片</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+                            <div class="form-row"><label>副发动机厂家</label><div class="control"><input type="text" id="f_sub_eng_mfr" placeholder="请输入副发动机厂家"></div></div>
+                            <div class="form-row"><label>副发动机型号</label><div class="control"><input type="text" id="f_sub_eng_model" placeholder="请输入副发动机型号"></div></div>
+                            <div class="form-row form-row--wide"><label>副发动机功率（KW）</label><div class="control"><input type="number" id="f_sub_eng_power" placeholder="请输入功率" min="0"></div></div>
                         </div>
                     </div>
 
@@ -203,9 +191,9 @@
                     <div class="form-section">
                         <div class="section-title">变速箱信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>变速箱铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-                            <div class="form-item"><label>变速箱厂家</label><input type="text" id="f_gear_mfr" placeholder="请输入变速箱厂家"></div>
-                            <div class="form-item"><label>变速箱型号</label><input type="text" id="f_gear_model" placeholder="请输入变速箱型号"></div>
+                            <div class="form-row"><label>变速箱铭牌</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+                            <div class="form-row"><label>变速箱厂家</label><div class="control"><input type="text" id="f_gear_mfr" placeholder="请输入变速箱厂家"></div></div>
+                            <div class="form-row"><label>变速箱型号</label><div class="control"><input type="text" id="f_gear_model" placeholder="请输入变速箱型号"></div></div>
                         </div>
                     </div>
 
@@ -213,12 +201,12 @@
                     <div class="form-section">
                         <div class="section-title">上装信息</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>风机铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-                            <div class="form-item"><label>风机型号/厂家</label><input type="text" id="f_fan_model" placeholder="请输入风机型号/厂家"></div>
-                            <div class="form-item"><label>高压水泵铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-                            <div class="form-item"><label>高压水泵型号/厂家</label><input type="text" id="f_hp_pump" placeholder="请输入高压水泵型号/厂家"></div>
-                            <div class="form-item"><label>低压水泵铭牌</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div>
-                            <div class="form-item"><label>低压水泵型号/厂家</label><input type="text" id="f_lp_pump" placeholder="请输入低压水泵型号/厂家"></div>
+                            <div class="form-row"><label>风机铭牌</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+                            <div class="form-row"><label>风机型号/厂家</label><div class="control"><input type="text" id="f_fan_model" placeholder="请输入风机型号/厂家"></div></div>
+                            <div class="form-row"><label>高压水泵铭牌</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+                            <div class="form-row form-row--wide"><label>高压水泵型号/厂家</label><div class="control"><input type="text" id="f_hp_pump" placeholder="请输入高压水泵型号/厂家"></div></div>
+                            <div class="form-row"><label>低压水泵铭牌</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传照片</span></div></div></div></div>
+                            <div class="form-row form-row--wide"><label>低压水泵型号/厂家</label><div class="control"><input type="text" id="f_lp_pump" placeholder="请输入低压水泵型号/厂家"></div></div>
                         </div>
                     </div>
 
@@ -226,44 +214,50 @@
                     <div class="form-section">
                         <div class="section-title">其他</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>其他配置</label><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传文件</span></div></div><div class="hint">支持jpg/png/pdf，单文件不超过10MB，可上传多个</div></div>
-                            <div class="form-item"><label>备注</label><textarea id="f_remark" maxlength="500" placeholder="请输入备注信息，最多500字"></textarea></div>
+                            <div class="form-row"><label>其他配置</label><div class="control"><div class="upload-area"><div class="upload-item" onclick="simulateUpload(this)"><span class="upload-icon">＋</span><span class="upload-text">上传文件</span></div></div><div class="hint">支持jpg/png/pdf，单文件不超过10MB，可上传多个</div></div></div>
+                            <div class="form-row"><label>备注</label><div class="control"><textarea id="f_remark" maxlength="500" placeholder="请输入备注信息，最多500字"></textarea></div></div>
                         </div>
                     </div>
 
                     <!-- 硬件信息 -->
                     <div class="form-section">
                         <div class="section-title">硬件信息</div>
-                        <table class="dynamic-table" id="hwTable">
-                            <thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th><th style="width:10%">操作</th></tr></thead>
-                            <tbody>
-                                <tr><td><input type="text" placeholder="请输入硬件名称"></td><td><input type="text" placeholder="请输入识别码"></td><td><input type="text" placeholder="请输入状态"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>
-                            </tbody>
-                        </table>
+                        <div class="table-wrapper">
+                            <table class="dynamic-table" id="hwTable">
+                                <thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th><th style="width:10%">操作</th></tr></thead>
+                                <tbody>
+                                    <tr><td><input type="text" placeholder="请输入硬件名称"></td><td><input type="text" placeholder="请输入识别码"></td><td><input type="text" placeholder="请输入状态"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <div class="add-row-btn" onclick="addHwRow()">＋ 添加硬件</div>
                     </div>
 
                     <!-- 软件信息 -->
                     <div class="form-section">
                         <div class="section-title">软件信息</div>
-                        <table class="dynamic-table" id="swTable">
-                            <thead><tr><th style="width:45%">软件名称</th><th style="width:45%">具体值</th><th style="width:10%">操作</th></tr></thead>
-                            <tbody>
-                                <tr><td><input type="text" placeholder="请输入软件名称"></td><td><input type="text" placeholder="请输入具体值"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>
-                            </tbody>
-                        </table>
+                        <div class="table-wrapper">
+                            <table class="dynamic-table" id="swTable">
+                                <thead><tr><th style="width:45%">软件名称</th><th style="width:45%">具体值</th><th style="width:10%">操作</th></tr></thead>
+                                <tbody>
+                                    <tr><td><input type="text" placeholder="请输入软件名称"></td><td><input type="text" placeholder="请输入具体值"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <div class="add-row-btn" onclick="addSwRow()">＋ 添加软件</div>
                     </div>
 
                     <!-- 摄像头信息 -->
                     <div class="form-section">
                         <div class="section-title">摄像头信息</div>
-                        <table class="dynamic-table" id="camTable">
-                            <thead><tr><th>名称</th><th>Track_ID</th><th>最小码率</th><th>最大码率</th><th>是否固定码率</th><th>帧率</th><th>分辨率</th><th>优先级</th><th>应用平台</th><th>操作</th></tr></thead>
-                            <tbody>
-                                <tr><td><input type="text" placeholder="名称"></td><td><input type="number" placeholder="ID"></td><td><input type="number" placeholder="码率"></td><td><input type="number" placeholder="码率"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td><td><input type="number" placeholder="帧率"></td><td><input type="text" placeholder="分辨率"></td><td><input type="text" placeholder="优先级"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>均支持</option><option>云平台</option><option>自动驾驶</option></select></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>
-                            </tbody>
-                        </table>
+                        <div class="table-wrapper">
+                            <table class="dynamic-table" id="camTable">
+                                <thead><tr><th>名称</th><th>Track_ID</th><th>最小码率</th><th>最大码率</th><th>是否固定码率</th><th>帧率</th><th>分辨率</th><th>优先级</th><th>应用平台</th><th>操作</th></tr></thead>
+                                <tbody>
+                                    <tr><td><input type="text" placeholder="名称"></td><td><input type="number" placeholder="ID"></td><td><input type="number" placeholder="码率"></td><td><input type="number" placeholder="码率"></td><td><select><option value="">请选择</option><option>是</option><option>否</option></select></td><td><input type="number" placeholder="帧率"></td><td><input type="text" placeholder="分辨率"></td><td><input type="text" placeholder="优先级"></td><td><select><option value="">请选择</option><option>均支持</option><option>云平台</option><option>自动驾驶</option></select></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <div class="add-row-btn" onclick="addCamRow()">＋ 添加摄像头</div>
                     </div>
 
@@ -271,50 +265,52 @@
                     <div class="form-section">
                         <div class="section-title">车辆功能配置</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>历史图片</label><div class="radio-group"><label><input type="radio" name="historyImg" value="1"> 是</label><label><input type="radio" name="historyImg" value="0"> 否</label></div></div>
-                            <div class="form-item"><label>历史视频</label><div class="radio-group"><label><input type="radio" name="historyVideo" value="1"> 有</label><label><input type="radio" name="historyVideo" value="0"> 无</label></div></div>
-                            <div class="form-item"><label>实时视频</label><select id="f_realtime"><option value="">请选择</option><option>腾讯云</option><option>WebRTC</option><option>GB28181</option><option>新GB28181</option><option>无</option></select></div>
-                            <div class="form-item"><label>平行驾驶座舱通话</label><div class="radio-group"><label><input type="radio" name="parallelCockpit" value="1"> 有</label><label><input type="radio" name="parallelCockpit" value="0"> 无</label></div></div>
-                            <div class="form-item"><label>网联协议</label><select id="f_protocol"><option value="">请选择</option><option>新网联</option><option>旧网联</option><option>无</option></select></div>
-                            <div class="form-item"><label>推拉流类型</label><select id="f_stream_type"><option value="">请选择</option><option>WebRTC</option><option>ZLMediaKit</option><option>其他</option></select></div>
+                            <div class="form-row"><label>历史图片</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyImg" value="1"> 是</label><label><input type="radio" name="historyImg" value="0"> 否</label></div></div></div>
+                            <div class="form-row"><label>历史视频</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyVideo" value="1"> 有</label><label><input type="radio" name="historyVideo" value="0"> 无</label></div></div></div>
+                            <div class="form-row"><label>实时视频</label><div class="control"><select id="f_realtime"><option value="">请选择</option><option>腾讯云</option><option>WebRTC</option><option>GB28181</option><option>新GB28181</option><option>无</option></select></div></div>
+                            <div class="form-row form-row--wide"><label>平行驾驶座舱通话</label><div class="control"><div class="radio-group"><label><input type="radio" name="parallelCockpit" value="1"> 有</label><label><input type="radio" name="parallelCockpit" value="0"> 无</label></div></div></div>
+                            <div class="form-row"><label>网联协议</label><div class="control"><select id="f_protocol"><option value="">请选择</option><option>新网联</option><option>旧网联</option><option>无</option></select></div></div>
+                            <div class="form-row"><label>推拉流类型</label><div class="control"><select id="f_stream_type"><option value="">请选择</option><option>WebRTC</option><option>ZLMediaKit</option><option>其他</option></select></div></div>
                         </div>
                     </div>
 
                     <!-- 摄像头图片配置 -->
                     <div class="form-section">
                         <div class="section-title">摄像头图片配置</div>
-                        <table class="dynamic-table" id="camImgTable">
-                            <thead>
-                                <tr>
-                                    <th style="width:12%">名称</th>
-                                    <th style="width:10%">Track_ID</th>
-                                    <th style="width:10%">是否支持历史图片</th>
-                                    <th style="width:10%">历史图片质量</th>
-                                    <th style="width:10%">是否支持感知标记</th>
-                                    <th style="width:10%">感知标记图片质量</th>
-                                    <th style="width:10%">是否支持云端打标</th>
-                                    <th style="width:10%">云端打标图片质量</th>
-                                    <th style="width:10%">是否支持车端打标</th>
-                                    <th style="width:8%">车端打标图片质量</th>
-                                    <th style="width:5%">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><input type="text" placeholder="名称"></td>
-                                    <td><input type="number" placeholder="ID"></td>
-                                    <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
-                                    <td><input type="number" placeholder="质量" min="0"></td>
-                                    <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
-                                    <td><input type="number" placeholder="质量" min="0"></td>
-                                    <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
-                                    <td><input type="number" placeholder="质量" min="0"></td>
-                                    <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
-                                    <td><input type="number" placeholder="质量" min="0"></td>
-                                    <td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-wrapper">
+                            <table class="dynamic-table" id="camImgTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:12%">名称</th>
+                                        <th style="width:10%">Track_ID</th>
+                                        <th style="width:10%">是否支持历史图片</th>
+                                        <th style="width:10%">历史图片质量</th>
+                                        <th style="width:10%">是否支持感知标记</th>
+                                        <th style="width:10%">感知标记图片质量</th>
+                                        <th style="width:10%">是否支持云端打标</th>
+                                        <th style="width:10%">云端打标图片质量</th>
+                                        <th style="width:10%">是否支持车端打标</th>
+                                        <th style="width:8%">车端打标图片质量</th>
+                                        <th style="width:5%">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="text" placeholder="名称"></td>
+                                        <td><input type="number" placeholder="ID"></td>
+                                        <td><select><option value="">请选择</option><option>是</option><option>否</option></select></td>
+                                        <td><input type="number" placeholder="质量" min="0"></td>
+                                        <td><select><option value="">请选择</option><option>是</option><option>否</option></select></td>
+                                        <td><input type="number" placeholder="质量" min="0"></td>
+                                        <td><select><option value="">请选择</option><option>是</option><option>否</option></select></td>
+                                        <td><input type="number" placeholder="质量" min="0"></td>
+                                        <td><select><option value="">请选择</option><option>是</option><option>否</option></select></td>
+                                        <td><input type="number" placeholder="质量" min="0"></td>
+                                        <td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <div class="add-row-btn" onclick="addCamImgRow()">＋ 添加摄像头图片配置</div>
                     </div>
 
@@ -322,9 +318,9 @@
                     <div class="form-section">
                         <div class="section-title">平行驾驶配置</div>
                         <div class="form-grid">
-                            <div class="form-item"><label>是否平行驾驶</label><div class="radio-group"><label><input type="radio" name="isParallel" value="1"> 是</label><label><input type="radio" name="isParallel" value="0"> 否</label></div></div>
-                            <div class="form-item"><label>最大车速（km/h）</label><input type="number" id="f_max_speed" placeholder="请输入最大车速" min="0"></div>
-                            <div class="form-item"><label>最大转向角</label><input type="number" id="f_max_steer" placeholder="请输入最大转向角" min="0"></div>
+                            <div class="form-row"><label>是否平行驾驶</label><div class="control"><div class="radio-group"><label><input type="radio" name="isParallel" value="1"> 是</label><label><input type="radio" name="isParallel" value="0"> 否</label></div></div></div>
+                            <div class="form-row form-row--wide"><label>最大车速（km/h）</label><div class="control"><input type="number" id="f_max_speed" placeholder="请输入最大车速" min="0"></div></div>
+                            <div class="form-row"><label>最大转向角</label><div class="control"><input type="number" id="f_max_steer" placeholder="请输入最大转向角" min="0"></div></div>
                         </div>
                     </div>
 
@@ -334,10 +330,10 @@
     </div>
 </div>
 
-<!-- 底部操作栏 -->
+<!-- 底部固定操作栏（样式由 form.css 的 .footer-bar 提供） -->
 <div class="footer-bar">
-    <button class="btn btn-lg" onclick="window.location.href='./vehicle-register-list.html'">取消</button>
-    <button class="btn btn-primary btn-lg" onclick="doSave()">确定</button>
+    <button class="btn" type="button" onclick="window.location.href='./vehicle-register-list.html'">取消</button>
+    <button class="btn btn-primary" type="button" onclick="doSave()">确定</button>
 </div>
 
 <script src="../components/common.js"></script>
@@ -347,11 +343,6 @@ Common.initLayout({
     sidebarId: 'sidebar',
     activeMenuId: 'vehicle-register',
     headerId: 'header',
-    breadcrumbs: [
-        { label: '车辆管理' },
-        { label: '车辆建档', href: './vehicle-register-list.html' },
-        { label: '新增车辆信息' },
-    ],
     headerOptions: { showProject: false }
 });
 
@@ -363,13 +354,34 @@ function removeUpload(el) {
     el.onclick = function(){ simulateUpload(el); };
 }
 
+// ===== 校验错误提示（规范三.2：错误文字为红色，位于控件下方） =====
+function setFieldError(el, msg) {
+    const row = el.closest('.form-row');
+    if (!row) return;
+    row.classList.add('has-error');
+    const control = el.closest('.control') || row;
+    let err = control.querySelector('.field-error');
+    if (!err) {
+        err = document.createElement('div');
+        err.className = 'field-error';
+        control.appendChild(err);
+    }
+    err.textContent = msg;
+}
+function clearFieldErrors() {
+    document.querySelectorAll('.form-row.has-error').forEach(r => r.classList.remove('has-error'));
+    document.querySelectorAll('.field-error').forEach(e => e.remove());
+}
+
 function doSave() {
-    const vin = document.getElementById('f_vin').value.trim();
-    if (!vin) { Common.showToast('请输入车架号', 'error'); document.getElementById('f_vin').focus(); return; }
-    const project = document.getElementById('f_project').value;
-    if (!project) { Common.showToast('请选择归属项目', 'error'); return; }
-    const modelName = document.getElementById('f_model_name').value;
-    if (!modelName) { Common.showToast('请选择车型名称', 'error'); return; }
+    clearFieldErrors();
+    const vinEl = document.getElementById('f_vin');
+    const vin = vinEl.value.trim();
+    if (!vin) { setFieldError(vinEl, '请输入车架号'); Common.showToast('请输入车架号', 'error'); vinEl.focus(); return; }
+    const projectEl = document.getElementById('f_project');
+    if (!projectEl.value) { setFieldError(projectEl, '请选择归属项目'); Common.showToast('请选择归属项目', 'error'); projectEl.focus(); return; }
+    const modelEl = document.getElementById('f_model_name');
+    if (!modelEl.value) { setFieldError(modelEl, '请选择车型名称'); Common.showToast('请选择车型名称', 'error'); modelEl.focus(); return; }
     Common.showToast('保存成功', 'success');
     setTimeout(() => window.location.href = './vehicle-register-list.html', 800);
 }
@@ -389,7 +401,7 @@ function addSwRow() {
 function addCamRow() {
     const tbody = document.querySelector('#camTable tbody');
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><input type="text" placeholder="名称"></td><td><input type="number" placeholder="ID"></td><td><input type="number" placeholder="码率"></td><td><input type="number" placeholder="码率"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td><td><input type="number" placeholder="帧率"></td><td><input type="text" placeholder="分辨率"></td><td><input type="text" placeholder="优先级"></td><td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>均支持</option><option>云平台</option><option>自动驾驶</option></select></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>`;
+    tr.innerHTML = `<td><input type="text" placeholder="名称"></td><td><input type="number" placeholder="ID"></td><td><input type="number" placeholder="码率"></td><td><input type="number" placeholder="码率"></td><td><select><option value="">请选择</option><option>是</option><option>否</option></select></td><td><input type="number" placeholder="帧率"></td><td><input type="text" placeholder="分辨率"></td><td><input type="text" placeholder="优先级"></td><td><select><option value="">请选择</option><option>均支持</option><option>云平台</option><option>自动驾驶</option></select></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>`;
     tbody.appendChild(tr);
 }
 
@@ -398,13 +410,13 @@ function addCamImgRow() {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td><input type="text" placeholder="名称"></td>
         <td><input type="number" placeholder="ID"></td>
-        <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
+        <td><select><option value="">请选择</option><option>是</option><option>否</option></select></td>
         <td><input type="number" placeholder="质量" min="0"></td>
-        <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
+        <td><select><option value="">请选择</option><option>是</option><option>否</option></select></td>
         <td><input type="number" placeholder="质量" min="0"></td>
-        <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
+        <td><select><option value="">请选择</option><option>是</option><option>否</option></select></td>
         <td><input type="number" placeholder="质量" min="0"></td>
-        <td><select style="height:28px;padding:0 4px;border:1px solid var(--border-input);border-radius:var(--radius-sm);font-size:13px;width:100%"><option value="">请选择</option><option>是</option><option>否</option></select></td>
+        <td><select><option value="">请选择</option><option>是</option><option>否</option></select></td>
         <td><input type="number" placeholder="质量" min="0"></td>
         <td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>`;
     tbody.appendChild(tr);
