@@ -53,7 +53,7 @@
   <div class="pagination-row"><span>共 <b id="total-count">0</b> 条</span><select class="page-size" id="page-size" onchange="changePageSize()"><option>10</option><option>20</option><option>50</option></select><span id="page-info">第 1 / 1 页</span><div id="pagination"></div></div>
 </section></main></div></div>
 <div class="modal-overlay" id="export-modal"><div class="modal-box confirm-box"><div class="modal-header"><h3>导出确认</h3><span class="modal-close" onclick="closeExport()">×</span></div><div class="confirm-body"><span class="confirm-icon">!</span><span class="confirm-text" id="export-message"></span></div><div class="modal-footer"><button class="btn" onclick="closeExport()">取消</button><button class="btn btn-primary" onclick="confirmExport()">确认导出</button></div></div></div>
-<script src="../components/common.js"></script><script src="../components/fixed-table.js"></script>
+<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/filter-component.js"></script><script src="../components/fixed-table.js"></script>
 <script>
 Common.initLayout({basePath:'../',sidebarId:'sidebar',activeMenuId:'sim-ledger',headerId:'header',headerOptions:{showProject:false}});
 const data=[

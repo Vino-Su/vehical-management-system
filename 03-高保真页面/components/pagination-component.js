@@ -116,9 +116,11 @@
 
     self._pageSize = options.pageSize || 10;
     self._pageSizeOptions = options.pageSizeOptions || [10, 20, 50, 100];
-    self._currentPage = 1;
+    self._currentPage = Math.max(1, parseInt(options.currentPage, 10) || 1);
     self._total = 0;
     self._size = options.size === 'small' ? 'small' : 'medium';
+    self._showStats = options.showStats !== false;
+    self._showPageSize = options.showPageSize !== false;
     self._onPageChange = options.onPageChange || function() {};
     self._onPageSizeChange = options.onPageSizeChange || function() {};
     self._destroyed = false;
@@ -159,22 +161,25 @@
     }
 
     // 每页条数选择器
-    var sizeSelectHtml = '<select id="' + cid + '-size" style="height:' + cfg.selectHeight + ';font-size:' + cfg.selectFontSize + ';padding:0 8px 0 12px;border:1px solid #d9d9d9;border-radius:6px;outline:none;background:#fff;cursor:pointer;min-width:80px">';
-    for (var s = 0; s < self._pageSizeOptions.length; s++) {
-      var opt = self._pageSizeOptions[s];
-      sizeSelectHtml += '<option value="' + opt + '"' + (opt === self._pageSize ? ' selected' : '') + '>' + opt + '</option>';
+    var sizeSelectHtml = '';
+    if (self._showPageSize) {
+      sizeSelectHtml = '<select id="' + cid + '-size" style="height:' + cfg.selectHeight + ';font-size:' + cfg.selectFontSize + ';padding:0 8px 0 12px;border:1px solid #d9d9d9;border-radius:6px;outline:none;background:#fff;cursor:pointer;min-width:80px">';
+      for (var s = 0; s < self._pageSizeOptions.length; s++) {
+        var opt = self._pageSizeOptions[s];
+        sizeSelectHtml += '<option value="' + opt + '"' + (opt === self._pageSize ? ' selected' : '') + '>' + opt + '</option>';
+      }
+      sizeSelectHtml += '</select>';
     }
-    sizeSelectHtml += '</select>';
 
     // 数据统计文本
-    var statsHtml = '<span class="pg-stats" style="font-size:' + TOKENS.fontSizePrompt + ';color:' + TOKENS.textGrey4 + '">共 <b style="color:' + TOKENS.textGrey4 + '">' + self._total + '</b> 条</span>';
+    var statsHtml = self._showStats ? '<span class="pg-stats" style="font-size:' + TOKENS.fontSizePrompt + ';color:' + TOKENS.textGrey4 + '">共 <b style="color:' + TOKENS.textGrey4 + '">' + self._total + '</b> 条</span>' : '';
 
     // 组装完整 HTML
     var html =
       '<div class="pg-wrapper" style="display:flex;align-items:center;justify-content:flex-end;gap:' + TOKENS.gap + ';margin-top:16px;font-size:' + cfg.fontSize + ';color:' + TOKENS.textGrey3 + '">' +
         statsHtml +
         sizeSelectHtml +
-        '<span style="font-size:' + TOKENS.fontSizePrompt + ';color:' + TOKENS.textGrey4 + '">条/页</span>' +
+        (self._showPageSize ? '<span style="font-size:' + TOKENS.fontSizePrompt + ';color:' + TOKENS.textGrey4 + '">条/页</span>' : '') +
         '<button id="' + cid + '-prev" class="pg-arrow" style="display:inline-flex;align-items:center;justify-content:center;height:' + cfg.arrowBtnSize + ';width:' + cfg.arrowBtnSize + ';padding:' + cfg.arrowPadding + ';border:1px solid #d9d9d9;border-radius:6px;background:#fff;cursor:pointer;transition:all .2s;outline:none">' + leftArrow + '</button>' +
         pageBtnsHtml +
         '<button id="' + cid + '-next" class="pg-arrow" style="display:inline-flex;align-items:center;justify-content:center;height:' + cfg.arrowBtnSize + ';width:' + cfg.arrowBtnSize + ';padding:' + cfg.arrowPadding + ';border:1px solid #d9d9d9;border-radius:6px;background:#fff;cursor:pointer;transition:all .2s;outline:none">' + rightArrow + '</button>' +
@@ -325,6 +330,24 @@
     if (this._currentPage > totalPages) {
       this._currentPage = totalPages || 1;
     }
+    this._render();
+  };
+
+  /** 设置当前页,不触发回调。 */
+  Pagination.prototype.setPage = function(page) {
+    if (this._destroyed) return;
+    var totalPages = this._getTotalPages();
+    this._currentPage = Math.min(Math.max(1, parseInt(page, 10) || 1), totalPages);
+    this._render();
+  };
+
+  /** 设置每页条数,不触发回调。 */
+  Pagination.prototype.setPageSize = function(size) {
+    if (this._destroyed) return;
+    var next = parseInt(size, 10);
+    if (!next || next < 1) return;
+    this._pageSize = next;
+    this._currentPage = 1;
     this._render();
   };
 

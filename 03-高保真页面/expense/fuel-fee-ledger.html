@@ -11,7 +11,7 @@
 </head>
 <body data-ledger-type="fuel">
 <div class="layout"><aside class="sidebar" id="sidebar"></aside><main class="main-area"><header id="header"></header><section class="content"><div class="page-container">
-  <div class="search-bar"><div class="search-row">
+  <div class="search-bar" data-visible-count="3"><div class="search-row">
     <div class="ledger-search-item"><label id="timeFilterLabel">加油时间</label><div class="ledger-date-range"><input id="startDate" type="date"><span>至</span><input id="endDate" type="date"></div></div>
     <div class="ledger-search-item"><label>车牌号</label><input id="plateFilter" placeholder="支持模糊搜索"></div>
     <div class="ledger-search-item" id="extraFilter"></div>
@@ -28,5 +28,5 @@
 <div class="modal-overlay" id="changeModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3>变更记录</h3><button class="modal-close" onclick="Common.closeModal('changeModal')">×</button></div><div class="modal-body"><div class="table-wrapper"><table class="ledger-change-table"><thead><tr><th>字段名称</th><th>变更前</th><th>变更后</th><th>变更时间</th><th>变更人</th></tr></thead><tbody id="changeBody"></tbody></table></div></div><div class="modal-footer modal-footer--right"><button class="btn" onclick="Common.closeModal('changeModal')">关闭</button></div></div></div>
 <div class="modal-overlay" id="importModal"><div class="modal-box"><div class="modal-header"><h3 id="importTitle"></h3><button class="modal-close" onclick="Common.closeModal('importModal')">×</button></div><div class="modal-body"><div class="ledger-import-tip"><span>请先下载模板，按模板格式填写后上传。</span><button class="btn btn-sm" type="button" onclick="Common.showToast('导入模板已准备完成','success')">下载模板</button></div><div class="ledger-form-upload"><input id="importFile" type="file" accept=".xlsx,.xls"><div class="ledger-file-hint">支持 .xlsx、.xls 格式，文件大小不超过 10MB</div></div></div><div class="modal-footer"><button class="btn" onclick="Common.closeModal('importModal')">取消</button><button class="btn btn-primary" onclick="EnergyLedger.submitImport()">确定导入</button></div></div></div>
 <div class="modal-overlay" id="previewModal"><div class="modal-box"><div class="modal-header"><h3>凭证预览</h3><button class="modal-close" onclick="Common.closeModal('previewModal')">×</button></div><div class="modal-body" id="previewBody"></div><div class="modal-footer modal-footer--right"><button class="btn" onclick="Common.closeModal('previewModal')">关闭</button></div></div></div>
-<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/fixed-table.js"></script><script src="./energy-ledger.js"></script>
+<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/filter-component.js"></script><script src="../components/fixed-table.js"></script><script src="./energy-ledger.js"></script>
 </body></html>

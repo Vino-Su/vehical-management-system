@@ -20,6 +20,62 @@
 <link rel="stylesheet" href="../components/common.css">
 <link rel="stylesheet" href="../components/form.css">
 <style>
+/* === 车辆总览：当班决策看板 === */
+.vehicle-global-info { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding:16px 0; border-bottom:1px solid var(--border-color); }
+.vehicle-global-content { flex:1; min-width:0; }
+.vehicle-global-main { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; min-width:0; }
+.vehicle-global-main::before { width:3px; height:22px; border-radius:2px; background:var(--primary); content:""; }
+.vehicle-global-vin { color:var(--text-primary); font-family:var(--font-number); font-size:20px; font-weight:600; line-height:28px; }
+.vehicle-global-model { color:var(--text-primary); font-size:16px; font-weight:600; line-height:24px; }
+.vehicle-global-meta { display:flex; align-items:center; flex-wrap:wrap; gap:4px 16px; margin-top:6px; min-width:0; }
+.vehicle-global-value { max-width:260px; overflow:hidden; color:var(--text-secondary); font-family:var(--font-number); font-size:13px; line-height:20px; text-overflow:ellipsis; white-space:nowrap; }
+.vehicle-global-value.project { font-family:inherit; }
+.vehicle-global-labels { display:flex; align-items:center; min-height:20px; flex-wrap:wrap; gap:4px; }
+.vehicle-global-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; flex:0 0 auto; }
+@media (max-width:900px) { .vehicle-global-info { gap:12px; flex-direction:column; } .vehicle-global-actions { justify-content:flex-start; } }
+
+.overview-dashboard { display:flex; flex-direction:column; gap:16px; }
+.overview-summary { background:var(--bg-container); border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; }
+.overview-identity { padding:18px 20px; border-bottom:1px solid var(--border-color); }
+.overview-identity-main { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 16px; }
+.overview-plate { font-family:var(--font-number); font-size:20px; font-weight:600; color:var(--text-primary); }
+.overview-vehicle { font-size:16px; font-weight:600; color:var(--text-primary); }
+.overview-project { font-size:14px; color:var(--text-secondary); }
+.overview-identity-meta { display:flex; flex-wrap:wrap; gap:8px 24px; margin-top:8px; color:var(--text-secondary); font-family:var(--font-number); font-size:13px; line-height:20px; }
+.availability-banner { display:flex; align-items:flex-start; gap:16px; padding:14px 20px; background:#fffbe6; border-bottom:1px solid #ffe58f; }
+.availability-label { flex:0 0 auto; color:#ad6800; font-size:14px; font-weight:600; line-height:22px; }
+.availability-body { flex:1; min-width:0; }
+.availability-state { color:#d48806; font-size:16px; font-weight:600; line-height:22px; }
+.availability-reason { margin-top:3px; color:var(--text-primary); font-size:14px; line-height:22px; }
+.availability-update { margin-top:4px; color:var(--text-secondary); font-family:var(--font-number); font-size:12px; line-height:18px; }
+.overview-operating-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+.overview-operating-card { min-width:0; padding:18px 20px; border-bottom:1px solid var(--border-color); }
+.overview-operating-card:nth-child(odd) { border-right:1px solid var(--border-color); }
+.overview-operating-card:nth-last-child(-n+2) { border-bottom:0; }
+.operating-card-title { color:var(--text-primary); font-size:16px; font-weight:600; line-height:24px; }
+.operating-metrics { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px 20px; margin-top:12px; }
+.operating-metric { color:var(--text-primary); font-size:14px; line-height:22px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.operating-metric strong { font-family:var(--font-number); font-weight:600; }
+.operating-card-action { display:inline-flex; align-items:center; height:24px; margin-top:14px; padding:0; border:0; background:transparent; color:var(--primary); cursor:pointer; font-size:13px; }
+.operating-card-action:hover { color:var(--primary-hover); }
+.overview-reminder { display:flex; align-items:center; gap:12px; padding:14px 20px; background:#fff7e6; border-top:1px solid #ffd591; }
+.reminder-title { flex:0 0 auto; color:#ad4e00; font-size:14px; font-weight:600; }
+.reminder-items { min-width:0; color:var(--text-primary); font-size:14px; line-height:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* === 车辆详情一级/二级导航 === */
+.business-subtab-bar { display:flex; align-items:center; gap:4px; min-height:40px; margin-bottom:16px; padding:4px; background:#fafafa; border:1px solid var(--border-color); border-radius:var(--radius); overflow-x:auto; }
+.business-subtab { height:30px; padding:0 12px; border:0; border-radius:4px; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:14px; white-space:nowrap; }
+.business-subtab:hover { color:var(--primary); background:#f0f5ff; }
+.business-subtab.active { background:#e6f4ff; color:var(--primary); font-weight:600; }
+.business-subtab.disabled { color:var(--text-disabled); cursor:not-allowed; }
+.business-subtab.disabled:hover { color:var(--text-disabled); background:transparent; }
+.business-subtab-badge { margin-left:4px; font-size:11px; font-weight:400; }
+.business-panel { min-width:0; }
+.monitor-placeholder { display:flex; align-items:center; justify-content:center; min-height:320px; border:1px dashed #b7d5ff; border-radius:var(--radius-lg); background:#fafcff; text-align:center; }
+.monitor-placeholder h3 { margin:0; color:var(--text-primary); font-size:16px; line-height:24px; }
+.monitor-placeholder p { max-width:480px; margin:8px 0 0; color:var(--text-secondary); font-size:14px; line-height:22px; }
+@media (max-width:900px) { .overview-operating-grid { grid-template-columns:minmax(0, 1fr); } .overview-operating-card:nth-child(odd) { border-right:0; } .overview-operating-card:nth-last-child(2) { border-bottom:1px solid var(--border-color); } .overview-reminder { align-items:flex-start; flex-direction:column; gap:4px; } }
+
 /* === 单车360度档案 - 车辆概览 Tab === */
 .overview-grid {
   display: grid;
@@ -239,6 +295,51 @@
   color: var(--text-disabled);
   margin-left: 4px;
   font-weight: 400;
+}
+
+/* === 详情页吸顶上下文：车辆全局信息 + 一级 Tab === */
+.vehicle-detail-sticky {
+  position: sticky;
+  top: -16px;
+  z-index: 8;
+  margin: -16px -16px 16px;
+  padding: 0 16px;
+  background: var(--bg-container);
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.vehicle-detail-sticky .vehicle-global-info { background: var(--bg-container); }
+.vehicle-detail-sticky .tab-bar { margin-bottom: 0; background: var(--bg-container); }
+
+/* === 车辆档案分组目录 === */
+.archive-layout { display: grid; grid-template-columns: 184px minmax(0, 1fr); gap: 24px; align-items: start; }
+.archive-directory {
+  position: sticky;
+  top: 132px;
+  max-height: calc(100vh - 164px);
+  overflow-y: auto;
+  padding: 12px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: #fafafa;
+  scrollbar-width: thin;
+}
+.archive-directory-title { padding: 0 8px 10px; color: var(--text-primary); font-size: 13px; font-weight: 600; }
+.archive-directory-list { display: flex; flex-direction: column; gap: 2px; }
+.archive-directory-item {
+  display: block; width: 100%; min-height: 32px; padding: 6px 8px; border: 0; border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: transparent; color: var(--text-secondary);
+  cursor: pointer; font-size: 13px; line-height: 20px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.archive-directory-item:hover { background: #f0f5ff; color: var(--primary); }
+.archive-directory-item.active { border-left-color: var(--primary); background: var(--primary-bg); color: var(--primary); font-weight: 600; }
+.archive-section { scroll-margin-top: 148px; }
+.archive-content { min-width: 0; }
+@media (max-width: 920px) {
+  .archive-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .archive-directory { position: sticky; top: 132px; z-index: 3; max-height: none; padding: 8px; }
+  .archive-directory-list { flex-direction: row; overflow-x: auto; }
+  .archive-directory-item { flex: 0 0 auto; width: auto; border-left: 0; border-bottom: 2px solid transparent; }
+  .archive-directory-item.active { border-left: 0; border-bottom-color: var(--primary); }
 }
 
 /* === 查看态信息展示 === */
@@ -649,29 +750,24 @@
     <div id="header"></div>
     <div class="content" id="contentArea">
       <div class="page-container">
-        <!-- 页面操作区（规范二.5：禁止页面大标题与面包屑，内容直接呈现） -->
-        <div class="action-bar" style="justify-content:flex-end">
-          <button class="btn" onclick="goBack()">关闭</button>
-          <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">编辑</button>
-        </div>
+        <div class="vehicle-detail-sticky">
+          <!-- 全局车辆信息及页面操作：字段直接取自车辆档案，在所有一级Tab中保持可见 -->
+          <div class="vehicle-global-info" id="vehicleGlobalInfo"></div>
 
-        <!-- Tab Bar -->
-        <div class="tab-bar" id="tabBar">
-          <div class="tab-item active" data-tab="overview" onclick="switchTab('overview')">车辆概览</div>
-          <div class="tab-item" data-tab="basic" onclick="switchTab('basic')">基础信息</div>
-          <div class="tab-item" data-tab="transfer" onclick="switchTab('transfer')">调度信息</div>
-          <div class="tab-item" data-tab="bom" id="bomTabItem" onclick="switchTab('bom')" style="display:none">BOM清单</div>
-          <div class="tab-item" data-tab="aftersales" id="aftersalesTabItem" onclick="switchTab('aftersales')">售后维保</div>
-          <div class="tab-item" data-tab="lifecycle" onclick="switchTab('lifecycle')">生命周期</div>
-          <div class="tab-item disabled" title="暂未开放">合规信息<span class="tab-badge">暂未开放</span></div>
-          <div class="tab-item disabled" title="暂未开放">风险信息<span class="tab-badge">暂未开放</span></div>
-          <div class="tab-item disabled" title="暂未开放">费用信息<span class="tab-badge">暂未开放</span></div>
-          <div class="tab-item" data-tab="changelog" onclick="switchTab('changelog')">变更日志</div>
+          <!-- Tab Bar -->
+          <div class="tab-bar" id="tabBar">
+            <div class="tab-item active" data-tab="overview" onclick="switchTab('overview')">车辆总览</div>
+            <div class="tab-item" data-tab="monitor" onclick="switchTab('monitor')">运行监控</div>
+            <div class="tab-item" data-tab="archive" onclick="switchTab('archive')">车辆档案</div>
+            <div class="tab-item" data-tab="business" onclick="switchTab('business')">业务记录</div>
+            <div class="tab-item" data-tab="lifecycle" onclick="switchTab('lifecycle')">生命周期</div>
+            <div class="tab-item" data-tab="changelog" onclick="switchTab('changelog')">变更日志</div>
+          </div>
         </div>
 
         <!-- Tab Content: 车辆概览（单车档案总览 Tab） -->
         <div class="tab-content" id="tab-overview">
-          <div class="overview-grid">
+          <div class="overview-grid" style="display:none">
 
             <!-- 车辆身份 -->
             <div class="overview-card overview-card--blue overview-card--full">
@@ -916,16 +1012,56 @@
             </div>
 
           </div>
+
+          <div class="overview-dashboard">
+            <section class="overview-summary" aria-label="车辆当班概览">
+              <div class="availability-banner">
+                <span class="availability-label">当前作业可用性</span>
+                <div class="availability-body"><div class="availability-state">受限可用</div><div class="availability-reason">清水余量偏低，左前摄像头今日出现 3 次掉线</div><div class="availability-update">数据更新时间：2026-09-15 14:32</div></div>
+              </div>
+              <div class="overview-operating-grid">
+                <section class="overview-operating-card"><div class="operating-card-title">实时运行</div><div class="operating-metrics"><span class="operating-metric">清扫中 · 自动驾驶</span><span class="operating-metric">速度 <strong>8 km/h</strong></span><span class="operating-metric">当前故障 <strong>0</strong></span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看运行监控</button></section>
+                <section class="overview-operating-card"><div class="operating-card-title">当班保障</div><div class="operating-metrics"><span class="operating-metric">电量 <strong>68%</strong> · 清水 <strong>12%</strong></span><span class="operating-metric">垃圾箱 <strong>40%</strong> · 设备 <strong>8/8</strong></span><span class="operating-metric">今日流量 <strong>1.2GB</strong></span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看保障详情</button></section>
+                <section class="overview-operating-card"><div class="operating-card-title">健康与损耗</div><div class="operating-metrics"><span class="operating-metric">左边刷：剩余 <strong>8 小时</strong></span><span class="operating-metric">摄像头：当前在线，待检查</span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看健康详情</button></section>
+                <section class="overview-operating-card"><div class="operating-card-title">合规与风险</div><div class="operating-metrics"><span class="operating-metric">证照剩余 <strong>15 天</strong></span><span class="operating-metric">年检已预约</span></div><button class="operating-card-action" onclick="showBusinessUnavailable('合规与风险')">查看合规与风险</button></section>
+              </div>
+              <div class="overview-reminder"><span class="reminder-title">当前提醒：3 项</span><span class="reminder-items">清水补给、摄像头检查、证照续办</span></div>
+            </section>
+          </div>
         </div>
 
-        <!-- Tab Content: 基础信息 -->
-        <div class="tab-content" id="tab-basic">
-          <div id="basicViewMode"></div>
-          <div id="basicEditMode" style="display:none"></div>
+        <!-- Tab Content: 运行监控（后续接入实时平台） -->
+        <div class="tab-content" id="tab-monitor" style="display:none">
+          <div class="monitor-placeholder"><div><h3>运行监控待接入</h3><p>将接入车载终端、IoT 或自动驾驶平台的实时位置、设备状态、告警及趋势数据；当前仅保留页面入口，不展示模拟实时数据。</p></div></div>
+        </div>
+
+        <!-- Tab Content: 车辆档案（原基础信息） -->
+        <div class="tab-content" id="tab-archive" style="display:none">
+          <div class="archive-layout">
+            <aside class="archive-directory" aria-label="车辆档案分组目录">
+              <div class="archive-directory-title">档案目录</div>
+              <div class="archive-directory-list" id="archiveDirectoryList"></div>
+            </aside>
+            <div class="archive-content">
+              <div id="basicViewMode"></div>
+              <div id="basicEditMode" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content: 业务记录（二级Tab承接既有业务内容） -->
+        <div class="tab-content" id="tab-business" style="display:none">
+          <div class="business-subtab-bar" role="tablist" aria-label="业务记录分类">
+            <button class="business-subtab active" data-business-tab="transfer" onclick="switchBusinessTab('transfer')">调度信息</button>
+            <button class="business-subtab" data-business-tab="aftersales" onclick="switchBusinessTab('aftersales')">售后维保</button>
+            <button class="business-subtab" data-business-tab="bom" id="bomBusinessSubtab" onclick="switchBusinessTab('bom')" style="display:none">BOM清单</button>
+            <button class="business-subtab disabled" title="暂未开放">合规与风险<span class="business-subtab-badge">暂未开放</span></button>
+            <button class="business-subtab disabled" title="暂未开放">费用信息<span class="business-subtab-badge">暂未开放</span></button>
+          </div>
         </div>
 
         <!-- Tab Content: 调拨信息 -->
-        <div class="tab-content" id="tab-transfer" style="display:none">
+        <div class="tab-content business-panel" id="tab-transfer" style="display:none">
           <div class="transfer-search">
             <div class="form-row">
               <label>调度申请时间</label>
@@ -1016,7 +1152,7 @@
         </div>
 
         <!-- Tab Content: BOM清单 -->
-        <div class="tab-content" id="tab-bom" style="display:none">
+        <div class="tab-content business-panel" id="tab-bom" style="display:none">
           <!-- 概览统计条 -->
           <div class="bom-stat-bar">
             <div class="stat-item"><span class="stat-label">📦 总件数</span><span class="stat-value" id="bomTotalCount">—</span></div>
@@ -1182,7 +1318,7 @@
         </div>
 
         <!-- Tab Content: 售后维保 -->
-        <div class="tab-content" id="tab-aftersales" style="display:none">
+        <div class="tab-content business-panel" id="tab-aftersales" style="display:none">
           <div class="warranty-stat-bar" id="warrantyStatBar"></div>
           <div class="sub-tab-bar" id="aftersalesSubTabBar">
             <div class="sub-tab-item active" data-subtab="warranty-info" onclick="switchAfterSalesSubTab('warranty-info')">售后信息</div>
@@ -1298,6 +1434,8 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/pagination-component.js"></script>
+<script src="../components/filter-component.js"></script>
 <script>
 // ===== 初始化布局（规范二.5：顶部导航仅展示模块名，不展示面包屑） =====
 Common.initLayout({
@@ -1386,11 +1524,18 @@ const statusTagMap = {
 };
 
 // ===== Tab切换 =====
-let currentTab = 'overview';   // 默认展示「车辆概览」（单车档案总览 Tab）
+let currentTab = 'overview';   // 默认展示「车辆总览」
 let isEditing = false;
 let currentAfterSalesSubTab = 'warranty-info';
+let currentBusinessTab = 'transfer';
 
 function switchTab(tab) {
+  if (tab === 'basic') tab = 'archive'; // 兼容原有页内入口
+  if (['transfer', 'aftersales', 'bom'].includes(tab)) {
+    switchTab('business');
+    switchBusinessTab(tab);
+    return;
+  }
   if (isEditing && tab !== currentTab) { Common.showToast('请先保存或取消编辑', 'error'); return; }
   currentTab = tab;
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
@@ -1399,16 +1544,39 @@ function switchTab(tab) {
   if (tabEl) tabEl.classList.add('active');
   const contentEl = document.getElementById('tab-' + tab);
   if (contentEl) contentEl.style.display = '';
-  if (tab === 'transfer') renderTransferTable();
   if (tab === 'changelog') renderLogTable();
+  if (tab === 'lifecycle') { renderLifecycleStages(); renderLifecycleEvents(); }
+  if (tab === 'business') switchBusinessTab(currentBusinessTab);
+  if (tab === 'archive') refreshArchiveDirectory();
+  updateEditButton();
+}
+
+function switchBusinessTab(tab) {
+  const subtab = document.querySelector(`.business-subtab[data-business-tab="${tab}"]`);
+  if (!subtab || subtab.style.display === 'none') return;
+  currentBusinessTab = tab;
+  document.querySelectorAll('.business-subtab[data-business-tab]').forEach(el => el.classList.remove('active'));
+  subtab.classList.add('active');
+  document.querySelectorAll('.business-panel').forEach(el => el.style.display = 'none');
+  const panel = document.getElementById('tab-' + tab);
+  if (panel) panel.style.display = '';
+  if (tab === 'transfer') renderTransferTable();
   if (tab === 'bom') renderBomTab();
   if (tab === 'aftersales') renderAfterSalesTab();
-  if (tab === 'lifecycle') { renderLifecycleStages(); renderLifecycleEvents(); }
+  updateEditButton();
+}
+
+function showBusinessUnavailable(name) {
+  switchTab('business');
+  Common.showToast(name + '功能暂未开放', 'info');
+}
+
+function updateEditButton() {
   const editBtn = document.getElementById('editBtn');
   if (editBtn) {
     if (isEditing) { editBtn.style.display = 'none'; }
-    else if (tab === 'basic') { editBtn.style.display = ''; }
-    else if (tab === 'aftersales' && currentAfterSalesSubTab === 'warranty-info') { editBtn.style.display = ''; }
+    else if (currentTab === 'archive') { editBtn.style.display = ''; }
+    else if (currentTab === 'business' && currentBusinessTab === 'aftersales' && currentAfterSalesSubTab === 'warranty-info') { editBtn.style.display = ''; }
     else { editBtn.style.display = 'none'; }
   }
 }
@@ -1702,6 +1870,33 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// 全局信息区只复用车辆档案已有字段，档案保存后同步刷新。
+function renderVehicleGlobalInfo() {
+  const d = vehicleData;
+  const value = (v) => escapeHtml(v || '—');
+  const container = document.getElementById('vehicleGlobalInfo');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="vehicle-global-content">
+      <div class="vehicle-global-main">
+        <span class="vehicle-global-vin">${value(d.vin)}</span>
+        <span class="vehicle-global-model">${value(d.model_name)}</span>
+        <span class="tag ${statusTagMap[d.vehicle_status] || 'tag-default'}">${value(d.vehicle_status)}</span>
+      </div>
+      <div class="vehicle-global-meta">
+        <span class="vehicle-global-value">${value(d.plate_no)}</span>
+        <span class="vehicle-global-value">${value(d.iot_code)}</span>
+        <span class="vehicle-global-value project">${value(d.project)}</span>
+        <span class="vehicle-global-labels">${renderDetailTags()}</span>
+      </div>
+    </div>
+    <div class="vehicle-global-actions">
+      <button class="btn" onclick="goBack()">关闭</button>
+      <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">编辑</button>
+    </div>
+  `;
+}
+
 // 筛选 / 阶段点击
 function bindLifecycleFilter() {
   document.querySelectorAll('[data-filter-type]').forEach(el => {
@@ -1733,6 +1928,49 @@ function onStageClick(stageKey) {
   });
   lifecycleFilterState.type = types[0];
   renderLifecycleEvents();
+}
+
+// 档案目录根据当前查看态/编辑态的实际分组自动生成，并同步滚动高亮。
+let archiveDirectoryBound = false;
+function refreshArchiveDirectory() {
+  const list = document.getElementById('archiveDirectoryList');
+  if (!list) return;
+  const mode = document.getElementById('basicEditMode').style.display === 'none' ? document.getElementById('basicViewMode') : document.getElementById('basicEditMode');
+  const sections = Array.from(mode.querySelectorAll('.info-section, .form-section'));
+  sections.forEach((section, index) => {
+    const titleEl = section.querySelector('.info-section-title, .section-title');
+    const title = titleEl ? titleEl.textContent.trim() : `分组 ${index + 1}`;
+    section.id = 'archive-section-' + index;
+    section.classList.add('archive-section');
+  });
+  list.innerHTML = sections.map((section, index) => {
+    const titleEl = section.querySelector('.info-section-title, .section-title');
+    const title = titleEl ? titleEl.textContent.trim() : `分组 ${index + 1}`;
+    return `<button class="archive-directory-item${index === 0 ? ' active' : ''}" type="button" data-target="${section.id}" title="${escapeHtml(title)}">${escapeHtml(title)}</button>`;
+  }).join('');
+  list.querySelectorAll('.archive-directory-item').forEach(item => item.addEventListener('click', () => {
+    const target = document.getElementById(item.dataset.target);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    list.querySelectorAll('.archive-directory-item').forEach(el => el.classList.toggle('active', el === item));
+  }));
+  if (!archiveDirectoryBound) {
+    const content = document.getElementById('contentArea');
+    if (content) content.addEventListener('scroll', updateArchiveDirectoryActive, { passive: true });
+    archiveDirectoryBound = true;
+  }
+  updateArchiveDirectoryActive();
+}
+
+function updateArchiveDirectoryActive() {
+  const mode = document.getElementById('basicEditMode').style.display === 'none' ? document.getElementById('basicViewMode') : document.getElementById('basicEditMode');
+  const sections = Array.from(mode.querySelectorAll('.archive-section'));
+  const list = document.getElementById('archiveDirectoryList');
+  if (!sections.length || !list) return;
+  const threshold = 160;
+  let active = sections[0];
+  sections.forEach(section => { if (section.getBoundingClientRect().top <= threshold) active = section; });
+  list.querySelectorAll('.archive-directory-item').forEach(item => item.classList.toggle('active', item.dataset.target === active.id));
 }
 
 // ===== 基础信息 - 查看态 =====
@@ -2109,14 +2347,15 @@ function showEditFooter(show) {
 
 function toggleEdit() {
   if (isEditing) return;
-  if (currentTab === 'basic') {
-    switchTab('basic');
+  if (currentTab === 'archive') {
+    switchTab('archive');
     isEditing = true;
     document.getElementById('basicViewMode').style.display = 'none';
     document.getElementById('basicEditMode').style.display = '';
+    refreshArchiveDirectory();
     document.getElementById('editBtn').style.display = 'none';
     showEditFooter(true);
-  } else if (currentTab === 'aftersales' && currentAfterSalesSubTab === 'warranty-info') {
+  } else if (currentTab === 'business' && currentBusinessTab === 'aftersales' && currentAfterSalesSubTab === 'warranty-info') {
     isEditing = true;
     renderWarrantyInfoEdit();
     document.getElementById('warrantyInfoViewMode').style.display = 'none';
@@ -2129,10 +2368,11 @@ function toggleEdit() {
 function cancelEdit() {
   const form = document.getElementById('editForm');
   if (form) form.querySelectorAll('.form-row.has-error').forEach(clearFieldError);
-  if (currentTab === 'basic') {
+  if (currentTab === 'archive') {
     document.getElementById('basicViewMode').style.display = '';
     document.getElementById('basicEditMode').style.display = 'none';
-  } else if (currentTab === 'aftersales') {
+    refreshArchiveDirectory();
+  } else if (currentTab === 'business' && currentBusinessTab === 'aftersales') {
     document.getElementById('warrantyInfoViewMode').style.display = '';
     document.getElementById('warrantyInfoEditMode').style.display = 'none';
   }
@@ -2231,7 +2471,7 @@ function validateVehicleHardwareSims(hardwareList) {
 }
 
 function saveEdit() {
-  if (currentTab === 'basic') {
+  if (currentTab === 'archive') {
     const firstError = validateEditForm();
     if (firstError) {
       Common.showToast('请先完善必填项', 'error');
@@ -2246,10 +2486,12 @@ function saveEdit() {
     collectBasicFormData();
     const simError = validateVehicleHardwareSims(vehicleData.hw_list);
     if (simError) { Common.showToast(simError, 'error'); return; }
+    renderVehicleGlobalInfo();
     initBomTab(); // 资产来源可能变化，同步 BOM 清单 Tab 显隐
     document.getElementById('basicViewMode').style.display = '';
     document.getElementById('basicEditMode').style.display = 'none';
-  } else if (currentTab === 'aftersales') {
+    refreshArchiveDirectory();
+  } else if (currentTab === 'business' && currentBusinessTab === 'aftersales') {
     saveAfterSalesData();
     document.getElementById('warrantyInfoViewMode').style.display = '';
     document.getElementById('warrantyInfoEditMode').style.display = 'none';
@@ -2258,8 +2500,8 @@ function saveEdit() {
   document.getElementById('editBtn').style.display = '';
   showEditFooter(false);
   Common.showToast('保存成功', 'success');
-  if (currentTab === 'basic') renderBasicView();
-  if (currentTab === 'aftersales') renderWarrantyInfoView();
+  if (currentTab === 'archive') renderBasicView();
+  if (currentTab === 'business' && currentBusinessTab === 'aftersales') renderWarrantyInfoView();
 }
 
 function goBack() {
@@ -2452,10 +2694,10 @@ let bomHistoryFilteredData = [...bomChangeData];
 
 // 初始化BOM Tab
 function initBomTab() {
-  // 显示BOM Tab标签
-  if (vehicleData.asset_source === '自研') {
-    document.getElementById('bomTabItem').style.display = '';
-  }
+  // BOM 仅在自研车辆的「业务记录」中显示，不占一级导航位置。
+  const bomSubtab = document.getElementById('bomBusinessSubtab');
+  if (bomSubtab) bomSubtab.style.display = vehicleData.asset_source === '自研' ? '' : 'none';
+  if (vehicleData.asset_source !== '自研' && currentBusinessTab === 'bom') currentBusinessTab = 'transfer';
 }
 
 // 渲染BOM Tab
@@ -2804,10 +3046,13 @@ function exportChangelog() {
 // ===== 初始化 =====
 renderBasicView();
 renderBasicEdit();
+refreshArchiveDirectory();
+renderVehicleGlobalInfo();
 // 单车360度档案 - 阶段1：默认展示车辆概览；按车型控制自动驾驶域/作业设备域显示
 renderOverviewByVehicleType();
 // 单车360度档案 - 生命周期 Tab 初始化（列表渲染在切到该 Tab 时触发）
 bindLifecycleFilter();
+updateEditButton();
 
 // 根据URL参数中的车辆ID解析资产来源，决定是否显示BOM清单Tab
 (function resolveVehicleSource() {

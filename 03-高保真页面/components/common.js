@@ -357,6 +357,7 @@ const Common = {
   // ===== 分页渲染 =====
   // 规范二.3：表格下方显示数据总数、当前页码、每页显示数量、总页数
   _pageCallbacks: {},
+  _paginationInstances: {},
   renderPagination(opts) {
     const { total, currentPage, pageSize, containerId, infoId, pageInfoId, onPageChange } = opts;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -370,6 +371,36 @@ const Common = {
     if (pageInfoEl) pageInfoEl.textContent = `第 ${currentPage} / ${totalPages} 页`;
 
     if (!container) return;
+
+    // 所有列表统一使用 components/pagination-component.js。保留旧调用签名，
+    // 页面无需改写分页回调即可迁移到公共组件。
+    if (window.Pagination) {
+      const oldPager = this._paginationInstances[containerId];
+      if (oldPager) oldPager.destroy();
+      const area = container.closest('.pagination-area');
+      const legacySize = area && area.querySelector('.page-size-select, .page-size');
+      const options = legacySize ? Array.from(legacySize.options).map(option => parseInt(option.value, 10)).filter(Boolean) : [10, 20, 50, 100];
+      if (options.indexOf(parseInt(pageSize, 10)) === -1) options.unshift(parseInt(pageSize, 10));
+      if (legacySize) legacySize.style.display = 'none';
+      const pager = new window.Pagination({
+        container: containerId,
+        currentPage,
+        pageSize,
+        pageSizeOptions: options.length ? options : [10, 20, 50, 100],
+        showStats: false,
+        showPageSize: !!legacySize,
+        onPageChange: page => { if (onPageChange) onPageChange(page); },
+        onPageSizeChange: size => {
+          if (!legacySize) return;
+          legacySize.value = String(size);
+          if (typeof legacySize.onchange === 'function') legacySize.onchange();
+        }
+      });
+      pager.setTotal(total);
+      this._paginationInstances[containerId] = pager;
+      container.dataset.publicPagination = 'true';
+      return;
+    }
 
     // 回调以容器 ID 为键覆盖注册，避免重复渲染时回调累积
     const cbId = containerId;

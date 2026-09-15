@@ -15,7 +15,7 @@
 
 ### 2. 车辆资产管理
 - **列表页**：车辆资产全量列表，支持车辆分配、编辑、删除、导出等操作，多条件组合查询。
-- **详情页**：资产详情展示，包含基础信息、调拨信息、变更日志等 Tab 页签，支持查看态与编辑态切换；硬件信息可展示SIM卡关联并跳转台账详情。
+- **详情页**：单车360度档案，采用“车辆总览、运行监控、车辆档案、业务记录、生命周期、变更日志”六个一级Tab；车辆全局信息区与Tab吸顶固定，车辆档案提供查看态/编辑态共用的分组目录快速定位；业务记录下汇总调度、售后维保、BOM、合规与风险和费用，支持车辆档案与售后信息编辑、生命周期追溯及变更审计。
 
 ### 3. 车型管理
 - **列表页**：车型主数据管理，支持可折叠展开的版本子列表，涵盖详情、编辑、新建版本、删除等操作。
@@ -107,7 +107,8 @@
 | 表格 | `common.css` | `.table-wrapper`（横向滚动）、48px 行高、`.col-left/.col-center/.col-right` 对齐类、`.ellipsis`、`.num` |
 | 固定列长表格 | `fixed-table.css` + `fixed-table.js` | 在 `.table-wrapper` 增加 `.fixed-table`，用 `data-fixed-first` / `data-fixed-last` 固定首个业务列和末列，自动跳过复选框；单元格不换行，`data-fixed-min-width` 指定横向滚动阈值 |
 | 标签 | `common.css` | `.tag` 及 `.tag-blue/green/orange/red/default/purple/yellow` |
-| 分页 | `common.css` + `common.js` | `Common.renderPagination()`，展示总数、当前页/总页数、每页条数 |
+| 分页 | `pagination-component.js` + `common.js` | 公共 `Pagination` 组件统一渲染页码、每页条数与翻页状态；`Common.renderPagination()` 保持旧页面调用兼容 |
+| 查询筛选 | `filter-component.js` | 统一处理历史查询栏及子页面查询区的展开/收起，超过一行时自动收纳多余条件 |
 | 弹窗 | `common.css` + `common.js` | `.modal-overlay/.modal-box`（600px）与 `.modal-box--lg`（800px）；`Common.openModal/closeModal/confirm` |
 | Toast | `common.js` | `Common.showToast(msg, type)` |
 | 表单 | `form.css` | `.form-row`（标签左置外置）、`.field-error`（控件下方红字）、`.form-grid` |

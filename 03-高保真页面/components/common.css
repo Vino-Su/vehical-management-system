@@ -683,6 +683,10 @@ input, select, textarea, button { font-family: inherit; font-size: inherit; }
   height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius);
   padding: 0 8px; font-size: 13px; color: var(--text-primary); outline: none;
 }
+.pagination-area .pg-wrapper,
+.pagination-row .pg-wrapper,
+.usage-pagination .pg-wrapper,
+.binding-pagination .pg-wrapper { margin-top: 0 !important; }
 
 /* ========== 弹窗 ========== */
 .modal-overlay {
