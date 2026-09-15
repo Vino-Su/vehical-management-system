@@ -1,0 +1,43 @@
+/* Energy expense ledgers: shared page-specific styles. */
+.ledger-table { overflow-x:auto; }
+.ledger-table > table { min-width:var(--ledger-table-min-width, 1320px); }
+.ledger-table th, .ledger-table td { text-align:center !important; }
+.ledger-summary { display:flex; align-items:center; flex-wrap:wrap; gap:20px; min-height:52px; padding:10px 16px; border-bottom:1px solid var(--border-color); background:#fcfdff; }
+.ledger-summary-item { display:flex; align-items:baseline; gap:6px; }
+.ledger-summary-label { color:var(--text-secondary); font-size:13px; }
+.ledger-summary-value { color:var(--text-primary); font-size:16px; font-weight:600; }
+.ledger-summary-item.primary .ledger-summary-value { color:var(--primary); }
+.ledger-selection { margin-left:auto; color:var(--text-secondary); font-size:13px; }
+.ledger-selection strong { color:var(--primary); }
+.ledger-search-item { display:flex; align-items:center; gap:8px; min-width:0; }
+.ledger-search-item label { flex:0 0 auto; color:var(--text-primary); white-space:nowrap; }
+.ledger-search-item input, .ledger-search-item select { width:178px; height:32px; padding:0 12px; border:1px solid var(--border-input); border-radius:var(--radius); outline:none; background:#fff; color:var(--text-primary); }
+.ledger-search-item input:focus, .ledger-search-item select:focus { border-color:var(--primary); box-shadow:0 0 0 2px rgba(22,119,255,.1); }
+.ledger-date-range { display:flex; align-items:center; gap:8px; }
+.ledger-date-range input { width:142px; }
+.ledger-action-cell { display:flex; align-items:center; justify-content:center; gap:8px; white-space:nowrap; }
+.ledger-action-cell .btn-link { border:0; background:transparent; padding:0; }
+.ledger-action-cell .is-danger { color:var(--error); }
+.ledger-action-cell .is-danger:hover { color:#ff7875; }
+.ledger-evidence { display:inline-flex; align-items:center; justify-content:center; min-width:42px; height:24px; padding:0 6px; border:1px solid #91caff; border-radius:var(--radius-sm); color:var(--primary); background:#f5faff; cursor:pointer; font-size:12px; }
+.ledger-evidence:hover { border-color:var(--primary); background:var(--primary-bg); }
+.ledger-empty { padding:64px 24px; text-align:center; color:var(--text-secondary); }
+.ledger-empty strong { display:block; color:var(--text-primary); font-size:16px; margin-bottom:4px; }
+.ledger-form-note { margin:0 0 16px 132px; color:var(--text-secondary); font-size:12px; line-height:18px; }
+.ledger-form-note.is-linked { color:var(--success); }
+.ledger-form-note.is-manual { color:var(--warning); }
+.ledger-form-upload { padding:12px; border:1px dashed var(--border-input); border-radius:var(--radius); background:#fafcff; }
+.ledger-form-upload input { max-width:100%; font-size:13px; }
+.ledger-file-hint { margin-top:4px; color:var(--text-secondary); font-size:12px; }
+.ledger-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 24px; }
+.ledger-detail-row { min-height:42px; padding:9px 0; border-bottom:1px solid var(--border-color); display:flex; gap:12px; }
+.ledger-detail-label { flex:0 0 112px; color:var(--text-secondary); text-align:right; }
+.ledger-detail-value { min-width:0; flex:1; color:var(--text-primary); word-break:break-all; }
+.ledger-receipt { width:360px; max-width:100%; padding:24px; margin:0 auto; border:1px solid var(--border-color); border-radius:var(--radius-lg); background:#fff; box-shadow:var(--shadow-sm); color:var(--text-primary); }
+.ledger-receipt-title { padding-bottom:12px; margin-bottom:12px; border-bottom:1px dashed var(--border-input); text-align:center; font-size:16px; font-weight:600; }
+.ledger-receipt-line { display:flex; justify-content:space-between; gap:16px; margin:8px 0; color:var(--text-secondary); font-size:13px; }
+.ledger-receipt-line strong { color:var(--text-primary); font-weight:500; }
+.ledger-change-table th, .ledger-change-table td { height:40px !important; padding:0 12px !important; }
+.ledger-import-tip { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; margin-bottom:16px; border:1px solid #b7eb8f; border-radius:var(--radius); background:#f6ffed; color:#356d17; }
+@media (max-width:1280px) { .ledger-search-item input, .ledger-search-item select { width:150px; } }
+@media (max-width:760px) { .ledger-detail-grid { grid-template-columns:1fr; } .ledger-form-note { margin-left:0; } .ledger-date-range input { width:120px; } }

@@ -1,0 +1,48 @@
+/** Fixed-column table component. */
+.fixed-table {
+  --fixed-table-cell-bg: var(--bg-container, #ffffff);
+  position: relative;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-color: #bfbfbf transparent;
+  scrollbar-width: thin;
+}
+
+.fixed-table > table { min-width: var(--fixed-table-min-width, 1200px); }
+
+.fixed-table th,
+.fixed-table td { white-space: nowrap; }
+
+.fixed-table .cell-tags { flex-wrap: nowrap; }
+
+.fixed-table__fixed-left,
+.fixed-table__fixed-right {
+  position: sticky;
+  background: var(--fixed-table-cell-bg);
+  background-clip: padding-box;
+  z-index: 2;
+}
+
+.fixed-table thead .fixed-table__fixed-left,
+.fixed-table thead .fixed-table__fixed-right {
+  z-index: 4;
+  background: #fafafa;
+}
+
+.fixed-table tbody > tr:hover > .fixed-table__fixed-left,
+.fixed-table tbody > tr:hover > .fixed-table__fixed-right { background: var(--bg-hover, #fafafa); }
+
+.fixed-table tbody > tr.selected > .fixed-table__fixed-left,
+.fixed-table tbody > tr.selected > .fixed-table__fixed-right { background: var(--primary-bg, #e6f4ff); }
+
+.fixed-table.fixed-table--has-left-overflow .fixed-table__fixed-left {
+  box-shadow: 8px 0 8px -8px rgba(0, 0, 0, .22);
+}
+
+.fixed-table.fixed-table--has-right-overflow .fixed-table__fixed-right {
+  box-shadow: -8px 0 8px -8px rgba(0, 0, 0, .22);
+}
+
+.fixed-table::-webkit-scrollbar { height: 8px; }
+.fixed-table::-webkit-scrollbar-thumb { background: #bfbfbf; border-radius: 4px; }
+.fixed-table::-webkit-scrollbar-track { background: transparent; }

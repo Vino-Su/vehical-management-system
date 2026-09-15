@@ -5,19 +5,204 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>资产详情 - 车辆管理系统</title>
 <!--
-  页面用途：车辆资产管理 — 车辆资产详情页，展示单台车辆的完整档案。
-  核心功能：1) Tab 分区展示：基础信息 / 调度信息 / BOM清单 / 售后维保 / 变更日志（合规、风险、费用暂未开放）；
-            2) 基础信息与售后信息支持查看态 ↔ 编辑态切换（编辑态底部固定操作栏，必填项校验 + 控件下方红字提示）；
-            3) 调度信息、BOM清单、变更记录、变更日志均支持筛选、分页（默认 10 条/页）与导出（导出前二次确认）；
-            4) 调度历史详情弹窗（步骤条 + 流程日志）、零部件变更时间线弹窗、图片预览。
+  页面用途：车辆资产管理 — 单车360度档案 + 车辆资产详情页，展示单台车辆的完整档案与运行状态。
+  核心功能：1) Tab 分区展示：车辆概览（默认） / 基础信息 / 调度信息 / BOM清单 / 售后维保 / 变更日志（合规、风险、费用暂未开放）；
+            2) 「车辆概览」聚合车辆身份、近期事件、运行/健康摘要、待办与自动驾驶/作业设备域指标（仅自动驾驶环卫机器人车型展示）；
+            3) 基础信息与售后信息支持查看态 ↔ 编辑态切换（编辑态底部固定操作栏，必填项校验 + 控件下方红字提示）；
+            4) 调度信息、BOM清单、变更记录、变更日志均支持筛选、分页（默认 10 条/页）与导出（导出前二次确认）；
+            5) 调度历史详情弹窗（步骤条 + 流程日志）、零部件变更时间线弹窗、图片预览。
   交互逻辑：编辑态由「编辑」按钮进入，需先保存或取消才能切换 Tab；
             弹窗统一使用公共 .modal-overlay（.active 显示），点击遮罩 / ESC / 右上角 × 关闭；
             顶部导航仅展示模块名（H3 20px），无面包屑、无页面大标题。
+  依据：单车360度档案与运行状态监管方案（V1.1）阶段一
   依赖：../components/common.css、../components/form.css、../components/common.js（无 CDN、无外部资源）
 -->
 <link rel="stylesheet" href="../components/common.css">
 <link rel="stylesheet" href="../components/form.css">
 <style>
+/* === 单车360度档案 - 车辆概览 Tab === */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.overview-card {
+  background: var(--bg-container);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.overview-card--full { grid-column: 1 / -1; }
+.overview-card--purple { border-left: 3px solid #722ed1; }
+.overview-card--blue   { border-left: 3px solid #1677ff; }
+.overview-card--green  { border-left: 3px solid #52c41a; }
+.overview-card--orange { border-left: 3px solid #fa8c16; }
+
+.overview-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+.overview-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.overview-card-title .tag { flex-shrink: 0; }
+.overview-card-actions {
+  font-size: 13px;
+  color: var(--primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.overview-card-actions:hover { color: var(--primary-hover); }
+
+.identity-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+}
+.identity-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 22px;
+  min-width: 0;
+}
+.identity-item .label {
+  flex: 0 0 88px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.identity-item .value {
+  flex: 1;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 自动驾驶域 / 作业设备域 / 运行指标域 - 指标卡 */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.metric-card {
+  padding: 12px;
+  border-radius: var(--radius);
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.metric-card .metric-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.metric-card .metric-value {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  color: var(--text-primary);
+  font-family: var(--font-number);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.metric-card .metric-value.metric-empty { color: var(--text-disabled); font-weight: 400; font-family: inherit; }
+.metric-card .metric-extra {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 近期事件列表 */
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--border-color);
+}
+.event-item:last-child { border-bottom: none; }
+.event-time {
+  flex: 0 0 140px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 22px;
+  font-family: var(--font-number);
+  font-variant-numeric: tabular-nums;
+}
+.event-body { flex: 1; min-width: 0; }
+.event-title {
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.event-source {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 18px;
+}
+.event-actions { flex: 0 0 auto; font-size: 12px; color: var(--primary); cursor: pointer; }
+.event-actions:hover { color: var(--primary-hover); }
+
+/* 待办列表 */
+.todo-list { display: flex; flex-direction: column; gap: 8px; }
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fffbe6;
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 20px;
+}
+.todo-item--warn { background: #fffbe6; }
+.todo-item--err  { background: #fff2f0; }
+.todo-item--info { background: #e6f4ff; }
+.todo-item .todo-icon { font-size: 14px; flex-shrink: 0; }
+.todo-item .todo-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo-item .todo-link { color: var(--primary); cursor: pointer; flex-shrink: 0; }
+.todo-item .todo-link:hover { color: var(--primary-hover); }
+
+@media (max-width: 1366px) {
+  .metrics-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .overview-grid { grid-template-columns: minmax(0, 1fr); }
+  .identity-list { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* === Tab 标签 === */
 .tab-bar {
   display: flex;
@@ -472,14 +657,265 @@
 
         <!-- Tab Bar -->
         <div class="tab-bar" id="tabBar">
-          <div class="tab-item active" data-tab="basic" onclick="switchTab('basic')">基础信息</div>
+          <div class="tab-item active" data-tab="overview" onclick="switchTab('overview')">车辆概览</div>
+          <div class="tab-item" data-tab="basic" onclick="switchTab('basic')">基础信息</div>
           <div class="tab-item" data-tab="transfer" onclick="switchTab('transfer')">调度信息</div>
           <div class="tab-item" data-tab="bom" id="bomTabItem" onclick="switchTab('bom')" style="display:none">BOM清单</div>
           <div class="tab-item" data-tab="aftersales" id="aftersalesTabItem" onclick="switchTab('aftersales')">售后维保</div>
+          <div class="tab-item" data-tab="lifecycle" onclick="switchTab('lifecycle')">生命周期</div>
           <div class="tab-item disabled" title="暂未开放">合规信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item disabled" title="暂未开放">风险信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item disabled" title="暂未开放">费用信息<span class="tab-badge">暂未开放</span></div>
           <div class="tab-item" data-tab="changelog" onclick="switchTab('changelog')">变更日志</div>
+        </div>
+
+        <!-- Tab Content: 车辆概览（单车档案总览 Tab） -->
+        <div class="tab-content" id="tab-overview">
+          <div class="overview-grid">
+
+            <!-- 车辆身份 -->
+            <div class="overview-card overview-card--blue overview-card--full">
+              <div class="overview-card-head">
+                <div class="overview-card-title">车辆身份</div>
+                <div class="overview-card-actions" onclick="switchTab('basic')">查看基础信息 →</div>
+              </div>
+              <div class="identity-list">
+                <div class="identity-item"><span class="label">车牌号</span><span class="value">京 A·12345</span></div>
+                <div class="identity-item"><span class="label">VIN</span><span class="value">LSGBH52H45Y123456</span></div>
+                <div class="identity-item"><span class="label">车辆编号</span><span class="value">AUTO-EV-2024-001</span></div>
+                <div class="identity-item"><span class="label">车型 / 版本</span><span class="value">环卫机器人 R3 / 2025 款</span></div>
+                <div class="identity-item"><span class="label">归属项目</span><span class="value">A 项目 - 智慧园区</span></div>
+                <div class="identity-item"><span class="label">资产来源</span><span class="value">自购</span></div>
+                <div class="identity-item"><span class="label">网联编号</span><span class="value">NL-2024-08-0091</span></div>
+                <div class="identity-item"><span class="label">标签</span><span class="value"><span class="tag tag-blue">自动驾驶</span>&nbsp;<span class="tag tag-green">新能源</span>&nbsp;<span class="tag tag-purple">试点车辆</span></span></div>
+              </div>
+            </div>
+
+            <!-- 自动驾驶域（仅自动驾驶环卫机器人展示） -->
+            <div class="overview-card overview-card--purple" id="overviewCardAd">
+              <div class="overview-card-head">
+                <div class="overview-card-title">
+                  自动驾驶域
+                  <span class="tag tag-purple">自动驾驶环卫机器人</span>
+                </div>
+                <div class="overview-card-actions">查看完整 →</div>
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-label">运行模式</div>
+                  <div class="metric-value">自动</div>
+                  <div class="metric-extra">自检：通过</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">系统就绪</div>
+                  <div class="metric-value">就绪</div>
+                  <div class="metric-extra">v3.2.1</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">定位可信度</div>
+                  <div class="metric-value metric-empty">— —</div>
+                  <div class="metric-extra">外部系统查看</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">接管人</div>
+                  <div class="metric-value metric-empty">— —</div>
+                  <div class="metric-extra">未触发接管</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">电子围栏</div>
+                  <div class="metric-value">未越界</div>
+                  <div class="metric-extra">园区 A 区</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">急停状态</div>
+                  <div class="metric-value">未触发</div>
+                  <div class="metric-extra">安全链路：正常</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">关键传感器</div>
+                  <div class="metric-value">健康</div>
+                  <div class="metric-extra">8 / 8 在线</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">OTA 状态</div>
+                  <div class="metric-value">最新</div>
+                  <div class="metric-extra">2026-09-08 已更新</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 作业设备域 -->
+            <div class="overview-card overview-card--green" id="overviewCardWork">
+              <div class="overview-card-head">
+                <div class="overview-card-title">
+                  作业设备域
+                  <span class="tag tag-green">环卫作业</span>
+                </div>
+                <div class="overview-card-actions">查看完整 →</div>
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-label">清水</div>
+                  <div class="metric-value">72%</div>
+                  <div class="metric-extra">建议 ≥ 30%</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">污水箱</div>
+                  <div class="metric-value">18%</div>
+                  <div class="metric-extra">建议 ≤ 80%</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">垃圾箱</div>
+                  <div class="metric-value">65%</div>
+                  <div class="metric-extra">接近预警</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">边刷</div>
+                  <div class="metric-value">正常</div>
+                  <div class="metric-extra">寿命 78%</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">风机</div>
+                  <div class="metric-value">正常</div>
+                  <div class="metric-extra">转速 1450 rpm</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">喷淋</div>
+                  <div class="metric-value">正常</div>
+                  <div class="metric-extra">水压 0.4 MPa</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">清扫盘</div>
+                  <div class="metric-value">正常</div>
+                  <div class="metric-extra">左 / 右：在线</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">作业模式</div>
+                  <div class="metric-value">清扫中</div>
+                  <div class="metric-extra">自动循迹</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 资源 / 能源 -->
+            <div class="overview-card">
+              <div class="overview-card-head">
+                <div class="overview-card-title">能源与里程</div>
+                <div class="overview-card-actions">查看完整 →</div>
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-label">电量</div>
+                  <div class="metric-value">28%</div>
+                  <div class="metric-extra">低于阈值 30%</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">预计续航</div>
+                  <div class="metric-value">42 km</div>
+                  <div class="metric-extra">常规路况</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">充电状态</div>
+                  <div class="metric-value">未充电</div>
+                  <div class="metric-extra">任务进行中</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">累计里程</div>
+                  <div class="metric-value">12,847 km</div>
+                  <div class="metric-extra">2026-09 更新</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 待办 -->
+            <div class="overview-card">
+              <div class="overview-card-head">
+                <div class="overview-card-title">待办与预警</div>
+                <div class="overview-card-actions">查看完整 →</div>
+              </div>
+              <div class="todo-list">
+                <div class="todo-item todo-item--warn">
+                  <span class="todo-icon">⚠</span>
+                  <span class="todo-text">电量低于 30%，请评估是否继续当前作业</span>
+                  <span class="todo-link">查看告警</span>
+                </div>
+                <div class="todo-item todo-item--err">
+                  <span class="todo-icon">⚠</span>
+                  <span class="todo-text">左前侧视摄像头间歇性掉线</span>
+                  <span class="todo-link">发起工单</span>
+                </div>
+                <div class="todo-item todo-item--info">
+                  <span class="todo-icon">ℹ</span>
+                  <span class="todo-text">常规保养 3 天后到期（2026-09-13）</span>
+                  <span class="todo-link">查看详情</span>
+                </div>
+                <div class="todo-item todo-item--info">
+                  <span class="todo-icon">ℹ</span>
+                  <span class="todo-text">年审将于 2026-11-20 到期</span>
+                  <span class="todo-link">查看详情</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 近期事件 -->
+            <div class="overview-card overview-card--full">
+              <div class="overview-card-head">
+                <div class="overview-card-title">近期事件</div>
+                <div class="overview-card-actions">查看完整生命周期 →</div>
+              </div>
+              <div class="event-list">
+                <div class="event-item">
+                  <div class="event-time">2026-09-10 14:20</div>
+                  <div class="event-body">
+                    <div class="event-title"><span class="tag tag-orange" style="margin-right:6px">运行异常 / 一般</span>剩余电量低于阈值，车辆可用性由「可用」变为「受限可用」</div>
+                    <div class="event-source">来源：车载终端 · 处理状态：待确认</div>
+                  </div>
+                  <div class="event-actions">查看告警 →</div>
+                </div>
+                <div class="event-item">
+                  <div class="event-time">2026-09-10 09:15</div>
+                  <div class="event-body">
+                    <div class="event-title"><span class="tag tag-blue" style="margin-right:6px">调度流转</span>调度单完成，车辆由 B 项目交接至 A 项目</div>
+                    <div class="event-source">来源：本系统 · 操作人：张三</div>
+                  </div>
+                  <div class="event-actions">查看调度 →</div>
+                </div>
+                <div class="event-item">
+                  <div class="event-time">2026-09-08 16:40</div>
+                  <div class="event-body">
+                    <div class="event-title"><span class="tag tag-green" style="margin-right:6px">维保</span>完成常规保养，更换空气滤芯</div>
+                    <div class="event-source">来源：售后系统 · 工单：WO-20260908-007</div>
+                  </div>
+                  <div class="event-actions">查看工单 →</div>
+                </div>
+                <div class="event-item">
+                  <div class="event-time">2026-09-05 11:02</div>
+                  <div class="event-body">
+                    <div class="event-title"><span class="tag tag-purple" style="margin-right:6px">自动驾驶</span>OTA 远程升级至 v3.2.1，自检通过</div>
+                    <div class="event-source">来源：自动驾驶平台 · 升级人：运维 · 王五</div>
+                  </div>
+                  <div class="event-actions">查看详情 →</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 关联入口 -->
+            <div class="overview-card overview-card--full">
+              <div class="overview-card-head">
+                <div class="overview-card-title">关联业务与外部系统</div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <span class="btn btn-sm">查看调度单（3）</span>
+                <span class="btn btn-sm">查看维保工单（5）</span>
+                <span class="btn btn-sm">查看 BOM 部件（26）</span>
+                <span class="btn btn-sm">查看告警（1）</span>
+                <span class="btn btn-sm">进入自动驾驶平台 →</span>
+                <span class="btn btn-sm">进入车载终端管理 →</span>
+                <span class="btn btn-sm">进入售后系统 →</span>
+              </div>
+            </div>
+
+          </div>
         </div>
 
         <!-- Tab Content: 基础信息 -->
@@ -771,8 +1207,47 @@
           </div>
         </div>
 
-        <!-- Tab Content: 变更日志 -->
+        <!-- Tab Content: 生命周期（单车360度档案 V1.0 §5 - 以车辆为主线的事件档案） -->
+        <div class="tab-content" id="tab-lifecycle" style="display:none">
+          <!-- 阶段步骤条（§5.5） -->
+          <div class="lifecycle-stage-bar" id="lifecycleStageBar"></div>
+
+          <!-- 多维筛选 -->
+          <div class="lifecycle-filter">
+            <div class="lifecycle-filter-group">
+              <span class="lifecycle-filter-label">类型</span>
+              <span class="lifecycle-chip active" data-filter-type="all">全部</span>
+              <span class="lifecycle-chip" data-filter-type="severe_fault">严重故障</span>
+              <span class="lifecycle-chip" data-filter-type="general_fault">一般故障</span>
+              <span class="lifecycle-chip" data-filter-type="warning">预警</span>
+              <span class="lifecycle-chip" data-filter-type="dispatch">调度流转</span>
+              <span class="lifecycle-chip" data-filter-type="maintenance">维保事件</span>
+              <span class="lifecycle-chip" data-filter-type="ota">软件升级</span>
+              <span class="lifecycle-chip" data-filter-type="asset">资产变更</span>
+              <span class="lifecycle-chip" data-filter-type="dispose">退出处置</span>
+            </div>
+            <div class="lifecycle-filter-group">
+              <span class="lifecycle-filter-label">时间</span>
+              <span class="lifecycle-chip active" data-filter-range="all">全部</span>
+              <span class="lifecycle-chip" data-filter-range="7d">近 7 天</span>
+              <span class="lifecycle-chip" data-filter-range="30d">近 30 天</span>
+              <span class="lifecycle-chip" data-filter-range="90d">近 90 天</span>
+            </div>
+            <div class="lifecycle-filter-group" style="margin-left:auto">
+              <span class="btn-link" onclick="Common.showToast('阶段1原型演示，导出与高级管理后续接入','info')">导出</span>
+            </div>
+          </div>
+
+          <!-- 事件列表 -->
+          <div class="lifecycle-events" id="lifecycleEvents"></div>
+        </div>
+
+        <!-- Tab Content: 变更日志（字段级操作审计；关键业务事件请见「生命周期」Tab） -->
         <div class="tab-content" id="tab-changelog" style="display:none">
+          <div style="background:#fafafa;border:1px solid var(--border-color);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:20px;color:var(--text-secondary);">
+            提示：本表记录的是<strong style="color:var(--text-primary)">字段级操作审计</strong>（修改字段、改前改后值、操作人、操作时间、操作来源）。车辆从建档到当前的<strong style="color:var(--text-primary)">关键业务事件</strong>请见
+            <a class="btn-link" onclick="switchTab('lifecycle')">「生命周期」Tab</a>。
+          </div>
           <div class="action-bar">
             <button class="btn" onclick="exportChangelog()"><span class="btn-icon">⤓</span>导出</button>
           </div>
@@ -835,6 +1310,8 @@ Common.initLayout({
 
 // ===== 车辆模拟数据 =====
 const vehicleData = {
+  // 单车360度档案 - 阶段1 占位：是否自动驾驶环卫机器人；后续接入自动驾驶平台时改为真实计算字段
+  isAutonomous: true, isSweepingRobot: true,
   vin: 'LSVAU2A39EN000001', gbt_vin: 'GB0000000001', plate_no: '京ADG090', factory_no: 'FN2025030001',
   is_test: '否', is_network: '是', iot_code: '14156',
   city: '上海', project: '鸠江项目', operator: '王强', asset_source: '外购',
@@ -856,7 +1333,7 @@ const vehicleData = {
   fan_photo: true, fan_model: 'CLK-5.5/中联环境', hp_pump_photo: true, hp_pump_model: 'BHD-25/杭州伯昂',
   lp_pump_photo: true, lp_pump_model: 'BHD-10/杭州伯昂',
   other_config: true, remark: '麒麟清扫车，配有前后清扫装置',
-  hw_list: [{name:'T-BOX',code:'TB20240001',status:'正常'},{name:'OBU',code:'OBU20240002',status:'正常'}],
+  hw_list: [{name:'T-BOX',type:'T-Box',code:'TBX-2026-001',has_sim:'有',imsi:'460041234567890',status:'正常'},{name:'OBU',type:'OBU',code:'OBU20240002',has_sim:'无',imsi:'',status:'正常'}],
   sw_list: [{name:'自动驾驶软件',value:'V3.2.1'},{name:'网联SDK',value:'V2.0.0'}],
   cam_list: [{name:'前视摄像头',tid:'1',minbr:'2',maxbr:'8',fixed:'否',fps:'30',res:'1920x1080',pri:'高',platform:'均支持'}],
   history_img: '是', history_video: '有', realtime_video: '腾讯云',
@@ -909,7 +1386,7 @@ const statusTagMap = {
 };
 
 // ===== Tab切换 =====
-let currentTab = 'basic';
+let currentTab = 'overview';   // 默认展示「车辆概览」（单车档案总览 Tab）
 let isEditing = false;
 let currentAfterSalesSubTab = 'warranty-info';
 
@@ -926,6 +1403,7 @@ function switchTab(tab) {
   if (tab === 'changelog') renderLogTable();
   if (tab === 'bom') renderBomTab();
   if (tab === 'aftersales') renderAfterSalesTab();
+  if (tab === 'lifecycle') { renderLifecycleStages(); renderLifecycleEvents(); }
   const editBtn = document.getElementById('editBtn');
   if (editBtn) {
     if (isEditing) { editBtn.style.display = 'none'; }
@@ -935,13 +1413,335 @@ function switchTab(tab) {
   }
 }
 
+// ===== 单车360度档案 - 按车型动态展示自动驾驶域/作业设备域 =====
+// 阶段1 占位实现：依据 vehicleData.isAutonomous / isSweepingRobot 控制卡片显示。
+// 后续接入自动驾驶平台与环卫作业平台时，仅替换该函数内的数据源与字段映射，UI 不变。
+function renderOverviewByVehicleType() {
+  const isAutonomous = vehicleData && vehicleData.isAutonomous;
+  const isSweepingRobot = vehicleData && vehicleData.isSweepingRobot;
+  const adCard = document.getElementById('overviewCardAd');
+  const workCard = document.getElementById('overviewCardWork');
+  if (adCard) adCard.style.display = isAutonomous ? '' : 'none';
+  if (workCard) workCard.style.display = (isAutonomous || isSweepingRobot) ? '' : 'none';
+}
+
+// =====================================================================
+// 单车360度档案 - 生命周期（单车档案与运行状态监管方案 V1.0 §5）
+// 阶段1：内存聚合层 + 占位数据。后续接入真实数据时仅替换 mockLifecycleEvents
+// 与 lifecycleStages 数据源，UI / 渲染 / 筛选逻辑不变。
+// =====================================================================
+
+// 7 个生命周期阶段（§5.2），顺序固定用于步骤条
+const lifecycleStages = [
+  { key: 'archived',   label: '建档入池', icon: '1' },
+  { key: 'asset',      label: '资产归属', icon: '2' },
+  { key: 'assigned',   label: '分配项目', icon: '3' },
+  { key: 'running',    label: '运行调度', icon: '4' },
+  { key: 'maintenance',label: '维保部件', icon: '5' },
+  { key: 'compliance', label: '合规风险', icon: '6' },
+  { key: 'dispose',    label: '退出归档', icon: '7' },
+];
+
+// 事件类型 → 阶段、tag、label 映射（§5.3 字段 + §5.2 阶段）
+const lifecycleTypeMap = {
+  archived:        { stage: 'archived',    tagCls: 'tag-blue',   label: '建档入池' },
+  asset:           { stage: 'asset',       tagCls: 'tag-purple', label: '资产变更' },
+  assigned:        { stage: 'asset',       tagCls: 'tag-purple', label: '项目分配' },
+  dispatch:        { stage: 'assigned',    tagCls: 'tag-blue',   label: '调度流转' },
+  severe_fault:    { stage: 'running',     tagCls: 'tag-red',    label: '严重故障' },
+  general_fault:   { stage: 'running',     tagCls: 'tag-orange', label: '一般故障' },
+  warning:         { stage: 'running',     tagCls: 'tag-yellow', label: '预警' },
+  maintenance:     { stage: 'maintenance', tagCls: 'tag-green',  label: '维保事件' },
+  ota:             { stage: 'running',     tagCls: 'tag-purple', label: '软件升级' },
+  compliance:      { stage: 'compliance',  tagCls: 'tag-blue',   label: '合规事件' },
+  dispose:         { stage: 'dispose',     tagCls: 'tag-default',label: '退出处置' },
+};
+
+// 严重度映射（事件 severity → tag 类 + 文案）
+const lifecycleSeverityMap = {
+  severe:  { tagCls: 'tag-red',    label: '严重' },
+  normal:  { tagCls: 'tag-orange', label: '一般' },
+  info:    { tagCls: 'tag-blue',   label: '提示' },
+};
+
+// 处理状态映射
+const lifecycleStatusMap = {
+  pending:   { tagCls: 'tag-yellow', label: '待确认' },
+  processing:{ tagCls: 'tag-blue',   label: '处理中' },
+  resolved:  { tagCls: 'tag-green',  label: '已解除' },
+  closed:    { tagCls: 'tag-default',label: '已关闭' },
+};
+
+// 数据源 → tag 颜色（用于数据来源标识）
+const lifecycleSourceMap = {
+  self:      { tagCls: 'tag-blue',   label: '本系统' },
+  iot:       { tagCls: 'tag-purple', label: '车载终端' },
+  ad:        { tagCls: 'tag-purple', label: '自动驾驶平台' },
+  service:   { tagCls: 'tag-green',  label: '售后系统' },
+  external:  { tagCls: 'tag-default',label: '外部系统' },
+};
+
+// 阶段1 内存事件（演示数据；占位覆盖 §5.4 五类沉淀规则）
+// 字段对齐方案 §5.3：id / occurred_at / type / stage / severity / title / source / operator / status / related / prev_state / new_state
+const mockLifecycleEvents = [
+  {
+    id: 'EVT-20260910-001', occurred_at: '2026-09-10 14:20:08',
+    type: 'general_fault', severity: 'normal',
+    title: '剩余电量低于阈值，车辆可用性由「可用」变为「受限可用」',
+    source: 'iot', operator: '车载终端 #NL-0091', status: 'pending',
+    prev_state: { availability: '可用' }, new_state: { availability: '受限可用' },
+    related: [
+      { kind: 'alert',   label: '查看告警', href: 'javascript:;' },
+      { kind: 'wo_new',  label: '发起工单', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260910-002', occurred_at: '2026-09-10 09:15:42',
+    type: 'dispatch', severity: 'info',
+    title: '调度单完成，车辆由 B 项目交接至 A 项目',
+    source: 'self', operator: '张三', status: 'closed',
+    prev_state: { project: 'B 项目' }, new_state: { project: 'A 项目 - 智慧园区' },
+    related: [
+      { kind: 'transfer', label: '查看调度详情', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260909-001', occurred_at: '2026-09-09 16:32:11',
+    type: 'warning', severity: 'info',
+    title: '垃圾箱装载达 65%，接近预警阈值（80%）',
+    source: 'ad', operator: '自动驾驶平台', status: 'processing',
+    related: [
+      { kind: 'alert', label: '查看告警', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260908-001', occurred_at: '2026-09-08 16:40:00',
+    type: 'maintenance', severity: 'info',
+    title: '完成常规保养，更换空气滤芯',
+    source: 'service', operator: '售后工单 WO-20260908-007', status: 'closed',
+    related: [
+      { kind: 'wo',       label: '查看工单', href: 'javascript:;' },
+      { kind: 'bom_log',  label: '查看部件变更', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260905-001', occurred_at: '2026-09-05 11:02:33',
+    type: 'ota', severity: 'info',
+    title: 'OTA 远程升级至 v3.2.1，自检通过',
+    source: 'ad', operator: '运维 · 王五', status: 'closed',
+    new_state: { sw_version: 'v3.2.1' },
+    related: [
+      { kind: 'ota', label: '查看升级详情', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260902-001', occurred_at: '2026-09-02 10:18:07',
+    type: 'asset', severity: 'info',
+    title: '资产属性由「运营车辆-电动」调整为「运营车辆-自动驾驶」',
+    source: 'self', operator: '管理员 · 李四', status: 'closed',
+    prev_state: { asset_attr: '运营车辆-电动' }, new_state: { asset_attr: '运营车辆-自动驾驶' },
+    related: [
+      { kind: 'basic', label: '查看基础信息', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260822-001', occurred_at: '2026-08-22 15:06:21',
+    type: 'general_fault', severity: 'normal',
+    title: '左前侧视摄像头间歇性掉线，已自动恢复',
+    source: 'iot', operator: '车载终端 #NL-0091', status: 'resolved',
+    related: [
+      { kind: 'alert', label: '查看告警', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260818-001', occurred_at: '2026-08-18 08:30:00',
+    type: 'compliance', severity: 'info',
+    title: '年审通过，记录归档',
+    source: 'external', operator: '车管所系统', status: 'closed',
+    related: [
+      { kind: 'ext', label: '查看年审详情', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260810-001', occurred_at: '2026-08-10 14:12:00',
+    type: 'dispatch', severity: 'info',
+    title: '调度申请提交，准备从 A 项目出库',
+    source: 'self', operator: '赵六', status: 'closed',
+    related: [
+      { kind: 'transfer', label: '查看调度详情', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260730-001', occurred_at: '2026-07-30 09:00:00',
+    type: 'maintenance', severity: 'info',
+    title: '底盘季度检查完成',
+    source: 'service', operator: '售后工单 WO-20260730-003', status: 'closed',
+    related: [
+      { kind: 'wo', label: '查看工单', href: 'javascript:;' },
+    ],
+  },
+  {
+    id: 'EVT-20260315-001', occurred_at: '2026-03-15 10:00:00',
+    type: 'archived', severity: 'info',
+    title: '车辆建档入池，资产来源：外购',
+    source: 'self', operator: '系统', status: 'closed',
+    related: [
+      { kind: 'basic', label: '查看基础信息', href: 'javascript:;' },
+    ],
+  },
+];
+
+// 当前筛选状态
+const lifecycleFilterState = { type: 'all', range: 'all' };
+
+// 计算当前阶段完成度（步骤条 §5.5）
+function computeLifecycleStageProgress(events) {
+  const reached = new Set(events.map(e => (lifecycleTypeMap[e.type] || {}).stage).filter(Boolean));
+  let currentIndex = -1;
+  // 「当前阶段」= 步骤条中最后一个已触达且其后还有未触达的阶段
+  for (let i = lifecycleStages.length - 1; i >= 0; i--) {
+    if (reached.has(lifecycleStages[i].key)) { currentIndex = i; break; }
+  }
+  return currentIndex;
+}
+
+// 阶段筛选：把 §5.5 6 个阶段重新映射到 7 阶段定义（建档入池、资产归属、合并到"建档入池/资产归属"）
+function filterLifecycleEvents(events, state) {
+  const now = Date.now();
+  const rangeMs = state.range === '7d'  ? 7  * 864e5
+                 : state.range === '30d' ? 30 * 864e5
+                 : state.range === '90d' ? 90 * 864e5
+                 : null;
+  return events.filter(e => {
+    if (state.type !== 'all' && e.type !== state.type) return false;
+    if (rangeMs !== null) {
+      const t = Date.parse(String(e.occurred_at).replace(/-/g, '/'));
+      if (isNaN(t) || (now - t) > rangeMs) return false;
+    }
+    return true;
+  }).sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
+}
+
+// 渲染步骤条
+function renderLifecycleStages() {
+  const wrap = document.getElementById('lifecycleStageBar');
+  if (!wrap) return;
+  const events = filterLifecycleEvents(mockLifecycleEvents, { type: 'all', range: 'all' });
+  const currentIdx = computeLifecycleStageProgress(events);
+  wrap.innerHTML = lifecycleStages.map((s, i) => {
+    let cls = '';
+    let meta = '';
+    const count = events.filter(e => (lifecycleTypeMap[e.type] || {}).stage === s.key).length;
+    if (count > 0) meta = `${count} 个事件`;
+    if (i < currentIdx) cls = 'lcs--done';
+    else if (i === currentIdx) cls = 'lcs--current';
+    return `<div class="lifecycle-stage ${cls}" data-stage="${s.key}" onclick="onStageClick('${s.key}')">
+      <div class="lifecycle-stage-dot">${cls === 'lcs--done' ? '✓' : s.icon}</div>
+      <div class="lifecycle-stage-label">${s.label}</div>
+      <div class="lifecycle-stage-meta">${meta}</div>
+    </div>`;
+  }).join('');
+}
+
+// 渲染事件列表
+function renderLifecycleEvents() {
+  const wrap = document.getElementById('lifecycleEvents');
+  if (!wrap) return;
+  const events = filterLifecycleEvents(mockLifecycleEvents, lifecycleFilterState);
+  if (events.length === 0) {
+    wrap.innerHTML = `<div class="lifecycle-empty">
+      <div class="lifecycle-empty-icon">📋</div>
+      <div class="lifecycle-empty-text">当前筛选条件下暂无事件</div>
+      <div class="lifecycle-empty-hint">可调整筛选条件或切换时间范围</div>
+    </div>`;
+    return;
+  }
+  wrap.innerHTML = events.map(e => {
+    const t = (lifecycleTypeMap[e.type] || { tagCls: 'tag-default', label: e.type });
+    const sv = (lifecycleSeverityMap[e.severity] || {});
+    const st = (lifecycleStatusMap[e.status] || { tagCls: 'tag-default', label: e.status || '' });
+    const sr = (lifecycleSourceMap[e.source] || { tagCls: 'tag-default', label: e.source });
+    const related = (e.related || []).map(r => `<a class="btn-link" onclick="${escapeHtml(r.href || 'javascript:;')}">${escapeHtml(r.label)}</a>`).join('');
+    const stateChange = (e.prev_state || e.new_state) ? renderStateChange(e.prev_state, e.new_state) : '';
+    return `<div class="lifecycle-event">
+      <div class="lifecycle-event-time">${escapeHtml(e.occurred_at)}</div>
+      <div class="lifecycle-event-body">
+        <div class="lifecycle-event-tags">
+          <span class="tag ${t.tagCls}">${escapeHtml(t.label)}</span>
+          ${sv.label ? `<span class="tag ${sv.tagCls}">严重度：${escapeHtml(sv.label)}</span>` : ''}
+          <span class="tag ${sr.tagCls}">来源：${escapeHtml(sr.label)}</span>
+          ${st.label ? `<span class="tag ${st.tagCls}">${escapeHtml(st.label)}</span>` : ''}
+        </div>
+        <div class="lifecycle-event-title">${escapeHtml(e.title)}</div>
+        <div class="lifecycle-event-source">
+          责任主体：${escapeHtml(e.operator || '-')}
+          ${e.id ? ` · 事件编号：${escapeHtml(e.id)}` : ''}
+          ${stateChange}
+        </div>
+      </div>
+      <div class="lifecycle-event-actions">${related}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderStateChange(prev, next) {
+  const keys = new Set([...Object.keys(prev || {}), ...Object.keys(next || {})]);
+  if (keys.size === 0) return '';
+  const rows = [...keys].map(k => {
+    const p = prev && prev[k] !== undefined ? prev[k] : '—';
+    const n = next && next[k] !== undefined ? next[k] : '—';
+    return `<span style="color:var(--text-secondary)">${escapeHtml(k)}：</span><span style="text-decoration:line-through;color:var(--text-disabled);margin-right:4px">${escapeHtml(String(p))}</span>→ <span style="color:var(--primary)">${escapeHtml(String(n))}</span>`;
+  }).join('；');
+  return `<div style="margin-top:4px;font-size:12px;line-height:18px;">状态变化：${rows}</div>`;
+}
+
+// 转义避免 XSS / 引号破坏
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// 筛选 / 阶段点击
+function bindLifecycleFilter() {
+  document.querySelectorAll('[data-filter-type]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter-type]').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      lifecycleFilterState.type = el.getAttribute('data-filter-type');
+      renderLifecycleEvents();
+    });
+  });
+  document.querySelectorAll('[data-filter-range]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter-range]').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      lifecycleFilterState.range = el.getAttribute('data-filter-range');
+      renderLifecycleEvents();
+    });
+  });
+}
+
+function onStageClick(stageKey) {
+  // 按阶段筛选：找到该阶段下所有事件类型，任选其一即可定位
+  const types = Object.keys(lifecycleTypeMap).filter(k => lifecycleTypeMap[k].stage === stageKey);
+  if (types.length === 0) return;
+  switchTab('lifecycle');
+  // 「全部」展示该阶段事件：选第一个作为主筛选；如需更细可改为多选，本期简化
+  document.querySelectorAll('[data-filter-type]').forEach(x => {
+    x.classList.toggle('active', x.getAttribute('data-filter-type') === types[0]);
+  });
+  lifecycleFilterState.type = types[0];
+  renderLifecycleEvents();
+}
+
 // ===== 基础信息 - 查看态 =====
 function renderBasicView() {
   const d = vehicleData;
   const v = (val) => val || '—';
   const tag = (val, cls) => `<span class="tag ${cls || 'tag-default'}">${val}</span>`;
   const uploaded = (has) => has ? '<span style="color:var(--primary);cursor:pointer">已上传</span>' : '<span style="color:var(--text-disabled)">—</span>';
-  const hwRows = d.hw_list.map(h => `<tr><td>${h.name}</td><td>${h.code}</td><td>${h.status}</td></tr>`).join('');
+  const hwRows = d.hw_list.map(h => `<tr><td>${h.name}</td><td>${h.type || '—'}</td><td>${h.code}</td><td>${h.has_sim || '暂未录入'}</td><td>${h.imsi ? `<a class="btn-link" href="../sim-card/sim-card-detail.html?imsi=${encodeURIComponent(h.imsi)}">${h.imsi}</a>` : '—'}</td><td>${h.status}</td></tr>`).join('');
   const swRows = d.sw_list.map(s => `<tr><td>${s.name}</td><td>${s.value}</td></tr>`).join('');
   const camRows = d.cam_list.map(c => `<tr><td>${c.name}</td><td>${c.tid}</td><td>${c.minbr}</td><td>${c.maxbr}</td><td>${c.fixed}</td><td>${c.fps}</td><td>${c.res}</td><td>${c.pri}</td><td>${c.platform}</td></tr>`).join('');
 
@@ -1042,7 +1842,7 @@ function renderBasicView() {
     </div></div>
 
     <div class="info-section"><div class="info-section-title">硬件信息</div>
-      <div class="table-wrapper"><table class="dynamic-table"><thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th></tr></thead><tbody>${hwRows}</tbody></table></div>
+      <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="0" data-fixed-min-width="1120"><table class="dynamic-table"><thead><tr><th>硬件名称</th><th>硬件类型</th><th>识别码</th><th>是否有SIM卡</th><th>IMSI</th><th>状态</th></tr></thead><tbody>${hwRows}</tbody></table></div>
     </div>
 
     <div class="info-section"><div class="info-section-title">软件信息</div>
@@ -1178,8 +1978,8 @@ function renderBasicEdit() {
       </div></div>
 
       <div class="form-section"><div class="section-title">硬件信息</div>
-        <div class="table-wrapper"><table class="dynamic-table" id="editHwTable"><thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th><th style="width:10%">操作</th></tr></thead>
-        <tbody>${d.hw_list.map(h=>`<tr><td><input type="text" value="${h.name}"></td><td><input type="text" value="${h.code}"></td><td><input type="text" value="${h.status}"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`).join('')}</tbody></table></div>
+        <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1280"><table class="dynamic-table" id="editHwTable"><thead><tr><th>硬件名称</th><th>硬件类型</th><th>识别码</th><th>是否有SIM卡</th><th>IMSI</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>${d.hw_list.map(h=>hardwareEditRow(h)).join('')}</tbody></table></div>
         <div class="add-row-btn" onclick="addEditHwRow()">＋ 添加硬件</div>
       </div>
 
@@ -1231,6 +2031,7 @@ function renderBasicEdit() {
       </div>
     </form>
   `;
+  syncAllEditHardwareSimStates();
 }
 
 function simulateUpload(el) {
@@ -1241,10 +2042,30 @@ function removeUpload(el) {
   el.onclick = function(){ simulateUpload(el); };
 }
 
+function hardwareEditRow(h = {}) {
+  const typeOptions = ['','T-Box','DTU','视频盒子','ADU','OBU','其他'].map(type => `<option value="${type}" ${type === (h.type || '') ? 'selected' : ''}>${type || '请选择'}</option>`).join('');
+  const simOptions = [['','暂不录入'],['有','有'],['无','无']].map(([value,label]) => `<option value="${value}" ${value === (h.has_sim || '') ? 'selected' : ''}>${label}</option>`).join('');
+  return `<tr><td><input type="text" value="${h.name || ''}" placeholder="请输入硬件名称"></td><td><select>${typeOptions}</select></td><td><input type="text" value="${h.code || ''}" placeholder="请输入识别码"></td><td><select onchange="syncEditHardwareSimState(this)">${simOptions}</select></td><td><div><input class="hardware-imsi" type="text" inputmode="numeric" maxlength="15" value="${h.imsi || ''}" oninput="updateEditHardwareSimLink(this)"><a class="hardware-sim-link">查看台账</a></div></td><td><input type="text" value="${h.status || ''}" placeholder="请输入状态"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>`;
+}
+function syncEditHardwareSimState(select) {
+  const row = select.closest('tr');
+  const input = row.querySelector('.hardware-imsi');
+  input.disabled = select.value !== '有';
+  input.placeholder = select.value === '有' ? '请输入15位IMSI' : '选择“有”后录入';
+  if (select.value !== '有') input.value = '';
+  updateEditHardwareSimLink(input);
+}
+function syncAllEditHardwareSimStates() { document.querySelectorAll('#editHwTable tbody tr').forEach(row => syncEditHardwareSimState(row.children[3].querySelector('select'))); }
+function updateEditHardwareSimLink(input) {
+  const link = input.parentElement.querySelector('.hardware-sim-link');
+  const imsi = input.value.trim();
+  link.style.display = /^\d{15}$/.test(imsi) ? 'inline-block' : 'none';
+  if (link.style.display !== 'none') link.href = `../sim-card/sim-card-detail.html?imsi=${encodeURIComponent(imsi)}`;
+}
 function addEditHwRow() {
   const tbody = document.querySelector('#editHwTable tbody');
   const tr = document.createElement('tr');
-  tr.innerHTML = '<td><input type="text" placeholder="请输入"></td><td><input type="text" placeholder="请输入"></td><td><input type="text" placeholder="请输入"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>';
+  tr.innerHTML = hardwareEditRow();
   tbody.appendChild(tr);
 }
 function addEditSwRow() {
@@ -1385,10 +2206,28 @@ function collectBasicFormData() {
     }
   });
   // 动态子表（硬件/软件/摄像头/摄像头图片配置）写回
-  vehicleData.hw_list = collectDynamicRows('editHwTable', ['name', 'code', 'status']);
+  vehicleData.hw_list = collectDynamicRows('editHwTable', ['name', 'type', 'code', 'has_sim', 'imsi', 'status']);
   vehicleData.sw_list = collectDynamicRows('editSwTable', ['name', 'value']);
   vehicleData.cam_list = collectDynamicRows('editCamTable', ['name', 'tid', 'minbr', 'maxbr', 'fixed', 'fps', 'res', 'pri', 'platform']);
   vehicleData.cam_img_list = collectDynamicRows('editCamImgTable', ['name', 'tid', 'support_history', 'history_quality', 'support_perception', 'perception_quality', 'support_cloud', 'cloud_quality', 'support_vehicle', 'vehicle_quality']);
+}
+
+function validateVehicleHardwareSims(hardwareList) {
+  const knownCards = {
+    '460041234567890': 'TBX-2026-001',
+    '460011234567891': 'VBX-2026-018',
+    '460011234567897': ''
+  };
+  const seen = new Set();
+  for (const hardware of hardwareList) {
+    if (hardware.has_sim !== '有') continue;
+    if (!hardware.type || !hardware.code || !/^\d{15}$/.test(hardware.imsi || '')) return '绑定SIM卡时须填写硬件类型、识别码和15位IMSI';
+    if (seen.has(hardware.imsi)) return '同一张SIM卡不能绑定多个硬件';
+    seen.add(hardware.imsi);
+    if (!(hardware.imsi in knownCards)) return '该IMSI未在SIM卡台账中登记';
+    if (knownCards[hardware.imsi] && knownCards[hardware.imsi] !== hardware.code) return '该SIM卡已绑定其他硬件';
+  }
+  return '';
 }
 
 function saveEdit() {
@@ -1405,6 +2244,8 @@ function saveEdit() {
     vehicleData.labels = sel;
     // 其余表单字段写回（保存前仅回写车辆标签的缺陷已修复）
     collectBasicFormData();
+    const simError = validateVehicleHardwareSims(vehicleData.hw_list);
+    if (simError) { Common.showToast(simError, 'error'); return; }
     initBomTab(); // 资产来源可能变化，同步 BOM 清单 Tab 显隐
     document.getElementById('basicViewMode').style.display = '';
     document.getElementById('basicEditMode').style.display = 'none';
@@ -1452,8 +2293,8 @@ function renderTransferTable() {
       <td class="col-center"><input type="checkbox" data-id="${d.id}" ${ck} onchange="toggleTransferCheck('${d.id}',this)"></td>
       <td class="col-center">${d.id}</td>
       <td class="col-left"><span class="tag ${tag}">${d.status}</span></td>
-      <td class="col-center num">${d.apply_time}</td>
-      <td class="col-center num">${d.confirm_time}</td>
+      <td class="col-center">${d.apply_time}</td>
+      <td class="col-center">${d.confirm_time}</td>
       <td class="col-left">${d.applicant}</td>
       <td class="col-left ellipsis" title="${d.from}">${d.from}</td>
       <td class="col-left ellipsis" title="${d.to}">${d.to}</td>
@@ -1795,7 +2636,7 @@ function renderBomHistoryTable() {
       const afterInfo = item.change_type === '移除' ? '—' : item.after_part_no + '(' + item.after_spec + ')';
       const reason = item.change_reason || '—';
       return '<tr>' +
-        '<td class="col-center num">' + item.change_time + '</td>' +
+        '<td class="col-center">' + item.change_time + '</td>' +
         '<td class="col-center">' + item.part_no + '</td>' +
         '<td class="col-left">' + item.part_name + '</td>' +
         '<td class="col-center">' + typeTag + '</td>' +
@@ -1917,7 +2758,7 @@ function renderLogTable() {
       <td class="col-left ellipsis" title="${d.before}">${d.before}</td>
       <td class="col-left ellipsis" title="${d.after}">${d.after}</td>
       <td class="col-left">${d.user}</td>
-      <td class="col-center num">${d.time}</td>
+      <td class="col-center">${d.time}</td>
       <td class="col-left">${d.source}</td>
     </tr>`;
   }).join('');
@@ -1963,6 +2804,10 @@ function exportChangelog() {
 // ===== 初始化 =====
 renderBasicView();
 renderBasicEdit();
+// 单车360度档案 - 阶段1：默认展示车辆概览；按车型控制自动驾驶域/作业设备域显示
+renderOverviewByVehicleType();
+// 单车360度档案 - 生命周期 Tab 初始化（列表渲染在切到该 Tab 时触发）
+bindLifecycleFilter();
 
 // 根据URL参数中的车辆ID解析资产来源，决定是否显示BOM清单Tab
 (function resolveVehicleSource() {

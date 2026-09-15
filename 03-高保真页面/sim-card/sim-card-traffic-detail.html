@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIM卡流量明细 - 车辆管理系统</title>
+<link rel="stylesheet" href="../components/common.css">
+<link rel="stylesheet" href="../components/fixed-table.css">
+<!-- 页面用途：按单张 SIM 卡查询日/月流量明细。交互逻辑：左侧卡片分组选择，右侧按时间查询、分页选择与导出。 -->
+<style>
+  .traffic-workbench { display:grid; grid-template-columns:304px minmax(0,1fr); min-height:calc(100vh - 144px); border:1px solid var(--border-color); border-radius:var(--radius); overflow:hidden; background:#fff; }
+  .sim-master { min-width:0; border-right:1px solid var(--border-color); background:#fafafa; }
+  .master-head { padding:16px; border-bottom:1px solid var(--border-color); background:#fff; }
+  .panel-title { margin:0 0 14px; font-size:16px; font-weight:600; line-height:24px; color:var(--text-primary); }
+  .master-search { display:grid; gap:10px; }
+  .master-search-item { display:grid; grid-template-columns:52px minmax(0,1fr); align-items:center; gap:8px; }
+  .master-search-item.advanced { display:none; }
+  .master-search.expanded .master-search-item.advanced { display:grid; }
+  .master-search-item label { color:var(--text-secondary); white-space:nowrap; }
+  .master-search-item input,.master-search-item select { width:100%; height:32px; padding:0 12px; border:1px solid var(--border-input); border-radius:var(--radius); background:#fff; color:var(--text-primary); outline:none; }
+  .master-search-item input:focus,.master-search-item select:focus,.date-field input:focus { border-color:var(--primary); box-shadow:0 0 0 2px rgba(22,119,255,.1); }
+  .master-actions { display:flex; justify-content:flex-end; gap:8px; }
+  .filter-toggle { height:32px; padding:0 4px; border:0; background:transparent; color:var(--primary); cursor:pointer; white-space:nowrap; }
+  .filter-toggle:hover { color:var(--primary-hover); }
+  .group-mode { display:grid; grid-template-columns:52px minmax(0,1fr); align-items:center; gap:8px; margin-top:14px; }
+  .group-mode-label { color:var(--text-secondary); }
+  .segmented { display:inline-flex; width:max-content; max-width:100%; padding:2px; border-radius:var(--radius); background:#f0f2f5; }
+  .segmented button { min-width:56px; height:28px; padding:0 10px; border:0; border-radius:4px; background:transparent; color:var(--text-secondary); cursor:pointer; white-space:nowrap; }
+  .segmented button:hover { color:var(--primary); }
+  .segmented button.active { background:#fff; color:var(--primary); font-weight:500; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  .group-list { height:calc(100vh - 366px); min-height:388px; overflow-y:auto; padding:8px; }
+  .sim-group + .sim-group { margin-top:4px; }
+  .group-toggle { display:flex; align-items:center; width:100%; height:36px; padding:0 8px; border:0; border-radius:var(--radius); background:transparent; color:var(--text-primary); cursor:pointer; text-align:left; }
+  .group-toggle:hover { background:#f0f2f5; }
+  .group-arrow { width:18px; color:var(--text-secondary); transition:transform .2s; }
+  .sim-group.collapsed .group-arrow { transform:rotate(-90deg); }
+  .group-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; }
+  .group-count { min-width:24px; height:20px; padding:0 7px; border-radius:10px; background:#e6e9ed; color:var(--text-secondary); font-family:var(--font-number); font-size:12px; line-height:20px; text-align:center; }
+  .group-cards { padding:2px 0 6px 18px; }
+  .sim-group.collapsed .group-cards { display:none; }
+  .sim-card-item { display:block; width:100%; margin:2px 0; padding:10px 12px; border:1px solid transparent; border-radius:var(--radius); background:transparent; color:var(--text-primary); cursor:pointer; text-align:left; transition:all .2s; }
+  .sim-card-item:hover { border-color:#91caff; background:#f5faff; }
+  .sim-card-item.active { border-color:#91caff; background:var(--primary-bg); box-shadow:inset 3px 0 0 var(--primary); }
+  .sim-id { display:flex; align-items:center; gap:7px; font-family:var(--font-number); font-size:13px; line-height:20px; }
+  .carrier-dot { width:7px; height:7px; flex:0 0 7px; border-radius:50%; background:#1677ff; }
+  .carrier-dot.unicom { background:#ff4d4f; }.carrier-dot.telecom { background:#52c41a; }
+  .sim-meta { margin-top:3px; overflow:hidden; color:var(--text-secondary); font-size:12px; line-height:18px; text-overflow:ellipsis; white-space:nowrap; }
+  .load-more { display:block; width:100%; height:30px; border:0; background:transparent; color:var(--primary); font-size:12px; cursor:pointer; }
+  .load-more:hover { color:var(--primary-hover); background:#f5faff; }
+  .master-empty { padding:56px 16px; color:var(--text-secondary); text-align:center; }
+  .traffic-detail { min-width:0; padding:16px; }
+  .detail-summary { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; padding:0 0 16px; border-bottom:1px solid var(--border-color); }
+  .detail-main { min-width:0; }
+  .detail-imsi { display:flex; align-items:center; gap:9px; font-family:var(--font-number); font-size:20px; font-weight:600; line-height:30px; }
+  .detail-imsi::before { content:""; width:4px; height:20px; border-radius:2px; background:var(--primary); }
+  .detail-subtitle { margin-top:4px; color:var(--text-secondary); font-size:12px; line-height:18px; }
+  .detail-tags { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+  .detail-tags .tag { line-height:22px; }
+  .detail-controls { display:flex; align-items:flex-end; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  .control-block { display:flex; align-items:center; gap:8px; }
+  .control-label { color:var(--text-secondary); white-space:nowrap; }
+  .date-field { display:flex; align-items:center; gap:8px; }
+  .date-field input { width:142px; height:32px; padding:0 10px; border:1px solid var(--border-input); border-radius:var(--radius); color:var(--text-primary); outline:none; }
+  .date-divider { color:var(--text-disabled); }
+  .detail-actions { display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .traffic-table { border-top:1px solid var(--border-color); }
+  .traffic-table table { min-width:1530px; }
+  .traffic-table th,.traffic-table td { text-align:center!important; }
+  .traffic-table .usage { color:#0958d9; font-family:var(--font-number); font-weight:600; }
+  .pagination-row { display:flex; justify-content:flex-end; align-items:center; gap:12px; padding-top:16px; flex-wrap:wrap; }
+  .page-size { height:32px; padding:0 8px; border:1px solid var(--border-input); border-radius:var(--radius); background:#fff; }
+  .empty-row { height:240px!important; color:var(--text-secondary)!important; text-align:center; }
+  @media(max-width:1100px) { .traffic-workbench { grid-template-columns:264px minmax(0,1fr); }.detail-actions { width:100%; margin-left:0; justify-content:flex-end; } }
+  @media(max-width:780px) { .traffic-workbench { display:block; }.sim-master { border-right:0; border-bottom:1px solid var(--border-color); }.group-list { height:320px; min-height:0; }.date-field { flex-wrap:wrap; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-area">
+    <div id="header"></div>
+    <main class="content">
+      <section class="page-container">
+        <div class="traffic-workbench">
+          <aside class="sim-master" aria-label="SIM卡列表">
+            <div class="master-head">
+              <h2 class="panel-title">SIM 卡列表</h2>
+              <div class="master-search" id="master-search">
+                <div class="master-search-item"><label for="filter-imsi">IMSI</label><input id="filter-imsi" placeholder="请输入 IMSI"></div>
+                <div class="master-search-item advanced"><label for="filter-vin">VIN码</label><input id="filter-vin" placeholder="请输入 VIN 码"></div>
+                <div class="master-search-item advanced"><label for="filter-plan">套餐</label><select id="filter-plan"><option value="">全部</option><option>10G/月</option><option>30G/月</option><option>100G/月</option><option>300G/月</option><option value="__none__">无套餐</option></select></div>
+                <div class="master-search-item advanced"><label for="filter-project">项目</label><select id="filter-project"><option value="">全部</option><option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江项目</option><option>陵水项目</option><option value="__none__">无归属项目</option></select></div>
+                <div class="master-actions"><button class="btn btn-primary" type="button" onclick="searchCards()">查询</button><button class="btn" type="button" onclick="resetCardFilters()">重置</button><button class="filter-toggle" id="filter-toggle" type="button" aria-expanded="false" onclick="toggleAdvancedFilters()">展开⌄</button></div>
+              </div>
+              <div class="group-mode"><span class="group-mode-label">分组</span><div class="segmented" id="group-mode"><button type="button" data-mode="carrier" onclick="changeGroup('carrier')">运营商</button><button class="active" type="button" data-mode="plan" onclick="changeGroup('plan')">套餐</button><button type="button" data-mode="project" onclick="changeGroup('project')">项目</button></div></div>
+            </div>
+            <div class="group-list" id="group-list"></div>
+          </aside>
+          <section class="traffic-detail" aria-label="SIM卡流量明细">
+            <div class="detail-summary">
+              <div class="detail-main"><div class="detail-imsi" id="detail-imsi">--</div><div class="detail-subtitle" id="detail-subtitle">请选择左侧 SIM 卡</div></div>
+              <div class="detail-tags" id="detail-tags"></div>
+            </div>
+            <div class="detail-controls">
+              <div class="control-block"><span class="control-label">统计粒度</span><div class="segmented" id="traffic-mode"><button class="active" type="button" data-mode="day" onclick="changeTrafficMode('day')">日流量</button><button type="button" data-mode="month" onclick="changeTrafficMode('month')">月流量</button></div></div>
+              <div class="control-block"><label class="control-label" for="start-date">时间范围</label><div class="date-field"><input id="start-date" type="date"><span class="date-divider">至</span><input id="end-date" type="date"></div></div>
+              <div class="detail-actions"><button class="btn btn-primary" type="button" onclick="queryTraffic()">查询</button><button class="btn" type="button" onclick="resetDateRange()">重置</button><button class="btn" type="button" onclick="exportTraffic()">导出</button></div>
+            </div>
+            <div class="table-wrapper fixed-table traffic-table" data-fixed-first="1" data-fixed-last="2" data-fixed-min-width="1530"><table><thead><tr>
+              <th class="col-center" style="width:54px"><input id="check-all" type="checkbox" aria-label="选择当前页全部数据" onchange="toggleCurrentPage(this.checked)"></th>
+              <th class="col-center">IMSI</th><th class="col-center">运营商</th><th class="col-center">套餐</th><th class="col-center">VIN码</th><th class="col-center">车牌号</th><th class="col-center">归属项目</th><th class="col-center">硬件类型</th><th class="col-center">硬件识别码</th><th class="col-center">日期</th><th class="col-center">使用流量（GB）</th>
+            </tr></thead><tbody id="traffic-body"></tbody></table></div>
+            <div class="pagination-row"><span>共 <b id="total-count">0</b> 条</span><select class="page-size" id="page-size" aria-label="每页条数" onchange="changePageSize()"><option>10</option><option>20</option><option>50</option></select><span id="page-info">第 1 / 1 页</span><div id="pagination"></div></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="../components/common.js"></script>
+<script src="../components/fixed-table.js"></script>
+<script>
+Common.initLayout({basePath:'../',sidebarId:'sidebar',activeMenuId:'sim-traffic-detail',headerId:'header',headerOptions:{showProject:false}});
+
+const cards=[
+  {id:1,imsi:'460011234567800',carrier:'中国联通',plan:'10G/月',vin:'LSVAU2A39EN000010',plate:'粤AEE078',project:'嘉定研发',type:'视频盒子',device:'VBX-2026-063',status:'正使用'},
+  {id:2,imsi:'460011234567891',carrier:'中国联通',plan:'100G/月',vin:'LSVAU2A39EN000002',plate:'京ADG091',project:'椒北街道',type:'视频盒子',device:'VBX-2026-018',status:'正使用'},
+  {id:3,imsi:'460011234567894',carrier:'中国联通',plan:'10G/月',vin:'LSVAU2A39EN000007',plate:'京ADJ055',project:'鸠江项目',type:'T-Box',device:'TBX-2026-032',status:'测试期'},
+  {id:4,imsi:'460011234567897',carrier:'中国联通',plan:'10G/月',vin:'',plate:'',project:'',type:'',device:'',status:'库存期'},
+  {id:5,imsi:'460011234567905',carrier:'中国联通',plan:'30G/月',vin:'LSVAU2A39EN000015',plate:'浙JDB1062',project:'镜湖区项目',type:'DTU',device:'DTU-2026-069',status:'正使用'},
+  {id:6,imsi:'460031234567801',carrier:'中国电信',plan:'300G/月',vin:'LSVAU2A39EN000012',plate:'京ADG092',project:'鸠江项目',type:'ADU',device:'ADU-2026-012',status:'正使用'},
+  {id:7,imsi:'460031234567892',carrier:'中国电信',plan:'30G/月',vin:'LSVAU2A39EN000003',plate:'浙JAR6538',project:'镜湖区项目',type:'DTU',device:'DTU-2026-027',status:'沉默期'},
+  {id:8,imsi:'460031234567895',carrier:'中国电信',plan:'30G/月',vin:'LSVAU2A39EN000009',plate:'粤AEE077',project:'鸠江项目',type:'视频盒子',device:'VBX-2026-041',status:'停机保号'},
+  {id:9,imsi:'460031234567898',carrier:'中国电信',plan:'30G/月',vin:'LSVAU2A39EN000005',plate:'浙JDB1062',project:'镜湖区项目',type:'DTU',device:'DTU-2026-054',status:'停机'},
+  {id:10,imsi:'460031234567908',carrier:'中国电信',plan:'100G/月',vin:'LSVAU2A39EN000018',plate:'皖BAX218',project:'经开东区项目',type:'T-Box',device:'TBX-2026-072',status:'正使用'},
+  {id:11,imsi:'460041234567890',carrier:'中国移动',plan:'10G/月',vin:'LSVAU2A39EN000001',plate:'京ADG090',project:'鸠江项目',type:'T-Box',device:'TBX-2026-001',status:'正使用'},
+  {id:12,imsi:'460041234567893',carrier:'中国移动',plan:'300G/月',vin:'LSVAU2A39EN000006',plate:'沪AAB124',project:'嘉定研发',type:'ADU',device:'ADU-2026-006',status:'正使用'},
+  {id:13,imsi:'460041234567896',carrier:'中国移动',plan:'100G/月',vin:'LSVAU2A39EN000011',plate:'京ADK033',project:'镜湖区项目',type:'T-Box',device:'TBX-2026-048',status:'正使用'},
+  {id:14,imsi:'460041234567899',carrier:'中国移动',plan:'100G/月',vin:'LSVAU2A39EN000008',plate:'京ADJ056',project:'椒北街道',type:'T-Box',device:'TBX-2026-057',status:'预销号'},
+  {id:15,imsi:'460041234567911',carrier:'中国移动',plan:'30G/月',vin:'LSVAU2A39EN000021',plate:'皖BAX221',project:'经开东区项目',type:'ADU',device:'ADU-2026-081',status:'正使用'},
+  {id:16,imsi:'460041234567916',carrier:'中国移动',plan:'',vin:'LSVAU2A39EN000026',plate:'皖BAX226',project:'陵水项目',type:'T-Box',device:'TBX-2026-086',status:'测试期'}
+];
+
+let groupMode='plan';
+let filteredCards=[...cards];
+let activeCard=null;
+let trafficMode='day';
+let trafficRows=[];
+let page=1;
+let pageSize=10;
+let filtersExpanded=false;
+let groupCollapseInitialized=false;
+const collapsedGroups=new Set();
+const visibleCounts={};
+const selectedRows=new Set();
+
+function cardSort(a,b){return a.imsi.localeCompare(b.imsi)}
+function groupLabel(card){return card[groupMode]||'无分组'}
+function cardKey(card){return `${groupMode}:${groupLabel(card)}`}
+function groupSort(a,b){
+  if(a==='无分组') return 1;
+  if(b==='无分组') return -1;
+  if(groupMode==='plan') return parseInt(a,10)-parseInt(b,10);
+  return a.localeCompare(b,'zh-CN');
+}
+function carrierClass(carrier){return carrier==='中国联通'?'unicom':carrier==='中国电信'?'telecom':''}
+function statusTag(status){const map={'正使用':'tag-green','测试期':'tag-blue','沉默期':'tag-orange','停机':'tag-red','停机保号':'tag-purple','预销号':'tag-yellow','库存期':'tag-default'};return `<span class="tag ${map[status]||'tag-default'}">${status}</span>`}
+
+function renderGroups(){
+  const grouped={};
+  filteredCards.slice().sort(cardSort).forEach(card=>{const label=groupLabel(card);(grouped[label]||(grouped[label]=[])).push(card)});
+  const labels=Object.keys(grouped).sort(groupSort);
+  const list=document.getElementById('group-list');
+  if(!labels.length){groupCollapseInitialized=false;list.innerHTML='<div class="master-empty">未找到匹配的 SIM 卡</div>';renderDetail();return}
+  if(!groupCollapseInitialized){
+    collapsedGroups.clear();
+    labels.slice(1).forEach(label=>collapsedGroups.add(`${groupMode}:${label}`));
+    groupCollapseInitialized=true;
+  }
+  list.innerHTML=labels.map(label=>{
+    const groupCards=grouped[label];
+    const key=`${groupMode}:${label}`;
+    const visible=Math.min(visibleCounts[key]||4,groupCards.length);
+    const items=groupCards.slice(0,visible).map(card=>`<button class="sim-card-item ${activeCard&&activeCard.id===card.id?'active':''}" type="button" onclick="selectCard(${card.id})"><span class="sim-id"><i class="carrier-dot ${carrierClass(card.carrier)}"></i>${card.imsi}</span><span class="sim-meta">${card.vin||'未绑定车辆'} · ${card.project||'无归属项目'}</span></button>`).join('');
+    const more=visible<groupCards.length?`<button class="load-more" type="button" onclick="loadMore('${encodeURIComponent(key)}')">显示更多 ${groupCards.length-visible} 张</button>`:'';
+    return `<section class="sim-group ${collapsedGroups.has(key)?'collapsed':''}"><button class="group-toggle" type="button" onclick="toggleGroup('${encodeURIComponent(key)}')"><span class="group-arrow">⌄</span><span class="group-name" title="${label}">${label}</span><span class="group-count">${groupCards.length}</span></button><div class="group-cards">${items}${more}</div></section>`;
+  }).join('');
+}
+
+function ensureActiveCard(){
+  const ordered=filteredCards.slice().sort(cardSort);
+  if(!activeCard||!ordered.some(card=>card.id===activeCard.id)) activeCard=ordered[0]||null;
+}
+
+function searchCards(){
+  const imsi=document.getElementById('filter-imsi').value.trim();
+  const vin=document.getElementById('filter-vin').value.trim().toLowerCase();
+  const plan=document.getElementById('filter-plan').value;
+  const project=document.getElementById('filter-project').value;
+  const matchesSelect=(filterValue,cardValue)=>!filterValue||(filterValue==='__none__'?!cardValue:cardValue===filterValue);
+  filteredCards=cards.filter(card=>(!imsi||card.imsi.includes(imsi))&&(!vin||card.vin.toLowerCase().includes(vin))&&matchesSelect(plan,card.plan)&&matchesSelect(project,card.project));
+  groupCollapseInitialized=false;
+  ensureActiveCard();selectedRows.clear();page=1;renderGroups();renderDetail();
+}
+
+function setAdvancedFilters(expanded){filtersExpanded=expanded;document.getElementById('master-search').classList.toggle('expanded',expanded);const toggle=document.getElementById('filter-toggle');toggle.setAttribute('aria-expanded',String(expanded));toggle.textContent=expanded?'收起⌃':'展开⌄'}
+function toggleAdvancedFilters(){setAdvancedFilters(!filtersExpanded)}
+function resetCardFilters(){document.getElementById('filter-imsi').value='';document.getElementById('filter-vin').value='';document.getElementById('filter-plan').value='';document.getElementById('filter-project').value='';filteredCards=[...cards];groupCollapseInitialized=false;setAdvancedFilters(false);ensureActiveCard();selectedRows.clear();page=1;renderGroups();renderDetail()}
+function changeGroup(mode){groupMode=mode;groupCollapseInitialized=false;collapsedGroups.clear();document.querySelectorAll('#group-mode button').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));renderGroups()}
+function toggleGroup(encodedKey){const key=decodeURIComponent(encodedKey);collapsedGroups.has(key)?collapsedGroups.delete(key):collapsedGroups.add(key);renderGroups()}
+function loadMore(encodedKey){const key=decodeURIComponent(encodedKey);visibleCounts[key]=(visibleCounts[key]||4)+4;renderGroups()}
+function selectCard(id){activeCard=cards.find(card=>card.id===id)||null;selectedRows.clear();page=1;renderGroups();renderDetail()}
+
+function pad(value){return String(value).padStart(2,'0')}
+function formatDate(date){return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`}
+function formatMonth(date){return `${date.getFullYear()}-${pad(date.getMonth()+1)}`}
+function parseLocal(value,mode){const parts=value.split('-').map(Number);return mode==='month'?new Date(parts[0],parts[1]-1,1):new Date(parts[0],parts[1]-1,parts[2])}
+function setDefaultDates(){
+  const end=new Date();
+  const start=new Date(end);
+  const startInput=document.getElementById('start-date');
+  const endInput=document.getElementById('end-date');
+  if(trafficMode==='day'){
+    start.setDate(start.getDate()-29);startInput.type='date';endInput.type='date';startInput.value=formatDate(start);endInput.value=formatDate(end);
+  }else{
+    start.setDate(1);start.setMonth(start.getMonth()-11);startInput.type='month';endInput.type='month';startInput.value=formatMonth(start);endInput.value=formatMonth(end);
+  }
+}
+
+function buildTrafficRows(){
+  if(!activeCard) return [];
+  const startValue=document.getElementById('start-date').value;
+  const endValue=document.getElementById('end-date').value;
+  if(!startValue||!endValue) return [];
+  const start=parseLocal(startValue,trafficMode);
+  const end=parseLocal(endValue,trafficMode);
+  if(start>end) return null;
+  const rows=[];
+  const cursor=new Date(end);
+  let index=0;
+  while(cursor>=start&&index<730){
+    const seed=Number(activeCard.imsi.slice(-4))%37;
+    const usage=trafficMode==='day'?((seed*7+index*13)%82+8)/100:((seed*19+index*37)%2600+420)/100;
+    const date=trafficMode==='day'?formatDate(cursor):formatMonth(cursor);
+    rows.push({...activeCard,rowId:`${activeCard.id}-${trafficMode}-${date}`,date,usage:Number(usage.toFixed(2))});
+    if(trafficMode==='day') cursor.setDate(cursor.getDate()-1);else cursor.setMonth(cursor.getMonth()-1);
+    index++;
+  }
+  return rows;
+}
+
+function renderDetail(){
+  const title=document.getElementById('detail-imsi');
+  const subtitle=document.getElementById('detail-subtitle');
+  const tags=document.getElementById('detail-tags');
+  if(!activeCard){title.textContent='--';subtitle.textContent='请选择左侧 SIM 卡';tags.innerHTML='';trafficRows=[];renderTable();return}
+  title.textContent=activeCard.imsi;
+  subtitle.textContent=`${activeCard.vin||'未绑定 VIN'} · ${activeCard.plate||'未绑定车牌'} · ${activeCard.device||'未绑定硬件'}`;
+  tags.innerHTML=`<span class="tag tag-blue">${activeCard.carrier}</span><span class="tag tag-purple">${activeCard.plan||'无套餐'}</span>${statusTag(activeCard.status)}`;
+  trafficRows=buildTrafficRows()||[];
+  renderTable();
+}
+
+function renderTable(){
+  const start=(page-1)*pageSize;
+  const rows=trafficRows.slice(start,start+pageSize);
+  const body=document.getElementById('traffic-body');
+  body.innerHTML=rows.length?rows.map(row=>`<tr class="${selectedRows.has(row.rowId)?'selected':''}"><td class="col-center"><input type="checkbox" aria-label="选择 ${row.date} 流量明细" ${selectedRows.has(row.rowId)?'checked':''} onchange="toggleRow('${row.rowId}',this.checked)"></td><td class="col-center num">${row.imsi}</td><td class="col-center">${row.carrier}</td><td class="col-center">${row.plan||'--'}</td><td class="col-center num">${row.vin||'--'}</td><td class="col-center">${row.plate||'--'}</td><td class="col-center">${row.project||'--'}</td><td class="col-center">${row.type||'--'}</td><td class="col-center num">${row.device||'--'}</td><td class="col-center num">${row.date}</td><td class="col-center usage">${row.usage.toFixed(2)}</td></tr>`).join(''):'<tr><td class="empty-row" colspan="11">当前时间范围内暂无流量明细</td></tr>';
+  document.getElementById('check-all').checked=rows.length>0&&rows.every(row=>selectedRows.has(row.rowId));
+  Common.renderPagination({total:trafficRows.length,currentPage:page,pageSize,containerId:'pagination',infoId:'total-count',pageInfoId:'page-info',onPageChange:next=>{page=next;renderTable()}});
+}
+
+function changeTrafficMode(mode){trafficMode=mode;document.querySelectorAll('#traffic-mode button').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));selectedRows.clear();page=1;setDefaultDates();renderDetail()}
+function resetDateRange(){selectedRows.clear();page=1;setDefaultDates();renderDetail()}
+function queryTraffic(){const rows=buildTrafficRows();if(rows===null){Common.showToast('开始时间不能晚于结束时间','error');return}trafficRows=rows;selectedRows.clear();page=1;renderTable()}
+function changePageSize(){pageSize=Number(document.getElementById('page-size').value);page=1;renderTable()}
+function toggleRow(rowId,checked){checked?selectedRows.add(rowId):selectedRows.delete(rowId);renderTable()}
+function toggleCurrentPage(checked){trafficRows.slice((page-1)*pageSize,page*pageSize).forEach(row=>checked?selectedRows.add(row.rowId):selectedRows.delete(row.rowId));renderTable()}
+function exportTraffic(){
+  if(!activeCard||!trafficRows.length){Common.showToast('暂无可导出的流量明细','warning');return}
+  if(selectedRows.size){Common.showToast(`已导出选中的 ${selectedRows.size} 条流量明细（原型演示）`,'success');return}
+  Common.confirm({title:'导出确认',content:`当前未选择明细，将导出 ${activeCard?activeCard.imsi:''} 在当前时间范围内的全部 ${trafficRows.length} 条流量数据，是否继续？`,okText:'确认导出',onOk:()=>Common.showToast('已生成流量明细导出文件（原型演示）','success')});
+}
+
+document.getElementById('filter-imsi').addEventListener('keydown',event=>{if(event.key==='Enter')searchCards()});
+document.getElementById('filter-vin').addEventListener('keydown',event=>{if(event.key==='Enter')searchCards()});
+ensureActiveCard();setDefaultDates();renderGroups();renderDetail();
+</script>
+</body>
+</html>

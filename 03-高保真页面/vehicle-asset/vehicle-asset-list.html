@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>车辆资产管理 - 列表页</title>
     <link rel="stylesheet" href="../components/common.css">
+    <link rel="stylesheet" href="../components/fixed-table.css">
     <!--
       车辆资产管理 - 资产台账列表页
       页面用途：车辆资产台账的分页列表，支持多条件筛选、车辆分配、状态变更、批量打标签/移出标签、删除与导出
@@ -219,7 +220,7 @@
                 <!-- 数据列表（列宽依据 PRD 3.1.4）
                      对齐规则（规范二.3）：文本列左对齐、固定宽度编码列（车架号/网联编号/车型编码/注册时间）居中、
                      操作列与复选框列居中；th 与 td 使用相同对齐类 -->
-                <div class="table-wrapper">
+                <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="2050px">
                     <table>
                         <thead>
                             <tr>
@@ -385,6 +386,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/fixed-table.js"></script>
 <script>
 // ===== 初始化布局 =====
 Common.initLayout({

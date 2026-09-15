@@ -6,6 +6,7 @@
     <title>车辆建档 - 新增</title>
     <link rel="stylesheet" href="../components/common.css">
     <link rel="stylesheet" href="../components/form.css">
+    <link rel="stylesheet" href="../components/fixed-table.css">
     <!--
       车辆建档 - 新增页
       页面用途：录入车辆档案全量信息（基础/归属/证照/车型/整车/底盘/发动机/上装/硬件/软件/摄像头/功能配置等分组）
@@ -222,11 +223,11 @@
                     <!-- 硬件信息 -->
                     <div class="form-section">
                         <div class="section-title">硬件信息</div>
-                        <div class="table-wrapper">
+                        <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1280px">
                             <table class="dynamic-table" id="hwTable">
-                                <thead><tr><th style="width:35%">硬件名称</th><th style="width:30%">识别码</th><th style="width:25%">状态</th><th style="width:10%">操作</th></tr></thead>
+                                <thead><tr><th style="width:18%">硬件名称</th><th style="width:15%">硬件类型</th><th style="width:18%">识别码</th><th style="width:12%">是否有SIM卡</th><th style="width:20%">IMSI</th><th style="width:10%">状态</th><th style="width:7%">操作</th></tr></thead>
                                 <tbody>
-                                    <tr><td><input type="text" placeholder="请输入硬件名称"></td><td><input type="text" placeholder="请输入识别码"></td><td><input type="text" placeholder="请输入状态"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>
+                                    <tr><td><input type="text" placeholder="请输入硬件名称"></td><td><select><option value="">请选择</option><option>T-Box</option><option>DTU</option><option>视频盒子</option><option>ADU</option><option>OBU</option><option>其他</option></select></td><td><input type="text" placeholder="请输入识别码"></td><td><select onchange="syncHardwareSimState(this)"><option value="">暂不录入</option><option value="有">有</option><option value="无">无</option></select></td><td><div><input class="hardware-imsi" type="text" inputmode="numeric" maxlength="15" placeholder="选择“有”后录入" disabled oninput="updateHardwareSimLink(this)"><a class="hardware-sim-link" hidden>查看台账</a></div></td><td><input type="text" placeholder="请输入状态"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -250,7 +251,7 @@
                     <!-- 摄像头信息 -->
                     <div class="form-section">
                         <div class="section-title">摄像头信息</div>
-                        <div class="table-wrapper">
+                        <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1380px">
                             <table class="dynamic-table" id="camTable">
                                 <thead><tr><th>名称</th><th>Track_ID</th><th>最小码率</th><th>最大码率</th><th>是否固定码率</th><th>帧率</th><th>分辨率</th><th>优先级</th><th>应用平台</th><th>操作</th></tr></thead>
                                 <tbody>
@@ -277,7 +278,7 @@
                     <!-- 摄像头图片配置 -->
                     <div class="form-section">
                         <div class="section-title">摄像头图片配置</div>
-                        <div class="table-wrapper">
+                        <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1560px">
                             <table class="dynamic-table" id="camImgTable">
                                 <thead>
                                     <tr>
@@ -337,6 +338,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/fixed-table.js"></script>
 <script>
 Common.initLayout({
     basePath: '../',
@@ -373,6 +375,56 @@ function clearFieldErrors() {
     document.querySelectorAll('.field-error').forEach(e => e.remove());
 }
 
+// 原型台账索引：IMSI 仅在用户选择“有 SIM 卡”时校验；整组字段可以暂不录入。
+const simLedgerIndex = {
+    '460011234567897': { id: 8, device: '' },
+    '460041234567890': { id: 1, device: 'TBX-2026-001' },
+    '460011234567891': { id: 2, device: 'VBX-2026-018' }
+};
+function syncHardwareSimState(select) {
+    const row = select.closest('tr');
+    const input = row.querySelector('.hardware-imsi');
+    input.disabled = select.value !== '有';
+    input.placeholder = select.value === '有' ? '请输入15位IMSI' : '选择“有”后录入';
+    if (select.value !== '有') input.value = '';
+    updateHardwareSimLink(input);
+}
+function updateHardwareSimLink(input) {
+    const link = input.parentElement.querySelector('.hardware-sim-link');
+    const imsi = input.value.trim();
+    const exists = !!simLedgerIndex[imsi];
+    link.hidden = !exists;
+    if (exists) link.href = `../sim-card/sim-card-detail.html?imsi=${encodeURIComponent(imsi)}`;
+}
+function setHardwareError(input, message) {
+    const cell = input.closest('td');
+    let error = cell.querySelector('.field-error');
+    if (!error) { error = document.createElement('div'); error.className = 'field-error'; cell.appendChild(error); }
+    error.textContent = message;
+}
+function clearHardwareErrors() { document.querySelectorAll('#hwTable .field-error').forEach(error => error.remove()); }
+function validateHardwareSimBindings() {
+    clearHardwareErrors();
+    const usedImsi = new Set();
+    for (const row of document.querySelectorAll('#hwTable tbody tr')) {
+        const cells = row.children;
+        const type = cells[1].querySelector('select').value;
+        const codeInput = cells[2].querySelector('input');
+        const hasSim = cells[3].querySelector('select').value;
+        const imsiInput = cells[4].querySelector('.hardware-imsi');
+        const imsi = imsiInput.value.trim();
+        if (hasSim !== '有') continue;
+        if (!type || !codeInput.value.trim()) { setHardwareError(!type ? cells[1].querySelector('select') : codeInput, '绑定SIM卡时须填写硬件类型和识别码'); return false; }
+        if (!/^\d{15}$/.test(imsi)) { setHardwareError(imsiInput, '请输入15位数字IMSI'); return false; }
+        if (usedImsi.has(imsi)) { setHardwareError(imsiInput, '同一张SIM卡不能绑定多个硬件'); return false; }
+        usedImsi.add(imsi);
+        const card = simLedgerIndex[imsi];
+        if (!card) { setHardwareError(imsiInput, '该IMSI未在SIM卡台账中登记'); return false; }
+        if (card.device && card.device !== codeInput.value.trim()) { setHardwareError(imsiInput, '该SIM卡已绑定其他硬件'); return false; }
+    }
+    return true;
+}
+
 function doSave() {
     clearFieldErrors();
     const vinEl = document.getElementById('f_vin');
@@ -382,6 +434,7 @@ function doSave() {
     if (!projectEl.value) { setFieldError(projectEl, '请选择归属项目'); Common.showToast('请选择归属项目', 'error'); projectEl.focus(); return; }
     const modelEl = document.getElementById('f_model_name');
     if (!modelEl.value) { setFieldError(modelEl, '请选择车型名称'); Common.showToast('请选择车型名称', 'error'); modelEl.focus(); return; }
+    if (!validateHardwareSimBindings()) { Common.showToast('请检查硬件与SIM卡关联信息', 'error'); return; }
     Common.showToast('保存成功', 'success');
     setTimeout(() => window.location.href = './vehicle-register-list.html', 800);
 }
@@ -389,7 +442,7 @@ function doSave() {
 function addHwRow() {
     const tbody = document.querySelector('#hwTable tbody');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" placeholder="请输入"></td><td><input type="text" placeholder="请输入"></td><td><input type="text" placeholder="请输入"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>';
+    tr.innerHTML = '<td><input type="text" placeholder="请输入硬件名称"></td><td><select><option value="">请选择</option><option>T-Box</option><option>DTU</option><option>视频盒子</option><option>ADU</option><option>OBU</option><option>其他</option></select></td><td><input type="text" placeholder="请输入识别码"></td><td><select onchange="syncHardwareSimState(this)"><option value="">暂不录入</option><option value="有">有</option><option value="无">无</option></select></td><td><div><input class="hardware-imsi" type="text" inputmode="numeric" maxlength="15" placeholder="选择“有”后录入" disabled oninput="updateHardwareSimLink(this)"><a class="hardware-sim-link" hidden>查看台账</a></div></td><td><input type="text" placeholder="请输入状态"></td><td><span class="remove-row-btn" onclick="removeRow(this)">删除</span></td>';
     tbody.appendChild(tr);
 }
 function addSwRow() {

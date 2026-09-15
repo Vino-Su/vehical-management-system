@@ -3,56 +3,126 @@
  * 包含：侧边栏、头部、面包屑、分页、Toast提示等
  */
 const Common = {
-  // ===== 侧边栏菜单配置（严格按01-需求文档/页面框架.md） =====
-  // disabled: true 表示未开发页面，做淡化处理
+  // ===== 导航配置（严格按 01-需求文档/页面框架.md 的三级结构） =====
+  // 顶部为一级模块，侧栏展示该模块的二级和三级菜单；disabled 表示页面尚未实现。
   menuConfig: [
-    { group: '车辆管理', items: [
-      { label: '车辆建档', id: 'vehicle-register', href: 'vehicle-register/vehicle-register-list.html' },
-      { label: '车辆资产管理', id: 'asset-manage', href: 'vehicle-asset/vehicle-asset-list.html' },
-      { label: '标签管理', id: 'tag-manage', href: 'vehicle-tag/tag-manage-list.html' },
-      { label: '车辆资产盘点', id: 'asset-inventory', href: '', disabled: true },
-      { label: '车辆资产信息维护', id: 'asset-maintain', href: '', disabled: true },
-      { label: '车型管理', id: 'vehicle-model', href: 'vehicle-model/vehicle-model-list.html' },
+    { id: 'vehicle', label: '车辆管理', symbol: '车', groups: [
+      { label: '车辆管理', symbol: '车', items: [
+        { label: '车辆建档', id: 'vehicle-register', href: 'vehicle-register/vehicle-register-list.html' },
+        { label: '车辆资产管理', id: 'asset-manage', href: 'vehicle-asset/vehicle-asset-list.html' },
+        { label: '标签管理', id: 'tag-manage', href: 'vehicle-tag/tag-manage-list.html' },
+        { label: '车型管理', id: 'vehicle-model', href: 'vehicle-model/vehicle-model-list.html' },
+      ]},
+      { label: '资产管理', symbol: '资', items: [
+        { label: '车辆资产盘点', id: 'asset-inventory', disabled: true },
+        { label: '车辆资产信息维护', id: 'asset-maintain', disabled: true },
+      ]},
+      { label: 'SIM 卡管理', symbol: '卡', items: [
+        { label: 'SIM卡台账', id: 'sim-ledger', href: 'sim-card/sim-card-list.html' },
+        { label: 'SIM卡流量明细', id: 'sim-traffic-detail', href: 'sim-card/sim-card-traffic-detail.html' },
+      ]},
     ]},
-    { group: '车辆调度管理', items: [
-      { label: '可用车辆库', id: 'transfer-available', href: 'vehicle-dispatch/dispatch-vehicle-list.html' },
-      { label: '调度记录管理', id: 'transfer-apply', href: 'vehicle-dispatch/dispatch-record-list.html' },
+    { id: 'operation', label: '运行监管', symbol: '运', groups: [
+      { label: '车辆调度', symbol: '调', items: [
+        { label: '可用车辆库', id: 'transfer-available', href: 'vehicle-dispatch/dispatch-vehicle-list.html' },
+        { label: '调度记录管理', id: 'transfer-apply', href: 'vehicle-dispatch/dispatch-record-list.html' },
+      ]},
+      { label: '实时监管', symbol: '监', items: [
+        { label: '车辆监管一张图', id: 'vehicle-monitor', disabled: true },
+        { label: '车辆运行数据', id: 'vehicle-runtime', disabled: true },
+      ]},
+      { label: '异常事件', symbol: '异', items: [
+        { label: '车辆故障信息', id: 'vehicle-fault', disabled: true },
+        { label: '车辆异常告警', id: 'vehicle-alert', disabled: true },
+      ]},
     ]},
-    { group: '维保管理', items: [
-      { label: '维修申请工单', id: 'repair-apply', href: '', disabled: true },
-      { label: '维修结算单', id: 'repair-settle', href: '', disabled: true },
-      { label: '保养任务清单', id: 'maintain-task', href: '', disabled: true },
-      { label: '保养结算单', id: 'maintain-settle', href: '', disabled: true },
+    { id: 'maintenance', label: '维保管理', symbol: '维', groups: [
+      { label: '维修管理', symbol: '修', items: [
+        { label: '维修申请工单', id: 'repair-apply', disabled: true },
+        { label: '维修结算单', id: 'repair-settle', disabled: true },
+      ]},
+      { label: '保养管理', symbol: '保', items: [
+        { label: '保养任务清单', id: 'maintain-task', disabled: true },
+        { label: '保养结算单', id: 'maintain-settle', disabled: true },
+      ]},
     ]},
-    { group: '合规管理', items: [
-      { label: '保险管理', id: 'insurance', href: '', disabled: true },
-      { label: '年检管理', id: 'annual-inspect', href: '', disabled: true },
-      { label: '证照管理', id: 'license', href: '', disabled: true },
-      { label: '到期预警', id: 'expire-warn', href: '', disabled: true },
+    { id: 'compliance', label: '合规与风险', symbol: '合', groups: [
+      { label: '合规管理', symbol: '规', items: [
+        { label: '保险管理', id: 'insurance', disabled: true },
+        { label: '年检管理', id: 'annual-inspect', disabled: true },
+        { label: '证照管理', id: 'license', disabled: true },
+        { label: '到期预警', id: 'expire-warn', disabled: true },
+      ]},
+      { label: '风险管理', symbol: '险', items: [
+        { label: '违章记录', id: 'violation-record', disabled: true },
+        { label: '违章费用', id: 'violation-fee', disabled: true },
+        { label: '事故记录', id: 'accident-record', disabled: true },
+        { label: '事故理赔', id: 'accident-claim', disabled: true },
+      ]},
     ]},
-    { group: '风险管理', items: [
-      { label: '违章记录', id: 'violation-record', href: '', disabled: true },
-      { label: '违章费用', id: 'violation-fee', href: '', disabled: true },
-      { label: '事故记录', id: 'accident-record', href: '', disabled: true },
-      { label: '事故理赔', id: 'accident-claim', href: '', disabled: true },
+    { id: 'expense', label: '费用管理', symbol: '费', groups: [
+      { label: '能耗费用', symbol: '能', items: [
+        { label: '加油费明细台账', id: 'fuel-fee', href: 'expense/fuel-fee-ledger.html' },
+        { label: '加水费用明细台账', id: 'water-fee', href: 'expense/water-fee-ledger.html' },
+        { label: '充电费用明细台账', id: 'charge-fee', href: 'expense/charge-fee-ledger.html' },
+      ]},
+      { label: '维修保养费用', symbol: '修', items: [
+        { label: '维修费用明细台账', id: 'repair-fee', disabled: true },
+        { label: '保养费用明细台账', id: 'maintain-fee', disabled: true },
+        { label: '耗材费用明细台账', id: 'material-fee', disabled: true },
+      ]},
+      { label: '合规与风险费用', symbol: '险', items: [
+        { label: '证照办理费用明细台账', id: 'license-fee', disabled: true },
+        { label: '保险费用明细台账', id: 'insurance-fee', disabled: true },
+        { label: '税费明细台账', id: 'tax-fee', disabled: true },
+        { label: '违章费用明细台账', id: 'violation-fee-ledger', disabled: true },
+        { label: '自费理赔费用明细台账', id: 'claim-fee', disabled: true },
+      ]},
+      { label: '流量费用', symbol: '流', items: [
+        { label: '流量套餐管理', id: 'data-plan', disabled: true },
+        { label: '流量费用明细', id: 'data-fee', disabled: true },
+      ]},
+      { label: 'AI推理服务费用', symbol: 'AI', items: [
+        { label: '模型套餐管理', id: 'model-plan', disabled: true },
+        { label: '模型费用明细', id: 'model-fee', disabled: true },
+      ]},
+      { label: '其他费用', symbol: '其', items: [
+        { label: '通行费明细台账', id: 'toll-fee', disabled: true },
+        { label: '停车费明细台账', id: 'parking-fee', disabled: true },
+        { label: '运输费明细台账', id: 'transport-fee', disabled: true },
+      ]},
+      { label: '费用分析', symbol: '析', items: [
+        { label: '加油费用分析', id: 'fuel-analysis', disabled: true },
+        { label: '加水费用分析', id: 'water-analysis', disabled: true },
+        { label: '充电费用分析', id: 'charge-analysis', disabled: true },
+        { label: '单车成本分析', id: 'vehicle-cost-analysis', disabled: true },
+      ]},
     ]},
-    { group: '费用管理', items: [
-      { label: '加油费明细台账', id: 'fuel-fee', href: '', disabled: true },
-      { label: '水费明细台账', id: 'water-fee', href: '', disabled: true },
-      { label: '电费明细台账', id: 'electric-fee', href: '', disabled: true },
-      { label: '通行费明细台账', id: 'toll-fee', href: '', disabled: true },
-      { label: '停车费明细台账', id: 'parking-fee', href: '', disabled: true },
-      { label: '运输费明细台账', id: 'transport-fee', href: '', disabled: true },
+    { id: 'exit', label: '退出管理', symbol: '退', groups: [
+      { label: '退出管理', symbol: '退', items: [
+        { label: '退出申请', id: 'exit-apply', disabled: true },
+        { label: '退出审批', id: 'exit-approve', disabled: true },
+        { label: '车辆处置', id: 'exit-dispose', disabled: true },
+        { label: '车辆归档', id: 'exit-archive', disabled: true },
+      ]},
     ]},
-    { group: '车辆退出管理', items: [
-      { label: '退出申请', id: 'exit-apply', href: '', disabled: true },
-      { label: '退出审批', id: 'exit-approve', href: '', disabled: true },
-      { label: '车辆处置', id: 'exit-dispose', href: '', disabled: true },
-      { label: '车辆归档', id: 'exit-archive', href: '', disabled: true },
+    { id: 'analysis', label: '数据分析', symbol: '数', groups: [
+      { label: '车辆报表', symbol: '报', items: [
+        { label: '行驶时长', id: 'driving-duration', disabled: true },
+        { label: '里程统计', id: 'mileage-statistics', disabled: true },
+        { label: '油耗分析', id: 'fuel-consumption', disabled: true },
+        { label: '电耗分析', id: 'energy-consumption', disabled: true },
+      ]},
+      { label: '车辆健康报告', symbol: '健', items: [{ label: '车辆健康报告', id: 'vehicle-health', disabled: true }] },
+      { label: '自动驾驶行为分析', symbol: '驾', items: [{ label: '自动驾驶行为分析', id: 'autonomous-analysis', disabled: true }] },
+      { label: '单车成本分析', symbol: '成', items: [{ label: '单车成本分析', id: 'single-vehicle-cost', disabled: true }] },
     ]},
-    { group: '系统管理', items: [
-      { label: '预警规则配置', id: 'alert-config', href: '', disabled: true },
-      { label: '维保策略管理', id: 'maintenance-strategy', href: '', disabled: true },
+    { id: 'system', label: '系统管理', symbol: '系', groups: [
+      { label: '规则配置', symbol: '规', items: [
+        { label: '预警规则配置', id: 'alert-config', disabled: true },
+        { label: '维保策略管理', id: 'maintenance-strategy', disabled: true },
+      ]},
+      { label: '权限管理', symbol: '权', items: [{ label: '权限管理', id: 'permission-manage', disabled: true }] },
     ]},
   ],
 
@@ -68,58 +138,62 @@ const Common = {
   initLayout(opts) {
     this._basePath = opts.basePath || '';
     this._activeMenuId = opts.activeMenuId;
-    if (opts.sidebarId) this.renderSidebar(opts.sidebarId, opts.activeMenuId);
-    // 顶部导航左侧仅展示当前模块名（H3 20px），不展示面包屑（规范二.5 强制）
+    this._headerOptions = opts.headerOptions || {};
+    this._activeTopId = this.getTopModuleByActive(opts.activeMenuId)?.id || this.menuConfig[0].id;
+    if (opts.sidebarId) this.renderSidebar(opts.sidebarId, opts.activeMenuId, this._activeTopId);
     if (opts.headerId) {
-      this.renderHeader(
-        opts.headerId,
-        opts.moduleName || this.getModuleName(opts.activeMenuId),
-        opts.headerOptions
-      );
+      this.renderHeader(opts.headerId, this._headerOptions);
+      this.mountAppShell(opts.headerId);
     }
+    this.restoreSidebarState();
     this.bindGlobalEvents();
   },
 
-  // ===== 由 activeMenuId 反查所属一级模块名 =====
-  getModuleName(activeMenuId) {
-    const group = this.menuConfig.find(g => g.items.some(i => i.id === activeMenuId));
-    return group ? group.group : '';
+  // ===== 由末级菜单反查所属一级模块 =====
+  getTopModuleByActive(activeMenuId) {
+    return this.menuConfig.find(module => module.groups.some(group => group.items.some(item => item.id === activeMenuId)));
   },
 
-  // ===== 侧边栏渲染 =====
-  renderSidebar(containerId, activeMenuId) {
+  getModuleName(activeMenuId) {
+    const module = this.getTopModuleByActive(activeMenuId);
+    return module ? module.label : '';
+  },
+
+  // ===== 获取一级模块内首个可访问的三级页面 =====
+  getFirstAvailableMenuItem(moduleId) {
+    const module = this.menuConfig.find(item => item.id === moduleId);
+    if (!module) return null;
+    for (const group of module.groups) {
+      const item = group.items.find(menuItem => !menuItem.disabled && menuItem.href);
+      if (item) return item;
+    }
+    return null;
+  },
+
+  // ===== 侧边栏渲染：二级分组 + 三级功能 =====
+  renderSidebar(containerId, activeMenuId, topModuleId) {
     const container = document.getElementById(containerId);
     if (!container) return;
+    const module = this.menuConfig.find(item => item.id === topModuleId) || this.menuConfig[0];
 
-    let html = '<div class="sidebar-logo">车辆管理系统</div>';
+    let html = '<div class="sidebar-brand"><span class="sidebar-brand-mark">车</span><span class="sidebar-brand-text">车辆管理系统</span></div>';
     html += '<nav class="sidebar-nav">';
-
-    this.menuConfig.forEach(group => {
-      // 判断当前组是否包含激活菜单项，若包含则默认展开
+    module.groups.forEach((group, index) => {
       const hasActive = group.items.some(item => item.id === activeMenuId);
-      const openCls = hasActive ? ' open' : '';
-      html += `<div class="menu-group${openCls}">`;
-      html += `<div class="menu-group-title" onclick="Common.toggleMenuGroup(this)">${group.group}<span class="group-arrow">▼</span></div>`;
-      html += `<div class="menu-group-items">`;
-      if (group.items.length === 0) {
-        html += `<div class="menu-item disabled">暂未开放</div>`;
-      } else {
-        group.items.forEach(item => {
-          const isDisabled = item.disabled;
-          const cls = [
-            'menu-item',
-            item.id === activeMenuId ? 'active' : '',
-            isDisabled ? 'disabled' : '',
-          ].filter(Boolean).join(' ');
-          const href = !isDisabled && item.href ? (this._basePath + item.href) : 'javascript:;';
-          const suffix = isDisabled ? '<span class="menu-item-badge">未开放</span>' : '';
-          html += `<a class="${cls}" href="${href}" data-id="${item.id}"${isDisabled ? ' onclick="return false;"' : ''}>${item.label}${suffix}</a>`;
-        });
-      }
+      const openCls = hasActive || (!activeMenuId && index === 0) ? ' open' : '';
+      html += `<div class="side-group${openCls}">`;
+      html += `<button class="side-group-toggle" type="button" onclick="Common.toggleMenuGroup(this)" title="${group.label}"><span class="side-group-symbol">${group.symbol}</span><span class="side-group-label">${group.label}</span><span class="group-arrow">⌄</span></button>`;
+      html += '<div class="side-group-items">';
+      group.items.forEach(item => {
+        const isDisabled = item.disabled;
+        const cls = ['side-menu-item', item.id === activeMenuId ? 'active' : '', isDisabled ? 'disabled' : ''].filter(Boolean).join(' ');
+        const href = !isDisabled && item.href ? (this._basePath + item.href) : 'javascript:;';
+        const suffix = isDisabled ? '<span class="menu-item-badge">未开放</span>' : '';
+        html += `<a class="${cls}" href="${href}" data-id="${item.id}"${isDisabled ? ' onclick="return false;"' : ''}>${item.label}${suffix}</a>`;
+      });
       html += '</div></div>';
     });
-
-    html += '</nav>';
+    html += '</nav><div class="sidebar-footer"><button class="sidebar-collapse" type="button" onclick="Common.toggleSidebar()" aria-label="收起或展开侧边导航" title="收起或展开侧边导航"><span class="collapse-icon">‹</span><span class="collapse-label">收起侧栏</span></button></div>';
     container.innerHTML = html;
   },
 
@@ -129,24 +203,76 @@ const Common = {
     group.classList.toggle('open');
   },
 
-  // ===== 头部渲染（规范二.5：禁止面包屑，左侧仅当前模块名 H3 20px）=====
-  renderHeader(containerId, moduleName, options) {
+  // ===== 顶部一级模块导航 =====
+  renderHeader(containerId, options) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let html = '<div class="header-left">';
-    if (moduleName) html += `<span class="header-module-name">${moduleName}</span>`;
-    html += '</div>';
-
-    html += '<div class="header-right">';
-    if (options && options.showProject !== false) {
+    let html = '<a class="header-brand" href="' + this._basePath + 'index.html" aria-label="返回页面索引"><span class="header-brand-mark">车</span><span class="header-brand-name">车辆管理系统</span></a>';
+    html += '<nav class="top-module-nav" aria-label="一级模块">';
+    this.menuConfig.forEach(module => {
+      const active = module.id === this._activeTopId ? ' active' : '';
+      html += `<button class="top-module-item${active}" type="button" onclick="Common.selectTopModule('${module.id}')">${module.label}</button>`;
+    });
+    html += '</nav><div class="header-right">';
+    if (!options || options.showProject !== false) {
       html += '<div class="project-select"><select><option>全部项目</option></select></div>';
     }
+    html += '<button class="header-icon-button" type="button" aria-label="通知" title="通知">○</button>';
     html += '<div class="user-info"><span class="user-avatar">管</span><span class="user-name">管理员</span></div>';
     html += '</div>';
 
     container.innerHTML = html;
-    container.className = 'page-header-bar';
+    container.className = 'global-header';
+  },
+
+  selectTopModule(moduleId) {
+    if (moduleId === this._activeTopId) return;
+    this._activeTopId = moduleId;
+    const module = this.menuConfig.find(item => item.id === moduleId);
+    const firstPage = this.getFirstAvailableMenuItem(moduleId);
+    if (firstPage) {
+      window.location.href = this._basePath + firstPage.href;
+      return;
+    }
+
+    // 当前模块尚无可访问页面时，保留模块切换并明确反馈，避免继续展示旧模块的选中状态。
+    this.renderSidebar('sidebar', null, moduleId);
+    this.renderHeader('header', this._headerOptions);
+    this.restoreSidebarState();
+    if (module) this.showToast(`${module.label}暂无可访问页面`, 'info');
+  },
+
+  mountAppShell(headerId) {
+    const header = document.getElementById(headerId);
+    const layout = header && header.closest('.layout');
+    if (!header || !layout || layout.parentElement.classList.contains('app-shell')) return;
+    const shell = document.createElement('div');
+    shell.className = 'app-shell';
+    layout.parentNode.insertBefore(shell, layout);
+    shell.appendChild(header);
+    shell.appendChild(layout);
+  },
+
+  restoreSidebarState() {
+    const shell = document.querySelector('.app-shell');
+    if (!shell) return;
+    try {
+      if (window.localStorage.getItem('vehicle-system-sidebar-collapsed') === '1') shell.classList.add('sidebar-collapsed');
+    } catch (e) {
+      // 静态文件或受限浏览器禁止本地存储时，使用默认展开状态。
+    }
+  },
+
+  toggleSidebar() {
+    const shell = document.querySelector('.app-shell');
+    if (!shell) return;
+    const collapsed = shell.classList.toggle('sidebar-collapsed');
+    try {
+      window.localStorage.setItem('vehicle-system-sidebar-collapsed', collapsed ? '1' : '0');
+    } catch (e) {
+      // 本地存储不可用不影响本次会话中的折叠交互。
+    }
   },
 
   // ===== 弹窗开关 & 全局交互（规范三.3：遮罩可关闭）=====

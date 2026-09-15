@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIM卡台账 - 车辆管理系统</title>
+<link rel="stylesheet" href="../components/common.css">
+<link rel="stylesheet" href="../components/fixed-table.css">
+<!-- 页面用途：SIM 卡台账列表，支持多条件筛选、选择与导出。交互逻辑：筛选/重置回到第一页；未选数据导出时二次确认。 -->
+<style>
+  .search-item { display:none; align-items:center; gap:8px; }
+  .search-item.visible { display:flex; }
+  .search-item label { color:var(--text-secondary); white-space:nowrap; }
+  .search-item input,.search-item select { width:178px; height:32px; padding:0 12px; border:1px solid var(--border-input); border-radius:var(--radius); background:#fff; color:var(--text-primary); outline:none; }
+  .search-item input:focus,.search-item select:focus { border-color:var(--primary); }
+  .search-actions { display:flex; align-items:center; gap:12px; margin-left:auto; }
+  .toggle-expand { color:var(--primary); cursor:pointer; white-space:nowrap; }
+  .meter { min-width:150px; display:flex; flex-direction:column; gap:5px; }
+  .meter-top { display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:var(--font-din); font-size:13px; white-space:nowrap; }
+  .meter-track { width:100%; height:7px; overflow:hidden; border-radius:4px; background:#edf2f7; }
+  .meter-fill { display:block; height:100%; border-radius:4px; background:#52c41a; }
+  .meter-fill.warn { background:#faad14; }.meter-fill.over { background:#ff4d4f; }
+  .over-text { color:var(--error); font-size:12px; }
+  .status-cell { display:flex; align-items:center; gap:6px; }
+  .table-wrapper { border-top:1px solid var(--border-color); }
+  .table-wrapper table { min-width:1640px; }
+  .pagination-row { display:flex; justify-content:flex-end; align-items:center; gap:12px; padding-top:16px; flex-wrap:wrap; }
+  .page-size { height:32px; border:1px solid var(--border-input); border-radius:var(--radius); padding:0 8px; background:#fff; }
+  .operation-links { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
+  @media(max-width:900px) { .search-actions { margin-left:0; }.content { padding:16px; } }
+</style>
+</head>
+<body>
+<div class="layout"><aside class="sidebar" id="sidebar"></aside><div class="main-area"><div id="header"></div><main class="content"><section class="page-container">
+  <div class="search-bar"><div class="search-row">
+    <div class="search-item visible"><label>IMSI</label><input id="f-imsi" placeholder="请输入 IMSI"></div>
+    <div class="search-item visible"><label>MSISDN</label><input id="f-msisdn" placeholder="请输入 MSISDN"></div>
+    <div class="search-item visible"><label>ICCID</label><input id="f-iccid" placeholder="请输入 ICCID"></div>
+    <div class="search-item"><label>运营商</label><select id="f-carrier"><option value="">全部</option><option>中国移动</option><option>中国联通</option><option>中国电信</option></select></div>
+    <div class="search-item"><label>卡状态</label><select id="f-status"><option value="">全部</option><option>正使用</option><option>停机</option><option>预销号</option><option>测试期</option><option>销号</option><option>沉默期</option><option>停机保号</option><option>未知</option><option>库存期</option></select></div>
+    <div class="search-item"><label>套餐</label><select id="f-plan"><option value="">全部</option><option>10G/月</option><option>30G/月</option><option>100G/月</option><option>300G/月</option></select></div>
+    <div class="search-item"><label>是否超套餐</label><select id="f-over"><option value="">全部</option><option value="yes">是</option><option value="no">否</option></select></div>
+    <div class="search-item"><label>VIN码</label><input id="f-vin" placeholder="请输入 VIN 码"></div>
+    <div class="search-item"><label>车牌号</label><input id="f-plate" placeholder="请输入车牌号"></div>
+    <div class="search-item"><label>归属项目</label><select id="f-project"><option value="">全部</option><option>鸠江项目</option><option>嘉定研发</option><option>镜湖区项目</option><option>椒北街道</option></select></div>
+    <div class="search-item"><label>硬件识别码</label><input id="f-device" placeholder="请输入硬件识别码"></div>
+    <div class="search-actions"><button class="btn btn-primary" type="button" onclick="search()">查询</button><button class="btn" type="button" onclick="resetFilters()">重置</button><a class="toggle-expand" id="toggle" onclick="toggleFilters()">展开 ▾</a></div>
+  </div></div>
+  <div class="action-bar"><button class="btn push-right" type="button" onclick="exportData()">导出</button></div>
+  <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1500"><table><thead><tr>
+    <th class="col-center" style="width:54px"><input id="check-all" type="checkbox" onchange="checkAll(this)"></th><th class="col-center">IMSI</th><th class="col-center">MSISDN</th><th class="col-center">ICCID</th><th class="col-left">运营商</th><th class="col-left">套餐</th><th class="col-left">当前周期流量使用情况</th><th class="col-center">VIN码</th><th class="col-left">车牌号</th><th class="col-left">归属项目</th><th class="col-left">硬件类型</th><th class="col-center">硬件识别码</th><th class="col-center">操作</th>
+  </tr></thead><tbody id="table-body"></tbody></table></div>
+  <div class="pagination-row"><span>共 <b id="total-count">0</b> 条</span><select class="page-size" id="page-size" onchange="changePageSize()"><option>10</option><option>20</option><option>50</option></select><span id="page-info">第 1 / 1 页</span><div id="pagination"></div></div>
+</section></main></div></div>
+<div class="modal-overlay" id="export-modal"><div class="modal-box confirm-box"><div class="modal-header"><h3>导出确认</h3><span class="modal-close" onclick="closeExport()">×</span></div><div class="confirm-body"><span class="confirm-icon">!</span><span class="confirm-text" id="export-message"></span></div><div class="modal-footer"><button class="btn" onclick="closeExport()">取消</button><button class="btn btn-primary" onclick="confirmExport()">确认导出</button></div></div></div>
+<script src="../components/common.js"></script><script src="../components/fixed-table.js"></script>
+<script>
+Common.initLayout({basePath:'../',sidebarId:'sidebar',activeMenuId:'sim-ledger',headerId:'header',headerOptions:{showProject:false}});
+const data=[
+ {id:1,imsi:'460041234567890',msisdn:'13916881234',iccid:'898600F202601001',carrier:'中国移动',plan:'10G/月',used:7.6,vin:'LSVAU2A39EN000001',plate:'京ADG090',project:'鸠江项目',type:'T-Box',device:'TBX-2026-001',status:'正使用'},
+ {id:2,imsi:'460011234567891',msisdn:'18602185678',iccid:'898601F202601002',carrier:'中国联通',plan:'100G/月',used:112.4,vin:'LSVAU2A39EN000002',plate:'京ADG091',project:'椒北街道',type:'视频盒子',device:'VBX-2026-018',status:'正使用'},
+ {id:3,imsi:'460031234567892',msisdn:'13311780192',iccid:'898603F202601003',carrier:'中国电信',plan:'30G/月',used:9.3,vin:'LSVAU2A39EN000003',plate:'浙JAR6538',project:'镜湖区项目',type:'DTU',device:'DTU-2026-027',status:'沉默期'},
+ {id:4,imsi:'460041234567893',msisdn:'13916885632',iccid:'898600F202601004',carrier:'中国移动',plan:'300G/月',used:238.7,vin:'LSVAU2A39EN000006',plate:'沪AAB124',project:'嘉定研发',type:'ADU',device:'ADU-2026-006',status:'正使用'},
+ {id:5,imsi:'460011234567894',msisdn:'18602183219',iccid:'898601F202601005',carrier:'中国联通',plan:'10G/月',used:1.2,vin:'LSVAU2A39EN000007',plate:'京ADJ055',project:'鸠江项目',type:'T-Box',device:'TBX-2026-032',status:'测试期'},
+ {id:6,imsi:'460031234567895',msisdn:'13311783654',iccid:'898603F202601006',carrier:'中国电信',plan:'30G/月',used:30.8,vin:'LSVAU2A39EN000009',plate:'粤AEE077',project:'鸠江项目',type:'视频盒子',device:'VBX-2026-041',status:'停机保号'},
+ {id:7,imsi:'460041234567896',msisdn:'13916883456',iccid:'898600F202601007',carrier:'中国移动',plan:'100G/月',used:66.1,vin:'LSVAU2A39EN000011',plate:'京ADK033',project:'镜湖区项目',type:'T-Box',device:'TBX-2026-048',status:'正使用'},
+ {id:8,imsi:'460011234567897',msisdn:'18602189876',iccid:'898601F202601008',carrier:'中国联通',plan:'10G/月',used:0,vin:'',plate:'',project:'',type:'',device:'',status:'库存期'},
+ {id:9,imsi:'460031234567898',msisdn:'13311780987',iccid:'898603F202601009',carrier:'中国电信',plan:'30G/月',used:17.5,vin:'LSVAU2A39EN000005',plate:'浙JDB1062',project:'镜湖区项目',type:'DTU',device:'DTU-2026-054',status:'停机'},
+ {id:10,imsi:'460041234567899',msisdn:'13916887890',iccid:'898600F202601010',carrier:'中国移动',plan:'100G/月',used:94.8,vin:'LSVAU2A39EN000008',plate:'京ADJ056',project:'椒北街道',type:'T-Box',device:'TBX-2026-057',status:'预销号'},
+ {id:11,imsi:'460011234567800',msisdn:'18602184567',iccid:'898601F202601011',carrier:'中国联通',plan:'10G/月',used:4.3,vin:'LSVAU2A39EN000010',plate:'粤AEE078',project:'嘉定研发',type:'视频盒子',device:'VBX-2026-063',status:'未知'},
+ {id:12,imsi:'460031234567801',msisdn:'13311781234',iccid:'898603F202601012',carrier:'中国电信',plan:'300G/月',used:263.4,vin:'LSVAU2A39EN000012',plate:'京ADG092',project:'鸠江项目',type:'ADU',device:'ADU-2026-012',status:'正使用'}];
+let filtered=[...data],page=1,size=10,selected=new Set(),expanded=false;
+const quota=p=>parseInt(p,10);
+function tag(s){const m={'正使用':'tag-green','测试期':'tag-blue','沉默期':'tag-orange','停机':'tag-red','停机保号':'tag-purple','预销号':'tag-yellow','库存期':'tag-default','未知':'tag-default'};return `<span class="tag ${m[s]||'tag-default'}">${s}</span>`}
+function render(){const rows=filtered.slice((page-1)*size,page*size),body=document.getElementById('table-body');body.innerHTML=rows.map(x=>{const q=quota(x.plan),p=Math.round(x.used/q*100),c=p>100?'over':p>80?'warn':'',w=Math.min(p,100);return `<tr class="${selected.has(x.id)?'selected':''}"><td class="col-center"><input type="checkbox" ${selected.has(x.id)?'checked':''} onchange="toggleOne(${x.id},this.checked)"></td><td class="col-center num">${x.imsi}</td><td class="col-center num">${x.msisdn}</td><td class="col-center num">${x.iccid}</td><td>${x.carrier}</td><td>${x.plan}</td><td><div class="meter"><div class="meter-top"><span>${x.used.toFixed(1)}G / ${q}G</span>${p>100?'<span class="over-text">超套餐</span>':`<span>${p}%</span>`}</div><div class="meter-track"><i class="meter-fill ${c}" style="width:${w}%"></i></div></div></td><td class="col-center num">${x.vin||'--'}</td><td>${x.plate||'--'}</td><td>${x.project||'--'}</td><td>${x.type||'--'}</td><td class="col-center num">${x.device||'--'}</td><td class="col-center"><span class="operation-links"><a class="btn-link" href="./sim-card-detail.html?imsi=${x.imsi}">查看</a><a class="btn-link" href="./sim-card-maintain.html?imsi=${x.imsi}">信息维护</a></span></td></tr>`}).join('');document.getElementById('check-all').checked=rows.length>0&&rows.every(x=>selected.has(x.id));Common.renderPagination({total:filtered.length,currentPage:page,pageSize:size,containerId:'pagination',infoId:'total-count',pageInfoId:'page-info',onPageChange:p=>{page=p;render()}});}
+function filterText(id,key,x){const v=document.getElementById(id).value.trim().toLowerCase();return !v||String(x[key]).toLowerCase().includes(v)}
+function search(){filtered=data.filter(x=>filterText('f-imsi','imsi',x)&&filterText('f-msisdn','msisdn',x)&&filterText('f-iccid','iccid',x)&&filterText('f-vin','vin',x)&&filterText('f-plate','plate',x)&&filterText('f-device','device',x)&&(!document.getElementById('f-carrier').value||x.carrier===document.getElementById('f-carrier').value)&&(!document.getElementById('f-status').value||x.status===document.getElementById('f-status').value)&&(!document.getElementById('f-plan').value||x.plan===document.getElementById('f-plan').value)&&(!document.getElementById('f-project').value||x.project===document.getElementById('f-project').value)&&(!document.getElementById('f-over').value||(document.getElementById('f-over').value==='yes'?x.used>quota(x.plan):x.used<=quota(x.plan))));page=1;selected.clear();render()}
+function resetFilters(){document.querySelectorAll('.search-item input,.search-item select').forEach(x=>x.value='');filtered=[...data];page=1;selected.clear();render()}
+function toggleFilters(){expanded=!expanded;document.querySelectorAll('.search-item:not(.visible)').forEach(x=>x.classList.toggle('visible',expanded));document.getElementById('toggle').textContent=expanded?'收起 ▴':'展开 ▾'}
+function checkAll(el){filtered.slice((page-1)*size,page*size).forEach(x=>el.checked?selected.add(x.id):selected.delete(x.id));render()}function toggleOne(id,on){on?selected.add(id):selected.delete(id);render()}function changePageSize(){size=+document.getElementById('page-size').value;page=1;render()}
+function exportData(){document.getElementById('export-message').textContent=selected.size?`确认导出已选中的 ${selected.size} 条 SIM 卡台账数据？`:`确认导出当前查询条件下的全部 ${filtered.length} 条 SIM 卡台账数据？`;Common.openModal('export-modal')}function closeExport(){Common.closeModal('export-modal')}function confirmExport(){closeExport();Common.showToast('已生成导出文件（原型演示）','success')}
+render();
+</script></body></html>

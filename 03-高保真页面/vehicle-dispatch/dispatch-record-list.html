@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>调度任务管理 - 列表页</title>
     <link rel="stylesheet" href="../components/common.css">
+    <link rel="stylesheet" href="../components/fixed-table.css">
     <link rel="stylesheet" href="../components/form.css">
     <!--
       调度管理 - 调度记录管理列表页
@@ -197,7 +198,7 @@
                 </div>
 
                 <!-- 数据列表（对齐规则，规范二.3：文本列左对齐、数字列右对齐、编号/时间列居中、复选框与操作列居中） -->
-                <div class="table-wrapper">
+                <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1420px">
                     <table>
                         <thead>
                             <tr>
@@ -481,6 +482,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/fixed-table.js"></script>
 <script>
 // ===== 初始化布局 =====
 Common.initLayout({

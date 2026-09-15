@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>车辆建档 - 列表页</title>
     <link rel="stylesheet" href="../components/common.css">
+    <link rel="stylesheet" href="../components/fixed-table.css">
     <!--
       车辆建档 - 列表页
       页面用途：车辆建档信息的分页列表，支持条件筛选、单个录入、批量导入与导出
@@ -110,12 +111,11 @@
 
                 <!-- 数据列表（与建档PRD 3.1.4节字段一致）
                      对齐规则（规范二.3）：文本列左对齐、固定宽度编码列居中、操作/复选框列居中 -->
-                <div class="table-wrapper">
+                <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1280px">
                     <table>
                         <thead>
                             <tr>
                                 <th class="col-center" style="width:50px"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
-                                <th class="col-center" style="width:70px">序号</th>
                                 <th class="col-center" style="width:180px">车架号</th>
                                 <th class="ellipsis" style="width:200px">车型名称（中）</th>
                                 <th class="col-center" style="width:120px">车牌号</th>
@@ -155,6 +155,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/fixed-table.js"></script>
 <script>
 Common.initLayout({
     basePath: '../',
@@ -203,10 +204,8 @@ function renderTable() {
         const ck = selectedIds.has(item.id) ? 'checked' : '';
         const selCls = selectedIds.has(item.id) ? ' class="selected"' : '';
         const tagCls = statusTagClass[item.status] || 'tag-default';
-        const rowNum = start + idx + 1;
         tbody.innerHTML += `<tr${selCls}>
             <td class="col-center"><input type="checkbox" data-id="${item.id}" ${ck} onchange="toggleCheck(${item.id},this)"></td>
-            <td class="col-center num">${rowNum}</td>
             <td class="col-center ellipsis" title="${item.vin}">${item.vin}</td>
             <td class="ellipsis" title="${item.model_name}">${item.model_name}</td>
             <td class="col-center">${item.plate_no}</td>
@@ -216,7 +215,7 @@ function renderTable() {
             <td><span class="tag ${tagCls}">${item.status}</span></td>
             <td class="ellipsis" title="${item.project || '—'}">${item.project || '—'}</td>
             <td>${item.creator}</td>
-            <td class="col-center num">${item.create_time}</td>
+            <td class="col-center">${item.create_time}</td>
             <td class="col-center">
                 <a class="action-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${item.id}">详情</a>
                 <a class="action-link danger" onclick="deleteItem(${item.id})">删除</a>
