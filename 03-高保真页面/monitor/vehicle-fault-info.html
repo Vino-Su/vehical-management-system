@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车辆故障信息 - 运行监管</title>
+    <link rel="stylesheet" href="../components/common.css">
+    <link rel="stylesheet" href="../components/fixed-table.css">
+    <!--
+      页面用途：展示车辆主动上报的软硬件故障码数据。
+      核心功能：多条件筛选、复选与当前页全选、分页、按查询结果或选中记录导出。
+      交互逻辑：查询和重置回到第一页；未选择记录时导出需二次确认；弹窗支持遮罩与 ESC 关闭。
+    -->
+    <style>
+        .fault-page { min-width: 0; }
+        .filter-bar { margin-bottom: 24px !important; padding: 0 !important; }
+        .filter-bar .filter-row { align-items: flex-end; }
+        .filter-bar .filter-item label { color: var(--text-secondary); }
+        .filter-control { width: 176px; }
+        .filter-control--wide { width: 206px; }
+        .date-range { display: inline-flex; align-items: center; gap: 8px; }
+        .date-range .ant-input { width: 158px; }
+        .date-separator { color: var(--text-disabled); }
+        .table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+        .table-summary { display: flex; align-items: center; gap: 8px; min-height: 32px; color: var(--text-secondary); }
+        .selected-count { display: none; align-items: center; height: 28px; padding: 0 10px; border-radius: var(--radius-sm); background: var(--primary-bg); color: var(--primary); font-size: 13px; }
+        .selected-count.is-visible { display: inline-flex; }
+        .export-button-icon { width: 15px; height: 15px; display: inline-block; position: relative; }
+        .export-button-icon::before { content: ""; position: absolute; left: 6px; top: 0; width: 2px; height: 9px; background: currentColor; }
+        .export-button-icon::after { content: "↓"; position: absolute; left: 2px; top: -6px; font-size: 15px; line-height: 16px; }
+        .fault-table th, .fault-table td { font-variant-numeric: tabular-nums; }
+        .fault-table .fault-code { color: #d4380d; font-family: var(--font-number); font-weight: 600; }
+        .fault-definition { max-width: 320px; }
+        .empty-row td { height: 240px !important; text-align: center; }
+        .empty-state { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text-secondary); }
+        .empty-mark { width: 52px; height: 38px; position: relative; border: 1px solid #d9d9d9; border-radius: 4px; background: #fafafa; }
+        .empty-mark::before { content: ""; position: absolute; left: 9px; right: 9px; top: 12px; height: 1px; background: #d9d9d9; box-shadow: 0 7px 0 #e5e5e5; }
+        .empty-text { font-size: 14px; }
+        input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+        @media (max-width: 1500px) {
+            .filter-control { width: 156px; }
+            .filter-control--wide { width: 184px; }
+            .filter-bar[data-progressive-filter] .filter-row.filter-primary { gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+        <div id="header"></div>
+        <main class="content">
+            <section class="page-container fault-page" aria-label="车辆故障信息列表">
+                <div class="filter-bar" data-progressive-filter>
+                    <div class="filter-row filter-primary">
+                        <div class="filter-item">
+                            <label for="filterVin">VIN 码</label>
+                            <input class="ant-input filter-control" id="filterVin" type="text" placeholder="请输入 VIN 码">
+                        </div>
+                        <div class="filter-item">
+                            <label for="filterPlate">车牌号</label>
+                            <input class="ant-input filter-control" id="filterPlate" type="text" placeholder="请输入车牌号">
+                        </div>
+                        <div class="filter-item">
+                            <label for="filterIot">网联编号</label>
+                            <input class="ant-input filter-control" id="filterIot" type="text" placeholder="请输入网联编号">
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn btn-primary" type="button" onclick="searchFaults()">查询</button>
+                            <button class="btn" type="button" onclick="resetFilters()">重置</button>
+                        </div>
+                        <button class="filter-more-toggle" type="button" aria-expanded="false">
+                            <span class="filter-more-text">展开更多</span>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"></path></svg>
+                        </button>
+                    </div>
+                    <div class="filter-row filter-extra">
+                        <div class="filter-item">
+                            <label for="filterProject">所属项目</label>
+                            <select class="ant-input filter-control" id="filterProject">
+                                <option value="">全部项目</option>
+                                <option>嘉定研发</option>
+                                <option>椒北街道</option>
+                                <option>经开东区项目</option>
+                                <option>镜湖区项目</option>
+                                <option>鸠江江北项目</option>
+                                <option>鸠江开发区项目</option>
+                                <option>鸠江项目</option>
+                                <option>陵水项目</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label for="filterCode">故障码</label>
+                            <input class="ant-input filter-control" id="filterCode" type="text" placeholder="请输入故障码">
+                        </div>
+                        <div class="filter-item">
+                            <label for="filterStart">故障上报时间</label>
+                            <div class="date-range">
+                                <input class="ant-input" id="filterStart" type="datetime-local" aria-label="故障上报开始时间">
+                                <span class="date-separator">至</span>
+                                <input class="ant-input" id="filterEnd" type="datetime-local" aria-label="故障上报结束时间">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-toolbar">
+                    <div class="table-summary">
+                        <span class="selected-count" id="selectedCount">已选择 0 条</span>
+                    </div>
+                    <button class="btn" type="button" onclick="exportFaults()" title="导出车辆故障信息">
+                        <span class="export-button-icon" aria-hidden="true"></span>
+                        导出
+                    </button>
+                </div>
+
+                <div class="table-wrapper fixed-table" id="faultTableWrapper" data-fixed-first="1" data-fixed-min-width="1300px">
+                    <table class="fault-table" id="faultTable">
+                        <thead>
+                            <tr>
+                                <th class="col-center" style="width:56px"><input id="checkAll" type="checkbox" aria-label="全选当前页" onchange="toggleCurrentPage(this)"></th>
+                                <th class="col-center" style="width:196px">VIN 码</th>
+                                <th class="col-center" style="width:126px">车牌号</th>
+                                <th class="col-center" style="width:110px">网联编号</th>
+                                <th style="width:170px">所属项目</th>
+                                <th class="col-center" style="width:132px">故障码</th>
+                                <th style="width:330px">故障定义</th>
+                                <th class="col-center" style="width:184px">故障上报时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="faultTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-area">
+                    <div class="pagination-left">
+                        <div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div>
+                        <span class="pagination-pages" id="pageInfo">第 1 / 1 页</span>
+                    </div>
+                    <div id="pagination"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script src="../components/common.js"></script>
+<script src="../components/pagination-component.js"></script>
+<script src="../components/filter-component.js"></script>
+<script src="../components/export-component.js"></script>
+<script src="../components/fixed-table.js"></script>
+<script>
+Common.initLayout({
+    basePath: '../',
+    sidebarId: 'sidebar',
+    activeMenuId: 'vehicle-fault',
+    headerId: 'header',
+    headerOptions: { showProject: false }
+});
+
+const faultRecords = [
+    { id: 1, vin: 'LSVAU2A39EN000001', plate: '京ADG090', iot: '14156', project: '鸠江项目', code: 'BMS-P0A80', definition: '动力电池组容量衰减异常，请检查电芯一致性', reportTime: '2026-09-15 09:42:18' },
+    { id: 2, vin: 'LSVAU2A39EN000002', plate: '浙JAR6538', iot: '11527', project: '椒北街道', code: 'VCU-U0100', definition: '整车控制器与动力系统通信中断', reportTime: '2026-09-15 09:18:36' },
+    { id: 3, vin: 'LSVAU2A39EN000003', plate: '浙JDB1062', iot: '14158', project: '镜湖区项目', code: 'EPS-C1001', definition: '电动助力转向扭矩传感器信号异常', reportTime: '2026-09-15 08:56:04' },
+    { id: 4, vin: 'LSVAU2A39EN000004', plate: '皖BDF218', iot: '11530', project: '经开东区项目', code: 'MOT-P0219', definition: '驱动电机控制器温度过高', reportTime: '2026-09-15 08:23:51' },
+    { id: 5, vin: 'LSVAU2A39EN000005', plate: '皖BDG667', iot: '14159', project: '鸠江江北项目', code: 'ABS-C0035', definition: '左前轮速传感器信号丢失', reportTime: '2026-09-14 17:48:22' },
+    { id: 6, vin: 'LSVAU2A39EN000006', plate: '沪ADP520', iot: '11532', project: '嘉定研发', code: 'BMS-P0AA6', definition: '高压系统绝缘电阻低于安全阈值', reportTime: '2026-09-14 16:35:47' },
+    { id: 7, vin: 'LSVAU2A39EN000007', plate: '京ADJ055', iot: '14160', project: '鸠江开发区项目', code: 'DCU-U0121', definition: '驾驶域控制器与制动控制器通信异常', reportTime: '2026-09-14 15:09:13' },
+    { id: 8, vin: 'LSVAU2A39EN000008', plate: '京ADJ056', iot: '11535', project: '陵水项目', code: 'OBC-P1A15', definition: '车载充电机交流输入电压异常', reportTime: '2026-09-14 13:27:40' },
+    { id: 9, vin: 'LSVAU2A39EN000009', plate: '粤AEE077', iot: '14161', project: '鸠江项目', code: 'BMS-P1A10', definition: '动力电池冷却液温度传感器故障', reportTime: '2026-09-14 11:14:08' },
+    { id: 10, vin: 'LSVAU2A39EN000010', plate: '粤AEE078', iot: '11538', project: '椒北街道', code: 'TCU-P0700', definition: '变速控制系统请求点亮故障指示灯', reportTime: '2026-09-13 18:52:29' },
+    { id: 11, vin: 'LSVAU2A39EN000011', plate: '京ADK033', iot: '14162', project: '镜湖区项目', code: 'ADAS-C1102', definition: '前视摄像头标定参数异常', reportTime: '2026-09-13 16:44:15' },
+    { id: 12, vin: 'LSVAU2A39EN000012', plate: '京ADG092', iot: '11540', project: '鸠江江北项目', code: 'LIDAR-U1003', definition: '激光雷达点云数据帧率异常', reportTime: '2026-09-13 14:20:06' },
+    { id: 13, vin: 'LSVAU2A39EN000013', plate: '皖BDS306', iot: '14165', project: '经开东区项目', code: 'VCU-P0606', definition: '整车控制器处理器自检失败', reportTime: '2026-09-13 10:05:38' },
+    { id: 14, vin: 'LSVAU2A39EN000014', plate: '沪ADF168', iot: '11543', project: '嘉定研发', code: 'GNSS-U1200', definition: '高精定位模块差分数据接收超时', reportTime: '2026-09-12 17:36:42' },
+    { id: 15, vin: 'LSVAU2A39EN000015', plate: '琼ADF520', iot: '14168', project: '陵水项目', code: 'BMS-P0A7F', definition: '动力电池系统健康状态低于预警值', reportTime: '2026-09-12 15:12:54' },
+    { id: 16, vin: 'LSVAU2A39EN000016', plate: '皖BDT118', iot: '11546', project: '鸠江开发区项目', code: 'EBS-C0040', definition: '右前轮制动压力传感器信号异常', reportTime: '2026-09-12 11:48:19' },
+    { id: 17, vin: 'LSVAU2A39EN000017', plate: '皖BDF709', iot: '14170', project: '鸠江项目', code: 'MOT-P0A3C', definition: '驱动电机逆变器过温保护', reportTime: '2026-09-11 16:30:11' },
+    { id: 18, vin: 'LSVAU2A39EN000018', plate: '浙JDC508', iot: '11549', project: '椒北街道', code: 'BCM-B1101', definition: '车身控制模块供电电压偏低', reportTime: '2026-09-11 14:06:33' },
+    { id: 19, vin: 'LSVAU2A39EN000019', plate: '皖BDU225', iot: '14173', project: '镜湖区项目', code: 'ADAS-U3000', definition: '自动驾驶域控制器内部存储异常', reportTime: '2026-09-11 10:29:47' },
+    { id: 20, vin: 'LSVAU2A39EN000020', plate: '皖BDV660', iot: '11552', project: '鸠江江北项目', code: 'PDU-P1B02', definition: '高压配电单元主接触器粘连', reportTime: '2026-09-10 17:55:20' },
+    { id: 21, vin: 'LSVAU2A39EN000021', plate: '沪ADG315', iot: '14176', project: '嘉定研发', code: 'IMU-C2100', definition: '惯性测量单元零偏超出标定范围', reportTime: '2026-09-10 13:18:09' },
+    { id: 22, vin: 'LSVAU2A39EN000022', plate: '琼ADH907', iot: '11555', project: '陵水项目', code: 'OBC-P0D26', definition: '车载充电机直流输出电流过高', reportTime: '2026-09-09 16:42:57' },
+    { id: 23, vin: 'LSVAU2A39EN000023', plate: '皖BDX102', iot: '14179', project: '经开东区项目', code: 'EPS-C1012', definition: '转向执行器目标角度跟随偏差过大', reportTime: '2026-09-09 09:27:34' }
+];
+
+let filteredRecords = faultRecords.slice();
+let currentPage = 1;
+let pageSize = 10;
+let pager = null;
+const selectedIds = new Set();
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>'"]/g, function (char) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char];
+    });
+}
+
+function currentPageRecords() {
+    const start = (currentPage - 1) * pageSize;
+    return filteredRecords.slice(start, start + pageSize);
+}
+
+function renderTable() {
+    const rows = currentPageRecords();
+    const tbody = document.getElementById('faultTableBody');
+    if (!rows.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8"><div class="empty-state"><span class="empty-mark" aria-hidden="true"></span><span class="empty-text">暂无符合条件的故障数据</span></div></td></tr>';
+    } else {
+        tbody.innerHTML = rows.map(function (item) {
+            const checked = selectedIds.has(item.id);
+            return '<tr' + (checked ? ' class="selected"' : '') + '>' +
+                '<td class="col-center"><input type="checkbox" aria-label="选择 ' + escapeHtml(item.vin) + '" data-id="' + item.id + '" ' + (checked ? 'checked' : '') + ' onchange="toggleRecord(' + item.id + ', this)"></td>' +
+                '<td class="col-center ellipsis" title="' + escapeHtml(item.vin) + '">' + escapeHtml(item.vin) + '</td>' +
+                '<td class="col-center">' + escapeHtml(item.plate) + '</td>' +
+                '<td class="col-center num">' + escapeHtml(item.iot) + '</td>' +
+                '<td class="ellipsis" title="' + escapeHtml(item.project) + '">' + escapeHtml(item.project) + '</td>' +
+                '<td class="col-center fault-code">' + escapeHtml(item.code) + '</td>' +
+                '<td class="fault-definition ellipsis" title="' + escapeHtml(item.definition) + '">' + escapeHtml(item.definition) + '</td>' +
+                '<td class="col-center num">' + escapeHtml(item.reportTime) + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+    updateSelectionState();
+    renderPagination();
+    if (window.FixedTable) requestAnimationFrame(function () { FixedTable.refresh('#faultTableWrapper'); });
+}
+
+function renderPagination() {
+    document.getElementById('totalCount').textContent = filteredRecords.length;
+    const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
+    if (currentPage > totalPages) currentPage = totalPages;
+    document.getElementById('pageInfo').textContent = '第 ' + currentPage + ' / ' + totalPages + ' 页';
+    if (pager) pager.destroy();
+    pager = new Pagination({
+        container: 'pagination',
+        currentPage: currentPage,
+        pageSize: pageSize,
+        pageSizeOptions: [10, 20, 50, 100],
+        showStats: false,
+        showPageSize: true,
+        onPageChange: function (page, size) {
+            currentPage = page;
+            pageSize = size;
+            renderTable();
+        },
+        onPageSizeChange: function (size) {
+            pageSize = size;
+            currentPage = 1;
+        }
+    });
+    pager.setTotal(filteredRecords.length);
+}
+
+function toggleRecord(id, checkbox) {
+    if (checkbox.checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+    renderTable();
+}
+
+function toggleCurrentPage(checkbox) {
+    currentPageRecords().forEach(function (item) {
+        if (checkbox.checked) selectedIds.add(item.id);
+        else selectedIds.delete(item.id);
+    });
+    renderTable();
+}
+
+function updateSelectionState() {
+    const rows = currentPageRecords();
+    const selectedOnPage = rows.filter(function (item) { return selectedIds.has(item.id); }).length;
+    const checkAll = document.getElementById('checkAll');
+    checkAll.checked = rows.length > 0 && selectedOnPage === rows.length;
+    checkAll.indeterminate = selectedOnPage > 0 && selectedOnPage < rows.length;
+    const count = document.getElementById('selectedCount');
+    count.textContent = '已选择 ' + selectedIds.size + ' 条';
+    count.classList.toggle('is-visible', selectedIds.size > 0);
+}
+
+function searchFaults() {
+    const vin = document.getElementById('filterVin').value.trim().toLowerCase();
+    const plate = document.getElementById('filterPlate').value.trim().toLowerCase();
+    const iot = document.getElementById('filterIot').value.trim().toLowerCase();
+    const project = document.getElementById('filterProject').value;
+    const code = document.getElementById('filterCode').value.trim().toLowerCase();
+    const start = document.getElementById('filterStart').value;
+    const end = document.getElementById('filterEnd').value;
+    if (start && end && start > end) {
+        Common.showToast('故障上报开始时间不能晚于结束时间', 'warning');
+        return;
+    }
+    filteredRecords = faultRecords.filter(function (item) {
+        const comparableTime = item.reportTime.replace(' ', 'T').slice(0, 16);
+        return (!vin || item.vin.toLowerCase().includes(vin)) &&
+            (!plate || item.plate.toLowerCase().includes(plate)) &&
+            (!iot || item.iot.toLowerCase().includes(iot)) &&
+            (!project || item.project === project) &&
+            (!code || item.code.toLowerCase().includes(code)) &&
+            (!start || comparableTime >= start) &&
+            (!end || comparableTime <= end);
+    });
+    currentPage = 1;
+    selectedIds.clear();
+    renderTable();
+    Common.showToast('查询完成，共 ' + filteredRecords.length + ' 条数据', 'success');
+}
+
+function resetFilters() {
+    ['filterVin', 'filterPlate', 'filterIot', 'filterCode', 'filterStart', 'filterEnd'].forEach(function (id) {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('filterProject').value = '';
+    filteredRecords = faultRecords.slice();
+    currentPage = 1;
+    selectedIds.clear();
+    renderTable();
+    Common.showToast('筛选条件已重置', 'success');
+}
+
+function downloadRecords(records, scopeText) {
+    if (!records.length) {
+        Common.showToast('当前没有可导出的数据', 'warning');
+        return;
+    }
+    exportCSV({
+        filename: '车辆故障信息_' + new Date().toISOString().slice(0, 10) + '.csv',
+        headers: ['VIN 码', '车牌号', '网联编号', '所属项目', '故障码', '故障定义', '故障上报时间'],
+        rows: records.map(function (item) {
+            return [item.vin, item.plate, item.iot, item.project, item.code, item.definition, item.reportTime];
+        })
+    });
+    Common.showToast('已导出' + scopeText + '（共 ' + records.length + ' 条）', 'success');
+}
+
+function exportFaults() {
+    if (selectedIds.size) {
+        const selected = faultRecords.filter(function (item) { return selectedIds.has(item.id); });
+        downloadRecords(selected, '选中数据');
+        return;
+    }
+    if (!filteredRecords.length) {
+        Common.showToast('当前查询结果为空，暂无可导出数据', 'warning');
+        return;
+    }
+    Common.confirm({
+        title: '导出确认',
+        content: '当前未勾选记录，将导出查询条件下的全部 <strong>' + filteredRecords.length + '</strong> 条故障数据，是否继续？',
+        okText: '确认导出',
+        cancelText: '取消',
+        onOk: function () { downloadRecords(filteredRecords, '当前查询结果'); }
+    });
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' && event.target.closest('.filter-bar')) searchFaults();
+});
+
+renderTable();
+</script>
+</body>
+</html>

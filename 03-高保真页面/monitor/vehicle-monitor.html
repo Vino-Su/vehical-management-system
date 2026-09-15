@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>车辆监管一张图 - 车辆管理系统</title>
+  <link rel="stylesheet" href="../components/common.css">
+  <link rel="stylesheet" href="../components/vendor/leaflet.css">
+  <style>
+    :root { --parallel: #52c41a; --auto: #1677ff; }
+    html, body { overflow: hidden; }
+    .monitor-content { padding: 0 !important; min-height: 0; overflow: hidden; }
+    .monitor-stage { display: flex; height: 100%; min-height: 0; position: relative; background: #dbe7ef; }
+    .vehicle-drawer { width: 360px; min-width: 360px; height: 100%; display: flex; flex-direction: column; background: #fff; border-right: 1px solid var(--border-color); z-index: 800; transition: width .22s ease, min-width .22s ease; }
+    .vehicle-drawer.collapsed { width: 0; min-width: 0; overflow: visible; border-right: 0; }
+    .drawer-head { height: 56px; min-height: 56px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+    .drawer-title { font-size: 16px; line-height: 24px; font-weight: 600; }
+    .drawer-count { color: var(--text-secondary); font: 12px/18px var(--font-number); }
+    .drawer-tabs { height: 42px; display: flex; border-bottom: 1px solid var(--border-color); }
+    .drawer-tab { flex: 1; border: 0; border-bottom: 2px solid transparent; background: #fff; color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+    .drawer-tab.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 500; }
+    .drawer-toggle { position: absolute; top: 16px; left: 344px; z-index: 1000; width: 28px; height: 28px; border: 1px solid var(--border-color); border-radius: 0 6px 6px 0; background: #fff; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08); transition: left .22s ease; }
+    .vehicle-drawer.collapsed + .drawer-toggle { left: 0; }
+    .drawer-toggle:hover { color: var(--primary); }
+    .drawer-filter { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
+    .filter-line { display: flex; gap: 8px; }
+    .filter-line input { flex: 1; height: 32px; min-width: 0; padding: 0 10px; border: 1px solid var(--border-input); border-radius: var(--radius); outline: none; }
+    .filter-line input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1); }
+    .filter-more { margin-top: 10px; display: none; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .filter-more input, .filter-more select { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--border-input); border-radius: var(--radius); color: var(--text-primary); background: #fff; }
+    .filter-more.open { display: grid; }
+    .filter-foot { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .filter-link { border: 0; padding: 0; background: transparent; color: var(--primary); cursor: pointer; font-size: 12px; }
+    .filter-actions { display: flex; gap: 8px; }
+    .group-switch { height: 48px; min-height: 48px; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+    .segmented { display: inline-flex; padding: 2px; border-radius: var(--radius); background: var(--bg-layout); }
+    .segment-btn { height: 28px; padding: 0 12px; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+    .segment-btn.active { color: var(--primary); background: #fff; box-shadow: var(--shadow-sm); font-weight: 500; }
+    .group-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+    .group + .group { margin-top: 4px; }
+    .group-head { width: 100%; height: 36px; padding: 0 8px; display: flex; align-items: center; gap: 6px; border: 0; border-radius: var(--radius); background: transparent; color: var(--text-primary); text-align: left; cursor: pointer; }
+    .group-head:hover { background: var(--bg-hover); }
+    .group-arrow { width: 16px; color: var(--text-secondary); transition: transform .2s; }
+    .group.collapsed .group-arrow { transform: rotate(-90deg); }
+    .group-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .group-count { padding: 0 7px; border-radius: 10px; background: #f2f3f5; color: var(--text-secondary); font: 12px/20px var(--font-number); }
+    .group.collapsed .group-items { display: none; }
+    .vehicle-row { width: 100%; min-height: 64px; margin: 3px 0; padding: 8px 8px 8px 12px; display: flex; align-items: center; gap: 9px; border: 1px solid transparent; border-radius: var(--radius); background: #fff; text-align: left; cursor: pointer; }
+    .vehicle-row:hover { background: var(--bg-hover); }
+    .vehicle-row.active { border-color: #91caff; background: var(--primary-bg); }
+    .row-mode { width: 8px; height: 40px; flex: 0 0 auto; border-radius: 4px; background: var(--parallel); }
+    .row-mode.auto { background: var(--auto); }
+    .row-mode.manual { background: #8c8c8c; }
+    .row-copy { flex: 1; min-width: 0; }
+    .row-primary { display: flex; align-items: center; gap: 7px; min-width: 0; }
+    .row-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .row-status { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--success); }
+    .row-status.offline { background: #bfbfbf; }
+    .row-meta { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font: 12px/18px var(--font-number); }
+    .row-tools { display: flex; gap: 4px; }
+    .icon-btn { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+    .icon-btn svg { width: 15px; height: 15px; fill: currentColor; }
+    .icon-btn:hover { color: var(--primary); background: #e6f4ff; }
+    .map-wrap { flex: 1; min-width: 0; position: relative; }
+    #map { width: 100%; height: 100%; background: #dbe7ef; }
+    .map-toolbar { position: absolute; top: 16px; right: 16px; z-index: 900; width: min(520px, calc(100% - 32px)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .map-search { width: 100%; max-width: 360px; height: 36px; display: flex; align-items: center; padding: 0 6px 0 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: rgba(255,255,255,.96); box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+    .map-search input { flex: 1; min-width: 0; height: 30px; border: 0; outline: 0; background: transparent; color: var(--text-primary); }
+    .search-btn { width: 28px; height: 28px; border: 0; border-radius: 4px; background: var(--primary); color: #fff; cursor: pointer; }
+    .search-btn:hover { background: var(--primary-hover); }
+    .map-filter { width: 100%; max-width: 520px; padding: 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: rgba(255,255,255,.96); box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+    .filter-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; font-weight: 600; }
+    .filter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .filter-grid select { width: 100%; min-height: 30px; height: 62px; padding: 4px 7px; border: 1px solid var(--border-input); border-radius: 4px; background: #fff; color: var(--text-primary); }
+    .filter-check { margin-top: 10px; display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 12px; }
+    .map-stats { position: absolute; left: 16px; top: 16px; z-index: 900; display: flex; gap: 8px; }
+    .stat-chip { min-width: 104px; padding: 8px 12px; border: 1px solid rgba(0,0,0,.08); border-radius: 6px; background: rgba(255,255,255,.92); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .stat-label { color: var(--text-secondary); font-size: 12px; }
+    .stat-value { margin-top: 2px; color: var(--text-primary); font: 600 20px/24px var(--font-number); }
+    .legend { position: absolute; left: 16px; bottom: 20px; z-index: 900; padding: 10px 12px; border: 1px solid rgba(0,0,0,.08); border-radius: 6px; background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .legend-title { margin-bottom: 7px; color: var(--text-secondary); font-size: 12px; }
+    .legend-line { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 12px; }
+    .legend-line + .legend-line { margin-top: 5px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .legend-dot.parallel { background: var(--parallel); } .legend-dot.auto { background: var(--auto); } .legend-dot.manual { background: #8c8c8c; }
+    .leaflet-control-zoom { margin-top: 76px !important; }
+    .vehicle-marker { position: relative; width: 72px; text-align: center; transform: translate(-50%, -100%); cursor: pointer; }
+    .vehicle-marker .marker-icon { width: 34px; height: 34px; margin: 0 auto 2px; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); color: #fff; font-size: 15px; box-shadow: 0 2px 7px rgba(0,0,0,.25); }
+    .vehicle-marker .marker-icon span { transform: rotate(45deg); }
+    .vehicle-marker.parallel .marker-icon { background: var(--parallel); } .vehicle-marker.auto .marker-icon { background: var(--auto); } .vehicle-marker.manual .marker-icon { background: #8c8c8c; }
+    .vehicle-marker .marker-label { max-width: 88px; margin: 0 auto; padding: 1px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; background: rgba(255,255,255,.92); color: var(--text-primary); font: 11px/16px var(--font-number); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+    .vehicle-marker.has-alert .marker-icon { animation: markerPulse 1.25s ease-in-out infinite; }
+    .alert-badge { position: absolute; top: -3px; right: 12px; min-width: 17px; height: 17px; padding: 0 4px; border: 2px solid #fff; border-radius: 9px; background: var(--error); color: #fff; font: 11px/13px var(--font-number); }
+    @keyframes markerPulse { 50% { box-shadow: 0 0 0 6px rgba(255,77,79,.2), 0 2px 7px rgba(0,0,0,.25); } }
+    .city-cluster { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; border: 4px solid rgba(22,119,255,.22); border-radius: 50%; background: rgba(22,119,255,.88); color: #fff; font: 600 17px/1 var(--font-number); box-shadow: 0 2px 8px rgba(0,0,0,.2); cursor: pointer; }
+    .city-cluster small { display: block; margin-top: 2px; font: 11px/13px var(--font-family); }
+    .modal-tabs { display: flex; height: 42px; border-bottom: 1px solid var(--border-color); }
+    .modal-tab { min-width: 112px; padding: 0 16px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; }
+    .modal-tab.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 500; }
+    .modal-pane { display: none; } .modal-pane.active { display: block; }
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; padding: 18px 0 6px; }
+    .metric-label { color: var(--text-secondary); font-size: 12px; } .metric-value { margin-top: 3px; color: var(--text-primary); font: 14px/20px var(--font-number); }
+    .record-card { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; }
+    .record-card + .record-card { margin-top: 8px; }
+    .record-top { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 12px; }
+    .record-top strong { color: var(--text-primary); font-weight: 500; } .record-second { margin-top: 7px; color: var(--text-secondary); font-size: 12px; }
+    .record-second b { color: var(--text-primary); font-weight: 400; }
+    .issue-list { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px; }
+    .issue-group-title { padding: 8px 6px 6px; color: var(--text-secondary); font-size: 12px; }
+    .issue-item { padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius); background: #fff; }
+    .issue-item + .issue-item { margin-top: 8px; }
+    .issue-item-top { display: flex; align-items: center; gap: 7px; }
+    .issue-item-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .issue-item-meta { margin-top: 5px; color: var(--text-secondary); font: 12px/18px var(--font-number); }
+    .issue-empty { padding: 42px 16px; color: var(--text-disabled); text-align: center; }
+    .modal-actions { margin-top: 14px; display: flex; justify-content: flex-end; gap: 8px; }
+    .track-panel { padding-top: 12px; } .track-meta { display: flex; align-items: center; justify-content: space-between; color: var(--text-secondary); font-size: 12px; }
+    .track-time { margin-top: 12px; height: 6px; border-radius: 3px; background: #e6f4ff; overflow: hidden; } .track-progress { width: 38%; height: 100%; background: var(--primary); }
+    .track-controls { margin-top: 14px; display: flex; align-items: center; gap: 8px; }
+    .video-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; } .video-tile { aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #162436; color: #a9c7e8; font-size: 12px; }
+    .empty-list { padding: 38px 16px; color: var(--text-disabled); text-align: center; }
+    @media (max-width: 1100px) { .vehicle-drawer { width: 320px; min-width: 320px; } .drawer-toggle { left: 304px; } .filter-grid { grid-template-columns: 1fr; } .stat-chip { min-width: 88px; } }
+    @media (max-width: 760px) { .vehicle-drawer { position: absolute; left: 0; top: 0; bottom: 0; box-shadow: 4px 0 14px rgba(0,0,0,.12); } .vehicle-drawer.collapsed { box-shadow: none; } .map-stats { left: 48px; } .map-toolbar { right: 8px; top: 8px; width: calc(100% - 16px); } .map-search, .map-filter { max-width: none; } .legend { left: 8px; bottom: 10px; } }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <div id="header"></div>
+      <main class="content monitor-content">
+        <div class="monitor-stage">
+          <aside class="vehicle-drawer" id="vehicleDrawer" aria-label="车辆数据面板">
+            <div class="drawer-tabs" role="tablist"><button class="drawer-tab active" data-drawer-tab="vehicles" type="button" role="tab" aria-selected="true">车辆列表</button><button class="drawer-tab" data-drawer-tab="issues" type="button" role="tab" aria-selected="false">异常与故障</button></div>
+            <div class="drawer-filter">
+              <div class="filter-line"><input id="drawerSearch" type="search" placeholder="精确搜索 VIN / 车牌 / 网联编号"><button class="btn btn-primary" id="drawerSearchBtn" type="button">查询</button></div>
+              <div class="filter-more" id="drawerMore"><input id="drawerProject" placeholder="项目"><input id="drawerModel" placeholder="车型"><input id="drawerRegion" placeholder="区域"></div>
+              <div class="filter-foot"><button class="filter-link" id="drawerMoreBtn" type="button">展开更多</button><div class="filter-actions"><button class="btn" id="drawerReset" type="button">重置</button></div></div>
+            </div>
+            <div class="group-switch"><div class="segmented"><button class="segment-btn active" data-group="project" type="button">按项目</button><button class="segment-btn" data-group="model" type="button">按车型</button><button class="segment-btn" data-group="region" type="button">按区域</button></div><span class="drawer-count" id="groupCount">0 个分组</span></div>
+            <div class="group-list" id="groupList"></div>
+            <div class="issue-list" id="issueList" hidden></div>
+          </aside>
+          <button class="drawer-toggle" id="drawerToggle" type="button" aria-label="收起车辆列表">‹</button>
+          <section class="map-wrap">
+            <div id="map" aria-label="车辆监管地图"></div>
+            <div class="map-stats"><div class="stat-chip"><div class="stat-label">车辆总数</div><div class="stat-value" id="statTotal">0</div></div><div class="stat-chip"><div class="stat-label">异常车辆</div><div class="stat-value" id="statAlert">0</div></div></div>
+            <div class="map-toolbar">
+              <div class="map-search"><input id="mapSearch" type="search" placeholder="搜索 VIN、车牌号或网联编号"><button class="search-btn" id="mapSearchBtn" type="button" aria-label="搜索">⌕</button></div>
+              <div class="map-filter"><div class="filter-heading"><span>地图筛选</span><button class="filter-link" id="clearMapFilter" type="button">清空</button></div><div class="filter-grid"><select id="mapProject" multiple aria-label="项目（可多选）"><option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option></select><select id="mapRegion" multiple aria-label="区域（可多选）"><option>上海市</option><option>芜湖市</option><option>陵水市</option><option>台州市</option></select><select id="mapModel" multiple aria-label="车型（可多选）"><option>爱瑞特纯电动高压冲洗车</option><option>长城多用途货车</option><option>独角兽</option><option>麒麟清扫车</option><option>麒麟无人化扫地车</option><option>三力洒水车</option><option>泰坦智能驾驶洒水车</option><option>中联清洗车</option></select></div><label class="filter-check"><input id="alertOnly" type="checkbox"> 仅显示故障与异常车辆</label></div>
+            </div>
+            <div class="legend"><div class="legend-title">驾驶模式</div><div class="legend-line"><span class="legend-dot parallel"></span>平行驾驶</div><div class="legend-line"><span class="legend-dot auto"></span>自动驾驶</div><div class="legend-line"><span class="legend-dot manual"></span>人工驾驶</div></div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="vehicleModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3 id="vehicleModalTitle">车辆信息</h3><button class="modal-close" type="button" data-close="vehicleModal">×</button></div><div class="modal-tabs"><button class="modal-tab active" data-tab="realtime" type="button">实时数据</button><button class="modal-tab" data-tab="records" type="button">故障与异常</button></div><div class="modal-body"><div class="modal-pane active" id="pane-realtime"></div><div class="modal-pane" id="pane-records"></div></div><div class="modal-footer"><button class="btn" type="button" data-action="track">轨迹</button><button class="btn btn-primary" type="button" data-action="video">视频</button></div></div></div>
+  <div class="modal-overlay" id="trackModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3 id="trackTitle">轨迹回放</h3><button class="modal-close" type="button" data-close="trackModal">×</button></div><div class="modal-body"><div class="track-panel"><div class="track-meta"><span>轨迹时间范围</span><span><input id="trackStart" type="date" value="2026-09-15"> <span style="padding:0 5px">至</span> <input id="trackEnd" type="date" value="2026-09-15"></span></div><div class="track-time"><div class="track-progress"></div></div><div class="track-meta" style="margin-top:8px"><span id="trackClock">09:42:18</span><span>23:59:59</span></div><div class="track-controls"><button class="btn btn-primary" id="trackPlay" type="button">▶ 播放</button><button class="btn" id="trackPause" type="button">Ⅱ 暂停</button><span id="trackModeText" class="tag tag-green">平行驾驶</span><span style="margin-left:auto;color:var(--text-secondary);font:12px var(--font-number)">速度 18.6 km/h</span></div></div></div></div></div>
+  <div class="modal-overlay" id="videoModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3 id="videoTitle">实时视频</h3><button class="modal-close" type="button" data-close="videoModal">×</button></div><div class="modal-body"><div class="video-grid"><div class="video-tile">前视摄像头<br>实时流</div><div class="video-tile">后视摄像头<br>实时流</div></div></div></div></div>
+
+  <script src="../components/common.js"></script>
+  <script src="../components/vendor/leaflet.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var menuItem = null;
+      Common.menuConfig.forEach(function (module) { module.groups.forEach(function (group) { group.items.forEach(function (item) { if (item.id === 'vehicle-monitor') menuItem = item; }); }); });
+      Common.initLayout({ basePath: '../', sidebarId: 'sidebar', activeMenuId: 'vehicle-monitor', headerId: 'header', headerOptions: { showProject: false } });
+
+      var vehicles = [
+        { id: 1, plate: '沪A7E315', network: '13472', vin: 'LZ9ADG2E6RA003658', model: '泰坦智能驾驶洒水车', project: '嘉定研发', region: '上海市', city: '上海市', lat: 31.2304, lng: 121.4737, mode: 'parallel', alerts: 3, speed: 18.6, takeover: '未接管', accL: 0.12, accW: 0.08, roll: 0.03, yaw: 0.04, gear: 'D', time: '2026-09-15 09:42:18' },
+        { id: 2, plate: '沪A5P782', network: '13541', vin: 'LZ9ADG2E6RA004749', model: '麒麟清扫车', project: '嘉定研发', region: '上海市', city: '上海市', lat: 31.1852, lng: 121.4378, mode: 'auto', alerts: 0, speed: 12.2, takeover: '未接管', accL: 0.06, accW: 0.02, roll: 0.01, yaw: 0.02, gear: 'D', time: '2026-09-15 09:41:56' },
+        { id: 3, plate: '皖B3E027', network: '14308', vin: 'LZ9ADG2E6RA002031', model: '独角兽', project: '镜湖区项目', region: '芜湖市', city: '芜湖市', lat: 31.3525, lng: 118.4331, mode: 'manual', alerts: 2, speed: 0, takeover: '人工驾驶', accL: 0, accW: 0, roll: 0, yaw: 0, gear: 'P', time: '2026-09-15 09:40:27' },
+        { id: 4, plate: '皖B6H312', network: '14276', vin: 'LZ9ADG2E6RA002184', model: '长城多用途货车', project: '鸠江项目', region: '芜湖市', city: '芜湖市', lat: 31.3866, lng: 118.4018, mode: 'auto', alerts: 1, speed: 26.4, takeover: '未接管', accL: 0.19, accW: 0.11, roll: 0.05, yaw: 0.07, gear: 'D', time: '2026-09-15 09:39:45' },
+        { id: 5, plate: '皖B8K560', network: '11642', vin: 'LZ9ADG2E6RA002509', model: '麒麟清扫车', project: '鸠江江北项目', region: '芜湖市', city: '芜湖市', lat: 31.4171, lng: 118.4596, mode: 'parallel', alerts: 0, speed: 9.4, takeover: '未接管', accL: 0.04, accW: 0.03, roll: 0.02, yaw: 0.01, gear: 'D', time: '2026-09-15 09:38:21' },
+        { id: 6, plate: '琼A8D725', network: '11805', vin: 'LZ9ADG2E6RA002687', model: '泰坦智能驾驶洒水车', project: '陵水项目', region: '陵水市', city: '陵水市', lat: 18.505, lng: 110.037, mode: 'parallel', alerts: 4, speed: 15.8, takeover: '未接管', accL: 0.16, accW: 0.08, roll: 0.04, yaw: 0.05, gear: 'D', time: '2026-09-15 09:37:54' },
+        { id: 7, plate: '琼A3C682', network: '13704', vin: 'LZ9ADG2E6RA003829', model: '独角兽', project: '陵水项目', region: '陵水市', city: '陵水市', lat: 18.475, lng: 110.009, mode: 'auto', alerts: 0, speed: 4.8, takeover: '未接管', accL: 0.02, accW: 0.01, roll: 0.01, yaw: 0.01, gear: 'D', time: '2026-09-15 09:36:15' },
+        { id: 8, plate: '浙JAR6538', network: '14156', vin: 'LZ9ADG2E6RA001156', model: '泰坦智能驾驶洒水车', project: '椒北街道', region: '台州市', city: '台州市', lat: 28.6564, lng: 121.4208, mode: 'manual', alerts: 1, speed: 21.1, takeover: '人工驾驶', accL: 0.22, accW: 0.13, roll: 0.06, yaw: 0.08, gear: 'D', time: '2026-09-15 09:35:42' }
+      ];
+      var groupMode = 'project', selectedId = null, expandedCity = null, markerLayer = L.layerGroup(), cityLayer = L.layerGroup(), trackTimer = null;
+      var map = L.map('map', { zoomControl: true, preferCanvas: true }).setView([29.8, 119.5], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
+      markerLayer.addTo(map); cityLayer.addTo(map);
+
+      function displayId(v) { return v.plate || v.network || v.vin; }
+      function modeText(mode) { return mode === 'parallel' ? '平行驾驶' : mode === 'auto' ? '自动驾驶' : '人工驾驶'; }
+      function modeClass(mode) { return mode === 'parallel' ? 'parallel' : mode === 'auto' ? 'auto' : 'manual'; }
+      function selectedValues(id) { return Array.from(document.getElementById(id).selectedOptions).map(function (option) { return option.value; }); }
+      function activeFilters() { return { project: selectedValues('mapProject'), region: selectedValues('mapRegion'), model: selectedValues('mapModel'), alert: document.getElementById('alertOnly').checked }; }
+      function filteredVehicles() {
+        var f = activeFilters(); var q = document.getElementById('mapSearch').value.trim();
+        return vehicles.filter(function (v) { return (!f.project.length || f.project.indexOf(v.project) >= 0) && (!f.region.length || f.region.indexOf(v.region) >= 0) && (!f.model.length || f.model.indexOf(v.model) >= 0) && (!f.alert || v.alerts > 0) && (!q || v.vin === q || v.plate === q || v.network === q); });
+      }
+      function cityGroups(list) { var groups = {}; list.forEach(function (v) { (groups[v.city] || (groups[v.city] = [])).push(v); }); return groups; }
+      function trackIcon() { return '<svg viewBox="0 0 1024 1024" aria-hidden="true"><path d="M1024 992c0 17.7-14.3 32-32 32H240.3v-.6l-.3.6h-1c-35.9 0-69.8-14-95.6-39.5-26-25.9-40.4-60.1-40.4-96.5s14.4-70.6 40.4-96.5c26-25.8 60.3-39.8 96.6-39.5h575c17.3 0 32-14.7 32-32 0-17.4-14.7-32-32-32H432l48-64h336c52.5.5 95 43.4 95 96s-42.5 95.5-95 96H239c-18.9 0-36.9 7.4-50.5 21-13.8 13.7-21.5 31.8-21.5 51s7.6 37.3 21.5 51c13.7 13.6 31.6 21 50.5 21h.7l.3.6v-.6h752c17.7 0 32 14.3 32 32zM288.4 64.4c59.7 0 115.9 23.3 158.1 65.5C488.8 172.2 512 228.3 512 288c0 49.8-16.3 97.1-47 137l-.3.4-.3.4-176 236.4-181.1-243c-27.9-38.5-42.6-83.9-42.6-131.3 0-59.7 23.3-115.9 65.5-158.1C172.5 87.7 228.6 64.4 288.4 64.4m0-64C129.5.4.7 129.3.7 288.1c0 63.1 20.4 121.5 55 169.2l232.7 312.3 227.3-305.3c37.7-48.8 60.4-109.6 60.4-176.1C576 129.3 447.2.4 288.4.4zM288 211.8c44.1 0 80 35.9 80 80s-35.9 80-80 80-80-35.9-80-80 35.9-80 80-80m0-64c-79.5 0-144 64.5-144 144s64.5 144 144 144 144-64.5 144-144-64.5-144-144-144z"></path></svg>'; }
+      function videoIcon() { return '<svg viewBox="0 0 1026 1024" aria-hidden="true"><path d="M945.643 234.058h-34.627c-9.585 0-17.325 8.19-17.325 18.338v-3.938L720.554 431.81v-161.1c0-40.5-31.028-73.35-69.278-73.35H131.819c-38.25 0-69.278 32.828-69.278 73.35v476.73c0 40.477 31.005 73.328 69.278 73.328h519.457c38.25 0 69.278-32.85 69.278-73.328V586.317l173.137 183.33v-3.893c0 10.102 7.74 18.315 17.325 18.315h34.627c9.562 0 17.325-8.213 17.325-18.315v-513.36c0-10.148-7.762-18.338-17.325-18.338zM651.275 505.16l-3.713 3.915 3.713 3.915v234.45H131.819V270.71h519.457v234.45zM893.713 665.922 745.551 509.075l148.162-156.87v313.717z"></path></svg>'; }
+      function renderMap() {
+        var list = filteredVehicles(); markerLayer.clearLayers(); cityLayer.clearLayers();
+        var groups = cityGroups(list), showPoints = map.getZoom() >= 9 || expandedCity;
+        Object.keys(groups).forEach(function (city) {
+          var rows = groups[city];
+          if (!showPoints || (expandedCity && expandedCity !== city)) {
+            var center = rows.reduce(function (acc, v) { return [acc[0] + v.lat / rows.length, acc[1] + v.lng / rows.length]; }, [0, 0]);
+            var icon = L.divIcon({ className: '', html: '<div class="city-cluster" title="点击查看车辆">' + rows.length + '<small>辆</small></div>', iconSize: [54, 54], iconAnchor: [27, 27] });
+            var marker = L.marker(center, { icon: icon }).addTo(cityLayer); marker.on('click', function () { expandedCity = city; var bounds = L.latLngBounds(rows.map(function (v) { return [v.lat, v.lng]; })); map.fitBounds(bounds, { padding: [80, 80], maxZoom: 12 }); renderMap(); });
+          } else rows.forEach(function (v) { var icon = L.divIcon({ className: '', html: '<div class="vehicle-marker ' + modeClass(v.mode) + (v.alerts ? ' has-alert' : '') + '"><div class="marker-icon"><span>▰</span></div>' + (v.alerts ? '<span class="alert-badge">' + v.alerts + '</span>' : '') + '<div class="marker-label">' + displayId(v) + '</div></div>', iconSize: [88, 70], iconAnchor: [44, 70] }); var marker = L.marker([v.lat, v.lng], { icon: icon, title: displayId(v) }).addTo(markerLayer); marker.on('click', function () { selectVehicle(v.id, true); }); });
+        });
+        document.getElementById('statTotal').textContent = list.length; document.getElementById('statAlert').textContent = list.filter(function (v) { return v.alerts > 0; }).length;
+      }
+      function renderList() {
+        var list = filteredVehicles(), groups = {}; list.forEach(function (v) { var key = groupMode === 'model' ? v.model : groupMode === 'region' ? v.region : v.project; (groups[key] || (groups[key] = [])).push(v); });
+        var html = ''; Object.keys(groups).sort().forEach(function (key, index) { html += '<section class="group ' + (index ? 'collapsed' : '') + '" data-group-key="' + key + '"><button class="group-head" type="button" aria-expanded="' + (index === 0) + '"><span class="group-arrow">⌄</span><span class="group-name">' + key + '</span><span class="group-count">' + groups[key].length + '</span></button><div class="group-items">'; groups[key].forEach(function (v) { html += '<div class="vehicle-row ' + (selectedId === v.id ? 'active' : '') + '" data-id="' + v.id + '"><span class="row-mode ' + modeClass(v.mode) + '"></span><div class="row-copy"><div class="row-primary"><span class="row-label">' + displayId(v) + '</span><span class="row-status"></span></div><div class="row-meta">' + v.network + ' · ' + v.vin + '</div></div><div class="row-tools"><button class="icon-btn track-row" type="button" title="查看轨迹">' + trackIcon() + '</button><button class="icon-btn video-row" type="button" title="查看视频">' + videoIcon() + '</button></div></div>'; }); html += '</div></section>'; });
+        document.getElementById('groupList').innerHTML = html || '<div class="empty-list">暂无符合条件的车辆</div>'; document.getElementById('groupCount').textContent = Object.keys(groups).length + ' 个分组';
+      }
+      function renderIssues() {
+        var list = filteredVehicles(), alertList = list.filter(function (v) { return v.alerts > 0; }), html = '<div class="issue-group-title">今日故障与异常 · ' + alertList.length + ' 辆</div>';
+        alertList.forEach(function (v) { html += '<div class="issue-item"><div class="issue-item-top"><span class="tag tag-red">故障</span><span class="issue-item-title">' + displayId(v) + ' · ADAS-C1102</span><span class="issue-item-meta">' + v.time.slice(11) + '</span></div><div class="issue-item-meta">车辆感知系统数据异常</div></div><div class="issue-item"><div class="issue-item-top"><span class="tag tag-orange">异常事件</span><span class="issue-item-title">' + displayId(v) + ' · 超速行驶</span><span class="issue-item-meta">' + v.time.slice(11) + '</span></div><div class="issue-item-meta">开始时间：' + v.time + '　结束时间：进行中</div></div>'; });
+        document.getElementById('issueList').innerHTML = alertList.length ? html : '<div class="issue-empty">今日暂无故障与异常记录</div>';
+      }
+      function switchDrawerTab(tab) {
+        var vehicleTab = tab === 'vehicles'; document.querySelectorAll('.drawer-tab').forEach(function (item) { var active = item.dataset.drawerTab === tab; item.classList.toggle('active', active); item.setAttribute('aria-selected', String(active)); }); document.querySelector('.drawer-filter').hidden = !vehicleTab; document.querySelector('.group-switch').hidden = !vehicleTab; document.getElementById('groupList').hidden = !vehicleTab; document.getElementById('issueList').hidden = vehicleTab;
+      }
+      function selectVehicle(id, focus) { selectedId = id; var v = vehicles.find(function (item) { return item.id === id; }); if (!v) return; expandedCity = v.city; if (focus) map.setView([v.lat, v.lng], 13); renderMap(); renderList(); openVehicleModal(v); }
+      function openVehicleModal(v) { document.getElementById('vehicleModalTitle').textContent = displayId(v) + ' - ' + v.model + ' - ' + v.project; document.getElementById('pane-realtime').innerHTML = '<div class="metric-grid">' + [['驾驶模式', modeText(v.mode)], ['接管状态', v.takeover], ['车辆速度', v.speed + ' km/h'], ['车辆横向加速度', v.accL + ' m/s²'], ['车辆纵向加速度', v.accW + ' m/s²'], ['车辆侧倾角速度', v.roll + ' °/s'], ['车辆横摆角速度', v.yaw + ' °/s'], ['档位', v.gear], ['数据采集时间', v.time]].map(function (m) { return '<div><div class="metric-label">' + m[0] + '</div><div class="metric-value">' + m[1] + '</div></div>'; }).join('') + '</div>'; var records = v.alerts ? '<div class="record-card"><div class="record-top"><span class="tag tag-red">故障</span><strong>ADAS-C1102</strong><span>' + v.time + '</span></div><div class="record-second">故障定义：车辆感知系统数据异常</div></div><div class="record-card"><div class="record-top"><span class="tag tag-orange">异常事件</span><strong>超速行驶</strong><span>' + v.time + '</span></div><div class="record-second"><b>开始时间：</b>' + v.time + '　<b>结束时间：</b>进行中</div></div>' : '<div class="empty-list">今日暂无故障与异常记录</div>'; document.getElementById('pane-records').innerHTML = records; document.querySelectorAll('#vehicleModal .modal-tab').forEach(function (tab) { tab.classList.toggle('active', tab.dataset.tab === 'realtime'); }); document.querySelectorAll('#vehicleModal .modal-pane').forEach(function (pane) { pane.classList.toggle('active', pane.id === 'pane-realtime'); }); Common.openModal('vehicleModal'); }
+      function showTrack(v) { document.getElementById('trackTitle').textContent = displayId(v) + ' - 轨迹回放'; document.getElementById('trackModeText').textContent = modeText(v.mode); document.getElementById('trackModeText').className = 'tag ' + (v.mode === 'auto' ? 'tag-blue' : v.mode === 'manual' ? 'tag-default' : 'tag-green'); Common.openModal('trackModal'); }
+      function showVideo(v) { document.getElementById('videoTitle').textContent = displayId(v) + ' - 实时视频'; Common.openModal('videoModal'); }
+      function searchVehicle() { var q = document.getElementById('mapSearch').value.trim(); var v = vehicles.find(function (item) { return item.vin === q || item.plate === q || item.network === q; }); if (!v) { Common.showToast('未找到匹配车辆，请输入完整 VIN、车牌号或网联编号', 'warning'); return; } selectVehicle(v.id, true); }
+      function applyFilters() { expandedCity = null; renderMap(); renderList(); renderIssues(); }
+      document.getElementById('mapSearchBtn').addEventListener('click', searchVehicle); document.getElementById('mapSearch').addEventListener('keydown', function (e) { if (e.key === 'Enter') searchVehicle(); }); ['mapProject', 'mapRegion', 'mapModel', 'alertOnly'].forEach(function (id) { document.getElementById(id).addEventListener('change', applyFilters); }); document.getElementById('clearMapFilter').addEventListener('click', function () { ['mapProject', 'mapRegion', 'mapModel'].forEach(function (id) { Array.from(document.getElementById(id).options).forEach(function (option) { option.selected = false; }); }); document.getElementById('alertOnly').checked = false; document.getElementById('mapSearch').value = ''; applyFilters(); });
+      document.getElementById('drawerSearchBtn').addEventListener('click', function () { document.getElementById('mapSearch').value = document.getElementById('drawerSearch').value.trim(); searchVehicle(); }); document.getElementById('drawerSearch').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('drawerSearchBtn').click(); }); document.getElementById('drawerMoreBtn').addEventListener('click', function () { var more = document.getElementById('drawerMore'); more.classList.toggle('open'); this.textContent = more.classList.contains('open') ? '收起更多' : '展开更多'; }); document.getElementById('drawerReset').addEventListener('click', function () { ['drawerSearch', 'drawerProject', 'drawerModel', 'drawerRegion'].forEach(function (id) { document.getElementById(id).value = ''; }); document.getElementById('mapSearch').value = ''; applyFilters(); });
+      document.querySelector('.group-switch').addEventListener('click', function (e) { var btn = e.target.closest('.segment-btn'); if (!btn) return; groupMode = btn.dataset.group; document.querySelectorAll('.segment-btn').forEach(function (item) { item.classList.toggle('active', item === btn); }); renderList(); }); document.getElementById('groupList').addEventListener('click', function (e) { var row = e.target.closest('.vehicle-row'), head = e.target.closest('.group-head'); if (head) { head.parentElement.classList.toggle('collapsed'); return; } if (!row) return; var v = vehicles.find(function (item) { return item.id === Number(row.dataset.id); }); if (e.target.closest('.track-row')) showTrack(v); else if (e.target.closest('.video-row')) showVideo(v); else selectVehicle(v.id, true); });
+      document.getElementById('drawerToggle').addEventListener('click', function () { var drawer = document.getElementById('vehicleDrawer'); drawer.classList.toggle('collapsed'); this.textContent = drawer.classList.contains('collapsed') ? '›' : '‹'; this.setAttribute('aria-label', drawer.classList.contains('collapsed') ? '展开车辆列表' : '收起车辆列表'); setTimeout(function () { map.invalidateSize(); }, 240); }); document.getElementById('vehicleModal').addEventListener('click', function (e) { var tab = e.target.closest('.modal-tab'), action = e.target.closest('[data-action]'); if (tab) { document.querySelectorAll('#vehicleModal .modal-tab').forEach(function (item) { item.classList.toggle('active', item === tab); }); document.querySelectorAll('#vehicleModal .modal-pane').forEach(function (pane) { pane.classList.toggle('active', pane.id === 'pane-' + tab.dataset.tab); }); } if (action && selectedId) { var v = vehicles.find(function (item) { return item.id === selectedId; }); Common.closeModal('vehicleModal'); if (action.dataset.action === 'track') showTrack(v); else showVideo(v); } }); document.querySelectorAll('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { Common.closeModal(this.dataset.close); }); }); document.getElementById('trackPlay').addEventListener('click', function () { var self = this; self.textContent = '▶ 播放中'; clearInterval(trackTimer); trackTimer = setInterval(function () { var p = document.querySelector('.track-progress'); var width = parseFloat(p.style.width || '38'); p.style.width = (width >= 96 ? 12 : width + 6) + '%'; }, 700); }); document.getElementById('trackPause').addEventListener('click', function () { clearInterval(trackTimer); document.getElementById('trackPlay').textContent = '▶ 播放'; });
+      map.on('zoomend', renderMap); map.on('moveend', function () { if (map.getZoom() < 9) expandedCity = null; });
+      document.querySelector('.drawer-tabs').addEventListener('click', function (e) { var tab = e.target.closest('.drawer-tab'); if (tab) switchDrawerTab(tab.dataset.drawerTab); });
+      var allBounds = L.latLngBounds(vehicles.map(function (v) { return [v.lat, v.lng]; })); map.fitBounds(allBounds, { padding: [80, 80] }); renderMap(); renderList(); renderIssues();
+    }());
+  </script>
+</body>
+</html>

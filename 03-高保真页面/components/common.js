@@ -28,12 +28,12 @@ const Common = {
         { label: '调度记录管理', id: 'transfer-apply', href: 'vehicle-dispatch/dispatch-record-list.html' },
       ]},
       { label: '实时监管', symbol: '监', items: [
-        { label: '车辆监管一张图', id: 'vehicle-monitor', disabled: true },
-        { label: '车辆运行数据', id: 'vehicle-runtime', disabled: true },
+        { label: '车辆监管一张图', id: 'vehicle-monitor', href: 'monitor/vehicle-monitor.html' },
+        { label: '车辆运行数据', id: 'vehicle-runtime', href: 'monitor/vehicle-running-data.html' },
       ]},
       { label: '异常事件', symbol: '异', items: [
-        { label: '车辆故障信息', id: 'vehicle-fault', disabled: true },
-        { label: '车辆异常告警', id: 'vehicle-alert', disabled: true },
+        { label: '车辆故障信息', id: 'vehicle-fault', href: 'monitor/vehicle-fault-info.html' },
+        { label: '车辆异常记录', id: 'vehicle-alert', href: 'monitor/vehicle-anomaly-records.html' },
       ]},
     ]},
     { id: 'maintenance', label: '维保管理', symbol: '维', groups: [

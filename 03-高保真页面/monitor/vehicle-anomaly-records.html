@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>车辆异常记录 - 车辆管理系统</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../components/common.css">
+  <link rel="stylesheet" href="../components/fixed-table.css">
+  <!-- 页面用途：展示策略规则触发的车辆异常记录，支持组合筛选、跨页选择与按查询结果导出。 -->
+  <style>
+    .filter-bar { margin-bottom:24px !important; padding:0 !important; }
+    .filter-item input,
+    .filter-item select { width:184px; }
+    .filter-item .date-range { display:inline-flex; align-items:center; gap:8px; }
+    .filter-item .date-range input { width:154px; }
+    .date-divider { color:var(--text-disabled); }
+    .action-bar { min-height:32px; }
+    .selection-summary { display:none; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px; }
+    .selection-summary.visible { display:inline-flex; }
+    .selection-summary strong { color:var(--primary); font-family:var(--font-number); }
+    .selection-clear { border:0; background:transparent; color:var(--primary); cursor:pointer; line-height:22px; }
+    .selection-clear:hover { color:var(--primary-hover); }
+    .anomaly-table { border-top:1px solid var(--border-color); }
+    .anomaly-table table { min-width:1460px; table-layout:fixed; }
+    .anomaly-table th,
+    .anomaly-table td { overflow:hidden; text-overflow:ellipsis; }
+    .col-check { width:54px; text-align:center !important; }
+    .col-vin { width:188px; text-align:center !important; font-family:var(--font-number); }
+    .col-plate { width:112px; }
+    .col-network { width:108px; text-align:center !important; font-family:var(--font-number); }
+    .col-project { width:148px; }
+    .col-type { width:124px; }
+    .col-time { width:176px; text-align:center !important; font-family:var(--font-number); }
+    .col-duration { width:124px; text-align:right !important; font-family:var(--font-number); }
+    .empty-cell { height:248px !important; text-align:center; }
+    .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--text-disabled); }
+    .empty-icon { width:52px; height:40px; position:relative; border:2px solid #d9d9d9; border-radius:6px; background:#fafafa; }
+    .empty-icon::before { content:""; position:absolute; left:8px; right:8px; top:11px; height:2px; background:#d9d9d9; box-shadow:0 8px 0 #d9d9d9,0 16px 0 #d9d9d9; }
+    .empty-state span { color:var(--text-secondary); }
+    .pagination-host { min-height:48px; }
+    input[type="checkbox"] { width:16px; height:16px; accent-color:var(--primary); cursor:pointer; }
+    @media (max-width:1440px) {
+      .filter-item input,
+      .filter-item select { width:162px; }
+      .filter-bar[data-progressive-filter] .filter-row.filter-primary { gap:12px; }
+    }
+    @media (max-width:1050px) {
+      .filter-bar[data-progressive-filter] .filter-row.filter-primary { flex-wrap:wrap; }
+      .filter-bar .filter-actions { margin-left:0 !important; }
+      .content { padding:16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <div id="header"></div>
+      <main class="content">
+        <section class="page-container">
+          <div class="filter-bar" data-progressive-filter>
+            <div class="filter-row filter-primary">
+              <div class="filter-item">
+                <label for="filterVin">VIN 码</label>
+                <input class="ant-input" id="filterVin" type="text" placeholder="请输入 VIN 码">
+              </div>
+              <div class="filter-item">
+                <label for="filterPlate">车牌号</label>
+                <input class="ant-input" id="filterPlate" type="text" placeholder="请输入车牌号">
+              </div>
+              <div class="filter-item">
+                <label for="filterNetwork">网联编号</label>
+                <input class="ant-input" id="filterNetwork" type="text" placeholder="请输入网联编号">
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" id="searchButton" type="button">查询</button>
+                <button class="btn" id="resetButton" type="button">重置</button>
+              </div>
+              <button type="button" class="filter-more-toggle" aria-expanded="false">
+                <span class="filter-more-text">展开更多</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+              </button>
+            </div>
+            <div class="filter-row filter-extra">
+              <div class="filter-item">
+                <label for="filterProject">所属项目</label>
+                <select class="ant-input" id="filterProject">
+                  <option value="">全部</option>
+                  <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option>
+                  <option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option>
+                  <option>鸠江项目</option><option>陵水项目</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterType">异常类型</label>
+                <select class="ant-input" id="filterType">
+                  <option value="">全部</option>
+                  <option>超时停靠</option><option>超速行驶</option><option>限行区行驶</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label for="filterStartDate">异常上报时间</label>
+                <span class="date-range">
+                  <input class="ant-input" id="filterStartDate" type="date" aria-label="异常上报开始日期">
+                  <span class="date-divider">至</span>
+                  <input class="ant-input" id="filterEndDate" type="date" aria-label="异常上报结束日期">
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="action-bar">
+            <div class="selection-summary" id="selectionSummary">
+              <span>已选择 <strong id="selectedCount">0</strong> 条</span>
+              <button class="selection-clear" id="clearSelectionButton" type="button">清空选择</button>
+            </div>
+            <button class="btn push-right" id="exportButton" type="button">导出</button>
+          </div>
+
+          <div class="table-wrapper anomaly-table fixed-table" id="anomalyTableWrapper" data-fixed-first="1" data-fixed-start="0" data-fixed-min-width="1460px">
+            <table id="anomalyTable">
+              <thead>
+                <tr>
+                  <th class="col-check"><input id="checkAll" type="checkbox" aria-label="全选当前页"></th>
+                  <th class="col-vin">VIN 码</th>
+                  <th class="col-plate">车牌号</th>
+                  <th class="col-network">网联编号</th>
+                  <th class="col-project">所属项目</th>
+                  <th class="col-type">异常类型</th>
+                  <th class="col-time">开始时间</th>
+                  <th class="col-time">结束时间</th>
+                  <th class="col-duration">持续时长（min）</th>
+                  <th class="col-time">异常上报时间</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination-host" id="paginationBar"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="../components/common.js"></script>
+  <script src="../components/filter-component.js"></script>
+  <script src="../components/export-component.js"></script>
+  <script src="../components/pagination-component.js"></script>
+  <script src="../components/fixed-table.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var anomalyMenu = null;
+      Common.menuConfig.forEach(function (module) {
+        module.groups.forEach(function (group) {
+          group.items.forEach(function (item) {
+            if (item.id === 'vehicle-alert' || item.id === 'vehicle-anomaly-records') anomalyMenu = item;
+          });
+        });
+      });
+      if (anomalyMenu) {
+        anomalyMenu.label = '车辆异常记录';
+        anomalyMenu.disabled = false;
+        anomalyMenu.href = 'monitor/vehicle-anomaly-records.html';
+      }
+      Common.initLayout({
+        basePath: '../',
+        sidebarId: 'sidebar',
+        activeMenuId: anomalyMenu ? anomalyMenu.id : 'vehicle-alert',
+        headerId: 'header',
+        headerOptions: { showProject: false }
+      });
+
+      var anomalyRecords = [
+        { id:1, vin:'LZ9ADG2E6RA001156', plate:'浙JAR6538', network:'14156', project:'嘉定研发', type:'超速行驶', start:'2026-09-15 09:18:32', end:'2026-09-15 09:25:47', duration:7.3, report:'2026-09-15 09:25:52' },
+        { id:2, vin:'LZ9ADG2E6RA001527', plate:'浙JDB1062', network:'11527', project:'椒北街道', type:'超时停靠', start:'2026-09-15 08:10:05', end:'2026-09-15 08:43:21', duration:33.3, report:'2026-09-15 08:43:29' },
+        { id:3, vin:'LZ9ADG2E6RA002031', plate:'皖B3E027', network:'14308', project:'镜湖区项目', type:'限行区行驶', start:'2026-09-14 17:42:18', end:'2026-09-14 17:51:40', duration:9.4, report:'2026-09-14 17:51:48' },
+        { id:4, vin:'LZ9ADG2E6RA002184', plate:'皖B6H312', network:'14276', project:'鸠江项目', type:'超速行驶', start:'2026-09-14 15:06:11', end:'2026-09-14 15:11:26', duration:5.3, report:'2026-09-14 15:11:33' },
+        { id:5, vin:'LZ9ADG2E6RA002509', plate:'皖B8K560', network:'11642', project:'鸠江江北项目', type:'超时停靠', start:'2026-09-14 12:35:02', end:'2026-09-14 13:18:36', duration:43.6, report:'2026-09-14 13:18:44' },
+        { id:6, vin:'LZ9ADG2E6RA002687', plate:'琼A8D725', network:'11805', project:'陵水项目', type:'限行区行驶', start:'2026-09-13 18:21:50', end:'2026-09-13 18:29:04', duration:7.2, report:'2026-09-13 18:29:12' },
+        { id:7, vin:'LZ9ADG2E6RA002844', plate:'皖B2F806', network:'13927', project:'经开东区项目', type:'超速行驶', start:'2026-09-13 16:03:14', end:'2026-09-13 16:10:48', duration:7.6, report:'2026-09-13 16:10:56' },
+        { id:8, vin:'LZ9ADG2E6RA003102', plate:'皖B5J109', network:'14519', project:'鸠江开发区项目', type:'超时停靠', start:'2026-09-13 11:42:20', end:'2026-09-13 12:15:52', duration:33.5, report:'2026-09-13 12:16:00' },
+        { id:9, vin:'LZ9ADG2E6RA003275', plate:'皖B9M231', network:'12063', project:'镜湖区项目', type:'限行区行驶', start:'2026-09-12 19:30:07', end:'2026-09-12 19:36:45', duration:6.6, report:'2026-09-12 19:36:52' },
+        { id:10, vin:'LZ9ADG2E6RA003461', plate:'浙J6A817', network:'12688', project:'椒北街道', type:'超速行驶', start:'2026-09-12 14:12:33', end:'2026-09-12 14:20:02', duration:7.5, report:'2026-09-12 14:20:10' },
+        { id:11, vin:'LZ9ADG2E6RA003658', plate:'沪A7E315', network:'13472', project:'嘉定研发', type:'超时停靠', start:'2026-09-12 09:50:16', end:'2026-09-12 10:28:45', duration:38.5, report:'2026-09-12 10:28:53' },
+        { id:12, vin:'LZ9ADG2E6RA003829', plate:'琼A3C682', network:'13704', project:'陵水项目', type:'限行区行驶', start:'2026-09-11 17:05:42', end:'2026-09-11 17:13:10', duration:7.5, report:'2026-09-11 17:13:18' },
+        { id:13, vin:'LZ9ADG2E6RA004016', plate:'皖B7L416', network:'12831', project:'鸠江项目', type:'超速行驶', start:'2026-09-11 15:24:09', end:'2026-09-11 15:31:22', duration:7.2, report:'2026-09-11 15:31:30' },
+        { id:14, vin:'LZ9ADG2E6RA004193', plate:'皖B1R730', network:'14062', project:'鸠江江北项目', type:'超时停靠', start:'2026-09-11 10:18:37', end:'2026-09-11 10:53:05', duration:34.5, report:'2026-09-11 10:53:13' },
+        { id:15, vin:'LZ9ADG2E6RA004387', plate:'皖B4T219', network:'13295', project:'经开东区项目', type:'限行区行驶', start:'2026-09-10 18:40:12', end:'2026-09-10 18:48:39', duration:8.5, report:'2026-09-10 18:48:47' },
+        { id:16, vin:'LZ9ADG2E6RA004562', plate:'皖B6W508', network:'11736', project:'鸠江开发区项目', type:'超速行驶', start:'2026-09-10 16:02:45', end:'2026-09-10 16:08:31', duration:5.8, report:'2026-09-10 16:08:39' },
+        { id:17, vin:'LZ9ADG2E6RA004749', plate:'沪A5P782', network:'13541', project:'嘉定研发', type:'超时停靠', start:'2026-09-10 11:13:06', end:'2026-09-10 11:48:42', duration:35.6, report:'2026-09-10 11:48:50' },
+        { id:18, vin:'LZ9ADG2E6RA004921', plate:'浙J8D305', network:'12374', project:'椒北街道', type:'限行区行驶', start:'2026-09-09 17:28:15', end:'2026-09-09 17:34:58', duration:6.7, report:'2026-09-09 17:35:06' },
+        { id:19, vin:'LZ9ADG2E6RA005108', plate:'皖B2Y641', network:'12950', project:'镜湖区项目', type:'超速行驶', start:'2026-09-09 14:46:23', end:'2026-09-09 14:54:17', duration:7.9, report:'2026-09-09 14:54:25' },
+        { id:20, vin:'LZ9ADG2E6RA005294', plate:'琼A6F913', network:'12108', project:'陵水项目', type:'超时停靠', start:'2026-09-09 08:37:52', end:'2026-09-09 09:16:21', duration:38.5, report:'2026-09-09 09:16:29' },
+        { id:21, vin:'LZ9ADG2E6RA005476', plate:'皖B9N572', network:'14423', project:'鸠江项目', type:'限行区行驶', start:'2026-09-08 18:12:11', end:'2026-09-08 18:20:36', duration:8.4, report:'2026-09-08 18:20:44' },
+        { id:22, vin:'LZ9ADG2E6RA005653', plate:'皖B3Q127', network:'13086', project:'鸠江江北项目', type:'超速行驶', start:'2026-09-08 15:51:04', end:'2026-09-08 15:58:18', duration:7.2, report:'2026-09-08 15:58:26' },
+        { id:23, vin:'LZ9ADG2E6RA005839', plate:'皖B7U804', network:'11964', project:'经开东区项目', type:'超时停靠', start:'2026-09-08 10:25:33', end:'2026-09-08 11:04:47', duration:39.2, report:'2026-09-08 11:04:55' },
+        { id:24, vin:'LZ9ADG2E6RA006012', plate:'皖B5X369', network:'13817', project:'鸠江开发区项目', type:'限行区行驶', start:'2026-09-07 17:44:26', end:'2026-09-07 17:52:09', duration:7.7, report:'2026-09-07 17:52:17' }
+      ];
+
+      var filteredRecords = anomalyRecords.slice();
+      var selectedIds = new Set();
+      var currentPage = 1;
+      var pageSize = 10;
+      var tableBody = document.getElementById('tableBody');
+      var checkAll = document.getElementById('checkAll');
+      var pager = new Pagination({
+        container: 'paginationBar',
+        pageSize: pageSize,
+        pageSizeOptions: [10, 20, 50],
+        onPageChange: function (page, size) {
+          currentPage = page;
+          pageSize = size;
+          renderTable();
+        }
+      });
+
+      function currentPageRows() {
+        var start = (currentPage - 1) * pageSize;
+        return filteredRecords.slice(start, start + pageSize);
+      }
+
+      function typeTag(type) {
+        var classMap = { '超时停靠':'tag-orange', '超速行驶':'tag-red', '限行区行驶':'tag-purple' };
+        return '<span class="tag ' + classMap[type] + '">' + type + '</span>';
+      }
+
+      function renderTable() {
+        var pageRows = currentPageRows();
+        if (!pageRows.length) {
+          tableBody.innerHTML = '<tr><td class="empty-cell" colspan="10"><div class="empty-state"><i class="empty-icon" aria-hidden="true"></i><span>暂无符合条件的异常记录</span></div></td></tr>';
+        } else {
+          tableBody.innerHTML = pageRows.map(function (record) {
+            var isSelected = selectedIds.has(record.id);
+            return '<tr class="' + (isSelected ? 'selected' : '') + '">' +
+              '<td class="col-check"><input class="row-check" type="checkbox" aria-label="选择 ' + record.plate + ' 的异常记录" data-id="' + record.id + '" ' + (isSelected ? 'checked' : '') + '></td>' +
+              '<td class="col-vin" title="' + record.vin + '">' + record.vin + '</td>' +
+              '<td class="col-plate">' + record.plate + '</td>' +
+              '<td class="col-network">' + record.network + '</td>' +
+              '<td class="col-project" title="' + record.project + '">' + record.project + '</td>' +
+              '<td class="col-type">' + typeTag(record.type) + '</td>' +
+              '<td class="col-time">' + record.start + '</td>' +
+              '<td class="col-time">' + record.end + '</td>' +
+              '<td class="col-duration">' + record.duration.toFixed(1) + '</td>' +
+              '<td class="col-time">' + record.report + '</td></tr>';
+          }).join('');
+        }
+        updateSelectionState(pageRows);
+        if (window.FixedTable) FixedTable.refresh('#anomalyTableWrapper');
+      }
+
+      function updateSelectionState(pageRows) {
+        var selectedOnPage = pageRows.filter(function (record) { return selectedIds.has(record.id); }).length;
+        checkAll.checked = pageRows.length > 0 && selectedOnPage === pageRows.length;
+        checkAll.indeterminate = selectedOnPage > 0 && selectedOnPage < pageRows.length;
+        document.getElementById('selectedCount').textContent = selectedIds.size;
+        document.getElementById('selectionSummary').classList.toggle('visible', selectedIds.size > 0);
+      }
+
+      function getTextValue(id) {
+        return document.getElementById(id).value.trim().toLowerCase();
+      }
+
+      function applyFilters() {
+        var vin = getTextValue('filterVin');
+        var plate = getTextValue('filterPlate');
+        var network = getTextValue('filterNetwork');
+        var project = document.getElementById('filterProject').value;
+        var type = document.getElementById('filterType').value;
+        var startDate = document.getElementById('filterStartDate').value;
+        var endDate = document.getElementById('filterEndDate').value;
+        if (startDate && endDate && startDate > endDate) {
+          Common.showToast('异常上报开始日期不能晚于结束日期', 'error');
+          return;
+        }
+        filteredRecords = anomalyRecords.filter(function (record) {
+          var reportDate = record.report.slice(0, 10);
+          return (!vin || record.vin.toLowerCase().indexOf(vin) !== -1) &&
+            (!plate || record.plate.toLowerCase().indexOf(plate) !== -1) &&
+            (!network || record.network.toLowerCase().indexOf(network) !== -1) &&
+            (!project || record.project === project) &&
+            (!type || record.type === type) &&
+            (!startDate || reportDate >= startDate) &&
+            (!endDate || reportDate <= endDate);
+        });
+        selectedIds.clear();
+        currentPage = 1;
+        pager.reset();
+        pager.setTotal(filteredRecords.length);
+        renderTable();
+        Common.showToast('查询完成，共 ' + filteredRecords.length + ' 条记录', 'success');
+      }
+
+      function resetFilters() {
+        document.querySelectorAll('.filter-bar input, .filter-bar select').forEach(function (control) { control.value = ''; });
+        filteredRecords = anomalyRecords.slice();
+        selectedIds.clear();
+        currentPage = 1;
+        pager.reset();
+        pager.setTotal(filteredRecords.length);
+        renderTable();
+        Common.showToast('筛选条件已重置', 'info');
+      }
+
+      function runExport(records) {
+        exportCSV({
+          filename: '车辆异常记录_' + new Date().toISOString().slice(0, 10) + '.csv',
+          headers: ['VIN 码', '车牌号', '网联编号', '所属项目', '异常类型', '开始时间', '结束时间', '持续时长（min）', '异常上报时间'],
+          rows: records.map(function (record) {
+            return [record.vin, record.plate, record.network, record.project, record.type, record.start, record.end, record.duration.toFixed(1), record.report];
+          })
+        });
+        Common.showToast('已导出 ' + records.length + ' 条车辆异常记录', 'success');
+      }
+
+      function exportRecords() {
+        if (selectedIds.size) {
+          var selectedRecords = anomalyRecords.filter(function (record) { return selectedIds.has(record.id); });
+          runExport(selectedRecords);
+          return;
+        }
+        if (!filteredRecords.length) {
+          Common.showToast('当前查询条件下暂无可导出的数据', 'warning');
+          return;
+        }
+        Common.confirm({
+          title: '导出确认',
+          content: '当前未勾选记录，将导出查询条件下的全部 <strong>' + filteredRecords.length + '</strong> 条数据。是否继续？',
+          okText: '确认导出',
+          cancelText: '取消',
+          onOk: function () { runExport(filteredRecords); }
+        });
+      }
+
+      document.getElementById('searchButton').addEventListener('click', applyFilters);
+      document.getElementById('resetButton').addEventListener('click', resetFilters);
+      document.getElementById('exportButton').addEventListener('click', exportRecords);
+      document.getElementById('clearSelectionButton').addEventListener('click', function () {
+        selectedIds.clear();
+        renderTable();
+      });
+      checkAll.addEventListener('change', function () {
+        currentPageRows().forEach(function (record) {
+          if (checkAll.checked) selectedIds.add(record.id);
+          else selectedIds.delete(record.id);
+        });
+        renderTable();
+      });
+      tableBody.addEventListener('change', function (event) {
+        var checkbox = event.target.closest('.row-check');
+        if (!checkbox) return;
+        var id = Number(checkbox.dataset.id);
+        if (checkbox.checked) selectedIds.add(id);
+        else selectedIds.delete(id);
+        renderTable();
+      });
+      document.querySelector('.filter-bar').addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') applyFilters();
+      });
+
+      pager.setTotal(filteredRecords.length);
+      renderTable();
+    }());
+  </script>
+</body>
+</html>

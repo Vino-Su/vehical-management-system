@@ -6,6 +6,7 @@
 <title>SIM卡流量明细 - 车辆管理系统</title>
 <link rel="stylesheet" href="../components/common.css">
 <link rel="stylesheet" href="../components/fixed-table.css">
+<link rel="icon" href="data:,">
 <!-- 页面用途：按单张 SIM 卡查询日/月流量明细。交互逻辑：左侧卡片分组选择，右侧按时间查询、分页选择与导出。 -->
 <style>
   .traffic-workbench { display:grid; grid-template-columns:304px minmax(0,1fr); min-height:calc(100vh - 144px); border:1px solid var(--border-color); border-radius:var(--radius); overflow:hidden; background:#fff; }
@@ -48,6 +49,12 @@
   .load-more { display:block; width:100%; height:30px; border:0; background:transparent; color:var(--primary); font-size:12px; cursor:pointer; }
   .load-more:hover { color:var(--primary-hover); background:#f5faff; }
   .master-empty { padding:56px 16px; color:var(--text-secondary); text-align:center; }
+  /* 左侧列表与车辆运行数据页保持同一套面板、分组和选中态视觉 */
+  .sim-master { background:#fff; }
+  .group-cards { padding:2px 0 6px 0; }
+  .sim-card-item { min-height:68px; position:relative; padding:9px 10px 9px 31px; background:#fff; }
+  .sim-card-item.active { box-shadow:none; }
+  .sim-card-item.active::before { content:""; position:absolute; left:20px; top:14px; bottom:14px; width:3px; border-radius:2px; background:var(--primary); }
   .traffic-detail { min-width:0; padding:16px; }
   .detail-summary { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; padding:0 0 16px; border-bottom:1px solid var(--border-color); }
   .detail-main { min-width:0; }
