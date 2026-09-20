@@ -22,16 +22,7 @@
     .drawer-toggle { position: absolute; top: 16px; left: 344px; z-index: 1000; width: 28px; height: 28px; border: 1px solid var(--border-color); border-radius: 0 6px 6px 0; background: #fff; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08); transition: left .22s ease; }
     .vehicle-drawer.collapsed + .drawer-toggle { left: 0; }
     .drawer-toggle:hover { color: var(--primary); }
-    .drawer-filter { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
-    .filter-line { display: flex; gap: 8px; }
-    .filter-line input { flex: 1; height: 32px; min-width: 0; padding: 0 10px; border: 1px solid var(--border-input); border-radius: var(--radius); outline: none; }
-    .filter-line input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1); }
-    .filter-more { margin-top: 10px; display: none; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .filter-more input, .filter-more select { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--border-input); border-radius: var(--radius); color: var(--text-primary); background: #fff; }
-    .filter-more.open { display: grid; }
-    .filter-foot { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
     .filter-link { border: 0; padding: 0; background: transparent; color: var(--primary); cursor: pointer; font-size: 12px; }
-    .filter-actions { display: flex; gap: 8px; }
     .group-switch { height: 48px; min-height: 48px; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
     .segmented { display: inline-flex; padding: 2px; border-radius: var(--radius); background: var(--bg-layout); }
     .segment-btn { height: 28px; padding: 0 12px; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 13px; }
@@ -63,16 +54,39 @@
     .icon-btn:hover { color: var(--primary); background: #e6f4ff; }
     .map-wrap { flex: 1; min-width: 0; position: relative; }
     #map { width: 100%; height: 100%; background: #dbe7ef; }
-    .map-toolbar { position: absolute; top: 16px; right: 16px; z-index: 900; width: min(520px, calc(100% - 32px)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-    .map-search { width: 100%; max-width: 360px; height: 36px; display: flex; align-items: center; padding: 0 6px 0 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: rgba(255,255,255,.96); box-shadow: 0 2px 10px rgba(0,0,0,.12); }
-    .map-search input { flex: 1; min-width: 0; height: 30px; border: 0; outline: 0; background: transparent; color: var(--text-primary); }
-    .search-btn { width: 28px; height: 28px; border: 0; border-radius: 4px; background: var(--primary); color: #fff; cursor: pointer; }
+    .map-toolbar { position: absolute; top: 16px; right: 16px; z-index: 900; width: min(420px, calc(100% - 32px)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .map-tool-actions { display: flex; gap: 8px; }
+    .map-tool-btn { position: relative; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: rgba(255,255,255,.96); color: var(--text-secondary); box-shadow: 0 2px 8px rgba(0,0,0,.12); cursor: pointer; transition: color .2s, border-color .2s, background .2s; }
+    .map-tool-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+    .map-tool-btn:hover, .map-tool-btn.active { color: var(--primary); border-color: #91caff; background: #e6f4ff; }
+    .filter-active-count { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border: 2px solid #fff; border-radius: 9px; background: var(--primary); color: #fff; font: 10px/14px var(--font-number); }
+    .map-popover { width: 100%; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: rgba(255,255,255,.98); box-shadow: 0 4px 16px rgba(0,0,0,.14); animation: toolbarDrop .16s ease-out; }
+    .map-popover[hidden] { display: none; }
+    @keyframes toolbarDrop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .map-search { width: 360px; max-width: 100%; height: 40px; display: flex; align-items: center; padding: 3px 4px 3px 12px; }
+    .map-search input { flex: 1; min-width: 0; height: 32px; border: 0; outline: 0; background: transparent; color: var(--text-primary); }
+    .search-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 4px; background: var(--primary); color: #fff; cursor: pointer; }
+    .search-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 2; }
     .search-btn:hover { background: var(--primary-hover); }
-    .map-filter { width: 100%; max-width: 520px; padding: 12px; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: rgba(255,255,255,.96); box-shadow: 0 2px 10px rgba(0,0,0,.12); }
-    .filter-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; font-weight: 600; }
-    .filter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .filter-grid select { width: 100%; min-height: 30px; height: 62px; padding: 4px 7px; border: 1px solid var(--border-input); border-radius: 4px; background: #fff; color: var(--text-primary); }
-    .filter-check { margin-top: 10px; display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 12px; }
+    .map-filter { padding: 16px; }
+    .filter-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-weight: 600; }
+    .filter-grid { display: grid; gap: 12px; }
+    .filter-field { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: 12px; }
+    .filter-label { color: var(--text-secondary); text-align: right; font-size: 13px; }
+    .multi-select { position: relative; min-width: 0; }
+    .select-trigger { width: 100%; height: 32px; padding: 0 11px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-input); border-radius: 6px; background: #fff; color: var(--text-primary); text-align: left; cursor: pointer; }
+    .select-trigger:hover, .select-trigger[aria-expanded="true"] { border-color: var(--primary); }
+    .select-trigger > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .select-trigger svg { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: var(--text-secondary); stroke-width: 1.8; transition: transform .2s; }
+    .select-trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .select-menu { position: absolute; top: 36px; left: 0; right: 0; z-index: 4; max-height: 190px; padding: 4px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; box-shadow: var(--shadow-md); }
+    .select-menu[hidden] { display: none; }
+    .select-option { min-height: 32px; padding: 5px 8px; display: flex; align-items: flex-start; gap: 8px; border-radius: 4px; cursor: pointer; line-height: 20px; }
+    .select-option:hover { background: var(--bg-hover); }
+    .select-option input { margin-top: 3px; accent-color: var(--primary); }
+    .filter-check { margin: 12px 0 0 68px; display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 13px; }
+    .filter-check input { accent-color: var(--primary); }
+    .filter-footer { margin-top: 14px; padding-top: 12px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); }
     .map-stats { position: absolute; left: 16px; top: 16px; z-index: 900; display: flex; gap: 8px; }
     .stat-chip { min-width: 104px; padding: 8px 12px; border: 1px solid rgba(0,0,0,.08); border-radius: 6px; background: rgba(255,255,255,.92); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .stat-label { color: var(--text-secondary); font-size: 12px; }
@@ -106,21 +120,91 @@
     .record-top strong { color: var(--text-primary); font-weight: 500; } .record-second { margin-top: 7px; color: var(--text-secondary); font-size: 12px; }
     .record-second b { color: var(--text-primary); font-weight: 400; }
     .issue-list { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px; }
-    .issue-group-title { padding: 8px 6px 6px; color: var(--text-secondary); font-size: 12px; }
-    .issue-item { padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius); background: #fff; }
+    .issue-item { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius); background: #fff; color: var(--text-primary); text-align: left; cursor: pointer; }
+    .issue-item:hover { border-color: #91caff; background: var(--primary-bg); }
     .issue-item + .issue-item { margin-top: 8px; }
     .issue-item-top { display: flex; align-items: center; gap: 7px; }
     .issue-item-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
     .issue-item-meta { margin-top: 5px; color: var(--text-secondary); font: 12px/18px var(--font-number); }
     .issue-empty { padding: 42px 16px; color: var(--text-disabled); text-align: center; }
     .modal-actions { margin-top: 14px; display: flex; justify-content: flex-end; gap: 8px; }
-    .track-panel { padding-top: 12px; } .track-meta { display: flex; align-items: center; justify-content: space-between; color: var(--text-secondary); font-size: 12px; }
-    .track-time { margin-top: 12px; height: 6px; border-radius: 3px; background: #e6f4ff; overflow: hidden; } .track-progress { width: 38%; height: 100%; background: var(--primary); }
-    .track-controls { margin-top: 14px; display: flex; align-items: center; gap: 8px; }
+    /* 车辆详情以快速查看为主，保持紧凑尺寸，避免遮挡地图上下文。 */
+    .vehicle-detail-modal { width: 640px; max-width: min(640px, calc(100vw - 32px)); max-height: min(560px, calc(100vh - 48px)); }
+    .vehicle-detail-modal .modal-header { min-height: 52px; padding: 14px 20px; }
+    .vehicle-detail-modal .modal-header h3 { max-width: calc(100% - 40px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; line-height: 24px; }
+    .vehicle-detail-modal .modal-tabs { height: 40px; padding: 0 20px; }
+    .vehicle-detail-modal .modal-tab { min-width: 96px; padding: 0 12px; font-size: 13px; }
+    .vehicle-detail-modal .modal-body { padding: 14px 20px 16px; }
+    .vehicle-detail-modal .modal-footer { padding: 10px 20px; }
+    .vehicle-detail-modal .metric-grid { gap: 12px 24px; padding: 2px 0 0; }
+    .vehicle-detail-modal .metric-value { font-size: 13px; }
+    @media (max-width: 760px) {
+      .vehicle-detail-modal { max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); }
+      .vehicle-detail-modal .modal-header { padding-left: 16px; padding-right: 16px; }
+      .vehicle-detail-modal .modal-tabs { padding: 0 16px; }
+      .vehicle-detail-modal .modal-body { padding-left: 16px; padding-right: 16px; }
+      .vehicle-detail-modal .modal-footer { padding-left: 16px; padding-right: 16px; }
+      .vehicle-detail-modal .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+    }
+    /* 轨迹回放直接叠加在原地图窗口内，不改变页面导航和数据面板。 */
+    .track-playback { position: absolute; inset: 0; z-index: 700; pointer-events: none; }
+    .track-playback[hidden] { display: none; }
+    .track-playback > * { pointer-events: auto; }
+    .map-wrap.track-active .map-stats,
+    .map-wrap.track-active .map-toolbar,
+    .map-wrap.track-active > .legend { display: none; }
+    .track-map-tools { position: absolute; top: 12px; right: 12px; z-index: 700; display: grid; gap: 8px; }
+    .track-map-tool { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,.12); border-radius: 6px; background: rgba(255,255,255,.96); color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,.12); cursor: pointer; }
+    .track-map-tool:hover, .track-map-tool.active { color: var(--primary); border-color: #91caff; background: #e6f4ff; }
+    .track-map-tool svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .track-legend { position: absolute; left: 12px; bottom: 116px; z-index: 700; width: 164px; padding: 10px 12px; border: 1px solid rgba(0,0,0,.08); border-radius: 6px; background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.10); }
+    .track-legend[hidden] { display: none; }
+    .track-legend-title { margin-bottom: 7px; color: var(--text-primary); font-size: 12px; font-weight: 600; }
+    .track-legend-item { min-height: 22px; display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 12px; }
+    .track-legend-dot { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%; }
+    .track-legend-line { width: 18px; height: 0; flex: 0 0 auto; border-top: 3px solid var(--primary); }
+    .track-legend-line.dashed { border-top-style: dashed; border-top-color: #fa8c16; }
+    .track-console { position: absolute; right: 12px; bottom: 12px; left: 12px; z-index: 700; min-height: 92px; padding: 10px 12px; border: 1px solid rgba(0,0,0,.10); border-radius: 8px; background: rgba(255,255,255,.97); box-shadow: 0 4px 18px rgba(0,0,0,.14); }
+    .track-query-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .track-filter-group { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .track-filter-label { flex: 0 0 auto; color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
+    .track-control { height: 32px; padding: 0 9px; border: 1px solid var(--border-input); border-radius: 6px; outline: 0; background: #fff; color: var(--text-primary); font: 12px/30px var(--font-number); }
+    .track-control:hover, .track-control:focus { border-color: var(--primary); }
+    .track-control[type="date"] { width: 120px; }
+    .track-control[type="time"] { width: 100px; }
+    .track-vehicle-select { width: 144px; font-family: var(--font-family); }
+    .track-time-separator { color: var(--text-disabled); }
+    .track-status { margin-left: auto; display: flex; align-items: center; gap: 12px; min-width: 0; color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
+    .track-status strong { color: var(--text-primary); font: 600 14px/22px var(--font-number); }
+    .track-status .speed { color: var(--primary); }
+    .track-status .mode { color: #52c41a; }
+    .track-console-close { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 4px; background: transparent; color: var(--text-disabled); font-size: 20px; cursor: pointer; }
+    .track-console-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .track-playback-row { margin-top: 8px; display: grid; grid-template-columns: 80px 58px minmax(180px, 1fr); align-items: center; gap: 8px; }
+    .track-play-button { min-width: 80px; }
+    .track-rate { width: 58px; padding-right: 4px; }
+    .track-timeline { min-width: 0; display: grid; grid-template-columns: auto minmax(80px, 1fr) auto; align-items: center; gap: 8px; color: var(--text-disabled); font: 12px/18px var(--font-number); }
+    .track-range { --track-percent: 0%; width: 100%; height: 4px; margin: 0; appearance: none; border-radius: 2px; outline: 0; background: linear-gradient(to right, var(--primary) 0 var(--track-percent), #e5e6eb var(--track-percent) 100%); cursor: pointer; }
+    .track-range::-webkit-slider-thumb { width: 16px; height: 16px; appearance: none; border: 3px solid var(--primary); border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(22,119,255,.28); }
+    .track-range::-moz-range-thumb { width: 12px; height: 12px; border: 3px solid var(--primary); border-radius: 50%; background: #fff; }
+    .track-vehicle-marker { position: relative; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; border-radius: 50%; background: var(--primary); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.28); }
+    .track-vehicle-marker::after { content: ""; position: absolute; right: 1px; bottom: -5px; width: 10px; height: 10px; transform: rotate(45deg); border-right: 3px solid #fff; border-bottom: 3px solid #fff; background: var(--primary); }
+    .track-vehicle-label { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,.96); color: var(--text-primary); font: 11px/16px var(--font-number); white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.16); }
     .video-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; } .video-tile { aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #162436; color: #a9c7e8; font-size: 12px; }
     .empty-list { padding: 38px 16px; color: var(--text-disabled); text-align: center; }
-    @media (max-width: 1100px) { .vehicle-drawer { width: 320px; min-width: 320px; } .drawer-toggle { left: 304px; } .filter-grid { grid-template-columns: 1fr; } .stat-chip { min-width: 88px; } }
-    @media (max-width: 760px) { .vehicle-drawer { position: absolute; left: 0; top: 0; bottom: 0; box-shadow: 4px 0 14px rgba(0,0,0,.12); } .vehicle-drawer.collapsed { box-shadow: none; } .map-stats { left: 48px; } .map-toolbar { right: 8px; top: 8px; width: calc(100% - 16px); } .map-search, .map-filter { max-width: none; } .legend { left: 8px; bottom: 10px; } }
+    @media (max-width: 1100px) { .vehicle-drawer { width: 320px; min-width: 320px; } .drawer-toggle { left: 304px; } .stat-chip { min-width: 88px; } }
+    @media (max-width: 1366px) {
+      .track-query-row { flex-wrap: wrap; }
+      .track-status { order: 2; flex: 1 0 calc(100% - 48px); margin-left: 0; }
+      .track-console { min-height: 126px; }
+      .track-legend { bottom: 150px; }
+    }
+    @media (max-width: 980px) {
+      .track-console { overflow-x: auto; }
+      .track-query-row { min-width: 740px; }
+      .track-playback-row { min-width: 620px; }
+    }
+    @media (max-width: 760px) { .vehicle-drawer { position: absolute; left: 0; top: 0; bottom: 0; box-shadow: 4px 0 14px rgba(0,0,0,.12); } .vehicle-drawer.collapsed { box-shadow: none; } .map-stats { left: 48px; } .map-toolbar { right: 8px; top: 8px; width: calc(100% - 16px); } .map-popover { max-width: none; } .legend { left: 8px; bottom: 10px; } }
   </style>
 </head>
 <body>
@@ -132,11 +216,6 @@
         <div class="monitor-stage">
           <aside class="vehicle-drawer" id="vehicleDrawer" aria-label="车辆数据面板">
             <div class="drawer-tabs" role="tablist"><button class="drawer-tab active" data-drawer-tab="vehicles" type="button" role="tab" aria-selected="true">车辆列表</button><button class="drawer-tab" data-drawer-tab="issues" type="button" role="tab" aria-selected="false">异常与故障</button></div>
-            <div class="drawer-filter">
-              <div class="filter-line"><input id="drawerSearch" type="search" placeholder="精确搜索 VIN / 车牌 / 网联编号"><button class="btn btn-primary" id="drawerSearchBtn" type="button">查询</button></div>
-              <div class="filter-more" id="drawerMore"><input id="drawerProject" placeholder="项目"><input id="drawerModel" placeholder="车型"><input id="drawerRegion" placeholder="区域"></div>
-              <div class="filter-foot"><button class="filter-link" id="drawerMoreBtn" type="button">展开更多</button><div class="filter-actions"><button class="btn" id="drawerReset" type="button">重置</button></div></div>
-            </div>
             <div class="group-switch"><div class="segmented"><button class="segment-btn active" data-group="project" type="button">按项目</button><button class="segment-btn" data-group="model" type="button">按车型</button><button class="segment-btn" data-group="region" type="button">按区域</button></div><span class="drawer-count" id="groupCount">0 个分组</span></div>
             <div class="group-list" id="groupList"></div>
             <div class="issue-list" id="issueList" hidden></div>
@@ -146,18 +225,61 @@
             <div id="map" aria-label="车辆监管地图"></div>
             <div class="map-stats"><div class="stat-chip"><div class="stat-label">车辆总数</div><div class="stat-value" id="statTotal">0</div></div><div class="stat-chip"><div class="stat-label">异常车辆</div><div class="stat-value" id="statAlert">0</div></div></div>
             <div class="map-toolbar">
-              <div class="map-search"><input id="mapSearch" type="search" placeholder="搜索 VIN、车牌号或网联编号"><button class="search-btn" id="mapSearchBtn" type="button" aria-label="搜索">⌕</button></div>
-              <div class="map-filter"><div class="filter-heading"><span>地图筛选</span><button class="filter-link" id="clearMapFilter" type="button">清空</button></div><div class="filter-grid"><select id="mapProject" multiple aria-label="项目（可多选）"><option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option></select><select id="mapRegion" multiple aria-label="区域（可多选）"><option>上海市</option><option>芜湖市</option><option>陵水市</option><option>台州市</option></select><select id="mapModel" multiple aria-label="车型（可多选）"><option>爱瑞特纯电动高压冲洗车</option><option>长城多用途货车</option><option>独角兽</option><option>麒麟清扫车</option><option>麒麟无人化扫地车</option><option>三力洒水车</option><option>泰坦智能驾驶洒水车</option><option>中联清洗车</option></select></div><label class="filter-check"><input id="alertOnly" type="checkbox"> 仅显示故障与异常车辆</label></div>
+              <div class="map-tool-actions">
+                <button class="map-tool-btn" id="mapSearchToggle" type="button" aria-label="打开车辆搜索" aria-controls="mapSearchPanel" aria-expanded="false" title="搜索车辆"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></button>
+                <button class="map-tool-btn" id="mapFilterToggle" type="button" aria-label="打开地图筛选" aria-controls="mapFilterPanel" aria-expanded="false" title="筛选车辆"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M7 12h10M10 19h4"></path></svg><span class="filter-active-count" id="filterActiveCount" hidden>0</span></button>
+              </div>
+              <div class="map-popover map-search" id="mapSearchPanel" hidden><input id="mapSearch" type="search" placeholder="请输入完整 VIN、车牌号或网联编号" aria-label="车辆精确搜索"><button class="search-btn" id="mapSearchBtn" type="button" aria-label="执行搜索" title="搜索"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></button></div>
+              <div class="map-popover map-filter" id="mapFilterPanel" hidden>
+                <div class="filter-heading"><span>筛选车辆</span><button class="filter-link" id="clearMapFilter" type="button">清空筛选</button></div>
+                <div class="filter-grid">
+                  <div class="filter-field"><span class="filter-label">项目</span><div class="multi-select"><button class="select-trigger" type="button" aria-expanded="false"><span id="mapProjectText">全部项目</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"></path></svg></button><div class="select-menu" hidden><label class="select-option"><input type="checkbox" name="mapProject" value="嘉定研发">嘉定研发</label><label class="select-option"><input type="checkbox" name="mapProject" value="椒北街道">椒北街道</label><label class="select-option"><input type="checkbox" name="mapProject" value="经开东区项目">经开东区项目</label><label class="select-option"><input type="checkbox" name="mapProject" value="镜湖区项目">镜湖区项目</label><label class="select-option"><input type="checkbox" name="mapProject" value="鸠江江北项目">鸠江江北项目</label><label class="select-option"><input type="checkbox" name="mapProject" value="鸠江开发区项目">鸠江开发区项目</label><label class="select-option"><input type="checkbox" name="mapProject" value="鸠江项目">鸠江项目</label><label class="select-option"><input type="checkbox" name="mapProject" value="陵水项目">陵水项目</label></div></div></div>
+                  <div class="filter-field"><span class="filter-label">区域</span><div class="multi-select"><button class="select-trigger" type="button" aria-expanded="false"><span id="mapRegionText">全部区域</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"></path></svg></button><div class="select-menu" hidden><label class="select-option"><input type="checkbox" name="mapRegion" value="上海市">上海市</label><label class="select-option"><input type="checkbox" name="mapRegion" value="芜湖市">芜湖市</label><label class="select-option"><input type="checkbox" name="mapRegion" value="陵水市">陵水市</label><label class="select-option"><input type="checkbox" name="mapRegion" value="台州市">台州市</label></div></div></div>
+                  <div class="filter-field"><span class="filter-label">车型</span><div class="multi-select"><button class="select-trigger" type="button" aria-expanded="false"><span id="mapModelText">全部车型</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9 5 5 5-5"></path></svg></button><div class="select-menu" hidden><label class="select-option"><input type="checkbox" name="mapModel" value="爱瑞特纯电动高压冲洗车">爱瑞特纯电动高压冲洗车</label><label class="select-option"><input type="checkbox" name="mapModel" value="长城多用途货车">长城多用途货车</label><label class="select-option"><input type="checkbox" name="mapModel" value="独角兽">独角兽</label><label class="select-option"><input type="checkbox" name="mapModel" value="麒麟清扫车">麒麟清扫车</label><label class="select-option"><input type="checkbox" name="mapModel" value="麒麟无人化扫地车">麒麟无人化扫地车</label><label class="select-option"><input type="checkbox" name="mapModel" value="三力洒水车">三力洒水车</label><label class="select-option"><input type="checkbox" name="mapModel" value="泰坦智能驾驶洒水车">泰坦智能驾驶洒水车</label><label class="select-option"><input type="checkbox" name="mapModel" value="中联清洗车">中联清洗车</label></div></div></div>
+                </div>
+                <label class="filter-check"><input id="alertOnly" type="checkbox">仅显示故障与异常车辆</label>
+                <div class="filter-footer"><button class="btn btn-primary" id="closeMapFilter" type="button">完成</button></div>
+              </div>
             </div>
             <div class="legend"><div class="legend-title">驾驶模式</div><div class="legend-line"><span class="legend-dot parallel"></span>平行驾驶</div><div class="legend-line"><span class="legend-dot auto"></span>自动驾驶</div><div class="legend-line"><span class="legend-dot manual"></span>人工驾驶</div></div>
+            <div class="track-playback" id="trackPlayback" aria-label="车辆轨迹回放" hidden>
+              <div class="track-map-tools" aria-label="轨迹地图工具">
+                <button class="track-map-tool active" id="trackLegendToggle" type="button" aria-pressed="true" title="显示或隐藏图例"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Z"></path><path d="m4 12 8 4 8-4M4 17l8 4 8-4"></path></svg></button>
+                <button class="track-map-tool" id="trackFitRoute" type="button" title="定位完整轨迹"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3"></path><path d="M8 15c1.5-4.5 6.5-1.5 8-6"></path><circle cx="8" cy="15" r="1.5"></circle><circle cx="16" cy="9" r="1.5"></circle></svg></button>
+              </div>
+              <aside class="track-legend" id="trackLegend" aria-label="轨迹图例">
+                <div class="track-legend-title">图例说明</div>
+                <div class="track-legend-item"><span class="track-legend-dot" style="background:#1677ff"></span>自动驾驶模式</div>
+                <div class="track-legend-item"><span class="track-legend-dot" style="background:#52c41a"></span>平行驾驶模式</div>
+                <div class="track-legend-item"><span class="track-legend-dot" style="background:#8c8c8c"></span>人工驾驶模式</div>
+                <div class="track-legend-item"><span class="track-legend-dot" style="background:#fa8c16"></span>异常事件车辆</div>
+                <div class="track-legend-item"><span class="track-legend-dot" style="background:#ff4d4f"></span>故障车辆</div>
+                <div class="track-legend-item"><span class="track-legend-line"></span>行驶轨迹</div>
+                <div class="track-legend-item"><span class="track-legend-line dashed"></span>停留路段</div>
+              </aside>
+              <section class="track-console" aria-label="轨迹回放控制台">
+                <div class="track-query-row">
+                  <div class="track-filter-group"><label class="track-filter-label" for="trackDate">时间范围</label><input class="track-control" id="trackDate" type="date" value="2026-09-16"><input class="track-control" id="trackStartTime" type="time" step="1" value="08:00:00"><span class="track-time-separator">-</span><input class="track-control" id="trackEndTime" type="time" step="1" value="14:32:00"></div>
+                  <div class="track-filter-group"><label class="track-filter-label" for="trackVehicle">车辆</label><select class="track-control track-vehicle-select" id="trackVehicle" aria-label="选择回放车辆"></select></div>
+                  <button class="btn btn-primary" id="trackQuery" type="button">查询</button>
+                  <button class="btn" id="trackVideoReplay" type="button">视频回看</button>
+                  <div class="track-status" aria-live="polite"><span>当前时间 <strong id="trackClock">08:00:00</strong></span><span>速度 <strong class="speed" id="trackSpeed">0 km/h</strong></span><span>驾驶模式 <strong class="mode" id="trackModeText">平行驾驶</strong></span></div>
+                  <button class="track-console-close" id="trackClose" type="button" aria-label="关闭轨迹回放" title="关闭">×</button>
+                </div>
+                <div class="track-playback-row">
+                  <button class="btn track-play-button" id="trackPlay" type="button" aria-pressed="false"><span aria-hidden="true">▶</span><span>播放</span></button>
+                  <select class="track-control track-rate" id="trackRate" aria-label="播放速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+                  <div class="track-timeline"><span id="trackStartLabel">08:00:00</span><input class="track-range" id="trackRange" type="range" min="0" max="100" value="0" aria-label="轨迹回放进度"><span id="trackEndLabel">14:32:00</span></div>
+                </div>
+              </section>
+            </div>
           </section>
         </div>
       </main>
     </div>
   </div>
 
-  <div class="modal-overlay" id="vehicleModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3 id="vehicleModalTitle">车辆信息</h3><button class="modal-close" type="button" data-close="vehicleModal">×</button></div><div class="modal-tabs"><button class="modal-tab active" data-tab="realtime" type="button">实时数据</button><button class="modal-tab" data-tab="records" type="button">故障与异常</button></div><div class="modal-body"><div class="modal-pane active" id="pane-realtime"></div><div class="modal-pane" id="pane-records"></div></div><div class="modal-footer"><button class="btn" type="button" data-action="track">轨迹</button><button class="btn btn-primary" type="button" data-action="video">视频</button></div></div></div>
-  <div class="modal-overlay" id="trackModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3 id="trackTitle">轨迹回放</h3><button class="modal-close" type="button" data-close="trackModal">×</button></div><div class="modal-body"><div class="track-panel"><div class="track-meta"><span>轨迹时间范围</span><span><input id="trackStart" type="date" value="2026-09-15"> <span style="padding:0 5px">至</span> <input id="trackEnd" type="date" value="2026-09-15"></span></div><div class="track-time"><div class="track-progress"></div></div><div class="track-meta" style="margin-top:8px"><span id="trackClock">09:42:18</span><span>23:59:59</span></div><div class="track-controls"><button class="btn btn-primary" id="trackPlay" type="button">▶ 播放</button><button class="btn" id="trackPause" type="button">Ⅱ 暂停</button><span id="trackModeText" class="tag tag-green">平行驾驶</span><span style="margin-left:auto;color:var(--text-secondary);font:12px var(--font-number)">速度 18.6 km/h</span></div></div></div></div></div>
+  <div class="modal-overlay" id="vehicleModal"><div class="modal-box vehicle-detail-modal" role="dialog" aria-modal="true" aria-labelledby="vehicleModalTitle"><div class="modal-header"><h3 id="vehicleModalTitle">车辆信息</h3><button class="modal-close" type="button" data-close="vehicleModal" aria-label="关闭车辆详情">×</button></div><div class="modal-tabs"><button class="modal-tab active" data-tab="realtime" type="button">实时数据</button><button class="modal-tab" data-tab="records" type="button">故障与异常</button></div><div class="modal-body"><div class="modal-pane active" id="pane-realtime"></div><div class="modal-pane" id="pane-records"></div></div><div class="modal-footer"><button class="btn" type="button" data-action="track">轨迹</button><button class="btn btn-primary" type="button" data-action="video">视频</button></div></div></div>
   <div class="modal-overlay" id="videoModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3 id="videoTitle">实时视频</h3><button class="modal-close" type="button" data-close="videoModal">×</button></div><div class="modal-body"><div class="video-grid"><div class="video-tile">前视摄像头<br>实时流</div><div class="video-tile">后视摄像头<br>实时流</div></div></div></div></div>
 
   <script src="../components/common.js"></script>
@@ -179,16 +301,17 @@
         { id: 7, plate: '琼A3C682', network: '13704', vin: 'LZ9ADG2E6RA003829', model: '独角兽', project: '陵水项目', region: '陵水市', city: '陵水市', lat: 18.475, lng: 110.009, mode: 'auto', alerts: 0, speed: 4.8, takeover: '未接管', accL: 0.02, accW: 0.01, roll: 0.01, yaw: 0.01, gear: 'D', time: '2026-09-15 09:36:15' },
         { id: 8, plate: '浙JAR6538', network: '14156', vin: 'LZ9ADG2E6RA001156', model: '泰坦智能驾驶洒水车', project: '椒北街道', region: '台州市', city: '台州市', lat: 28.6564, lng: 121.4208, mode: 'manual', alerts: 1, speed: 21.1, takeover: '人工驾驶', accL: 0.22, accW: 0.13, roll: 0.06, yaw: 0.08, gear: 'D', time: '2026-09-15 09:35:42' }
       ];
-      var groupMode = 'project', selectedId = null, expandedCity = null, markerLayer = L.layerGroup(), cityLayer = L.layerGroup(), trackTimer = null;
+      var groupMode = 'project', drawerTab = 'vehicles', selectedId = null, expandedCity = null, markerLayer = L.layerGroup(), cityLayer = L.layerGroup(), trackTimer = null;
+      var trackRouteLayer = null, trackPassedLayer = null, trackDecorationLayer = null, trackMarker = null, trackRoute = [], trackVehicle = null, trackActive = false, trackViewBefore = null;
       var map = L.map('map', { zoomControl: true, preferCanvas: true }).setView([29.8, 119.5], 6);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
-      markerLayer.addTo(map); cityLayer.addTo(map);
+      markerLayer.addTo(map); cityLayer.addTo(map); trackDecorationLayer = L.layerGroup().addTo(map);
 
       function displayId(v) { return v.plate || v.network || v.vin; }
       function modeText(mode) { return mode === 'parallel' ? '平行驾驶' : mode === 'auto' ? '自动驾驶' : '人工驾驶'; }
       function modeClass(mode) { return mode === 'parallel' ? 'parallel' : mode === 'auto' ? 'auto' : 'manual'; }
-      function selectedValues(id) { return Array.from(document.getElementById(id).selectedOptions).map(function (option) { return option.value; }); }
-      function activeFilters() { return { project: selectedValues('mapProject'), region: selectedValues('mapRegion'), model: selectedValues('mapModel'), alert: document.getElementById('alertOnly').checked }; }
+      function checkedValues(name) { return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked')).map(function (input) { return input.value; }); }
+      function activeFilters() { return { project: checkedValues('mapProject'), region: checkedValues('mapRegion'), model: checkedValues('mapModel'), alert: document.getElementById('alertOnly').checked }; }
       function filteredVehicles() {
         var f = activeFilters(); var q = document.getElementById('mapSearch').value.trim();
         return vehicles.filter(function (v) { return (!f.project.length || f.project.indexOf(v.project) >= 0) && (!f.region.length || f.region.indexOf(v.region) >= 0) && (!f.model.length || f.model.indexOf(v.model) >= 0) && (!f.alert || v.alerts > 0) && (!q || v.vin === q || v.plate === q || v.network === q); });
@@ -212,29 +335,99 @@
       function renderList() {
         var list = filteredVehicles(), groups = {}; list.forEach(function (v) { var key = groupMode === 'model' ? v.model : groupMode === 'region' ? v.region : v.project; (groups[key] || (groups[key] = [])).push(v); });
         var html = ''; Object.keys(groups).sort().forEach(function (key, index) { html += '<section class="group ' + (index ? 'collapsed' : '') + '" data-group-key="' + key + '"><button class="group-head" type="button" aria-expanded="' + (index === 0) + '"><span class="group-arrow">⌄</span><span class="group-name">' + key + '</span><span class="group-count">' + groups[key].length + '</span></button><div class="group-items">'; groups[key].forEach(function (v) { html += '<div class="vehicle-row ' + (selectedId === v.id ? 'active' : '') + '" data-id="' + v.id + '"><span class="row-mode ' + modeClass(v.mode) + '"></span><div class="row-copy"><div class="row-primary"><span class="row-label">' + displayId(v) + '</span><span class="row-status"></span></div><div class="row-meta">' + v.network + ' · ' + v.vin + '</div></div><div class="row-tools"><button class="icon-btn track-row" type="button" title="查看轨迹">' + trackIcon() + '</button><button class="icon-btn video-row" type="button" title="查看视频">' + videoIcon() + '</button></div></div>'; }); html += '</div></section>'; });
-        document.getElementById('groupList').innerHTML = html || '<div class="empty-list">暂无符合条件的车辆</div>'; document.getElementById('groupCount').textContent = Object.keys(groups).length + ' 个分组';
+        document.getElementById('groupList').innerHTML = html || '<div class="empty-list">暂无符合条件的车辆</div>'; if (drawerTab === 'vehicles') document.getElementById('groupCount').textContent = Object.keys(groups).length + ' 个分组';
       }
       function renderIssues() {
-        var list = filteredVehicles(), alertList = list.filter(function (v) { return v.alerts > 0; }), html = '<div class="issue-group-title">今日故障与异常 · ' + alertList.length + ' 辆</div>';
-        alertList.forEach(function (v) { html += '<div class="issue-item"><div class="issue-item-top"><span class="tag tag-red">故障</span><span class="issue-item-title">' + displayId(v) + ' · ADAS-C1102</span><span class="issue-item-meta">' + v.time.slice(11) + '</span></div><div class="issue-item-meta">车辆感知系统数据异常</div></div><div class="issue-item"><div class="issue-item-top"><span class="tag tag-orange">异常事件</span><span class="issue-item-title">' + displayId(v) + ' · 超速行驶</span><span class="issue-item-meta">' + v.time.slice(11) + '</span></div><div class="issue-item-meta">开始时间：' + v.time + '　结束时间：进行中</div></div>'; });
-        document.getElementById('issueList').innerHTML = alertList.length ? html : '<div class="issue-empty">今日暂无故障与异常记录</div>';
+        var alertList = filteredVehicles().filter(function (v) { return v.alerts > 0; }), groups = {}, html = '';
+        alertList.forEach(function (v) { var key = groupMode === 'model' ? v.model : groupMode === 'region' ? v.region : v.project; (groups[key] || (groups[key] = [])).push(v); });
+        Object.keys(groups).sort().forEach(function (key, index) { html += '<section class="group ' + (index ? 'collapsed' : '') + '"><button class="group-head" type="button" aria-expanded="' + (index === 0) + '"><span class="group-arrow">⌄</span><span class="group-name">' + key + '</span><span class="group-count">' + groups[key].length + '</span></button><div class="group-items">'; groups[key].forEach(function (v) { html += '<button class="issue-item" data-id="' + v.id + '" type="button"><div class="issue-item-top"><span class="tag tag-red">故障</span><span class="issue-item-title">' + displayId(v) + ' · ADAS-C1102</span><span class="issue-item-meta">' + v.time.slice(11) + '</span></div><div class="issue-item-meta">车辆感知系统数据异常</div></button><button class="issue-item" data-id="' + v.id + '" type="button"><div class="issue-item-top"><span class="tag tag-orange">异常事件</span><span class="issue-item-title">' + displayId(v) + ' · 超速行驶</span><span class="issue-item-meta">' + v.time.slice(11) + '</span></div><div class="issue-item-meta">开始时间：' + v.time + '　结束时间：进行中</div></button>'; }); html += '</div></section>'; });
+        document.getElementById('issueList').innerHTML = html || '<div class="issue-empty">当前筛选条件下暂无故障与异常记录</div>'; if (drawerTab === 'issues') document.getElementById('groupCount').textContent = Object.keys(groups).length + ' 个分组';
       }
       function switchDrawerTab(tab) {
-        var vehicleTab = tab === 'vehicles'; document.querySelectorAll('.drawer-tab').forEach(function (item) { var active = item.dataset.drawerTab === tab; item.classList.toggle('active', active); item.setAttribute('aria-selected', String(active)); }); document.querySelector('.drawer-filter').hidden = !vehicleTab; document.querySelector('.group-switch').hidden = !vehicleTab; document.getElementById('groupList').hidden = !vehicleTab; document.getElementById('issueList').hidden = vehicleTab;
+        drawerTab = tab; var vehicleTab = tab === 'vehicles'; document.querySelectorAll('.drawer-tab').forEach(function (item) { var active = item.dataset.drawerTab === tab; item.classList.toggle('active', active); item.setAttribute('aria-selected', String(active)); }); document.getElementById('groupList').hidden = !vehicleTab; document.getElementById('issueList').hidden = vehicleTab; if (vehicleTab) renderList(); else renderIssues();
       }
       function selectVehicle(id, focus) { selectedId = id; var v = vehicles.find(function (item) { return item.id === id; }); if (!v) return; expandedCity = v.city; if (focus) map.setView([v.lat, v.lng], 13); renderMap(); renderList(); openVehicleModal(v); }
       function openVehicleModal(v) { document.getElementById('vehicleModalTitle').textContent = displayId(v) + ' - ' + v.model + ' - ' + v.project; document.getElementById('pane-realtime').innerHTML = '<div class="metric-grid">' + [['驾驶模式', modeText(v.mode)], ['接管状态', v.takeover], ['车辆速度', v.speed + ' km/h'], ['车辆横向加速度', v.accL + ' m/s²'], ['车辆纵向加速度', v.accW + ' m/s²'], ['车辆侧倾角速度', v.roll + ' °/s'], ['车辆横摆角速度', v.yaw + ' °/s'], ['档位', v.gear], ['数据采集时间', v.time]].map(function (m) { return '<div><div class="metric-label">' + m[0] + '</div><div class="metric-value">' + m[1] + '</div></div>'; }).join('') + '</div>'; var records = v.alerts ? '<div class="record-card"><div class="record-top"><span class="tag tag-red">故障</span><strong>ADAS-C1102</strong><span>' + v.time + '</span></div><div class="record-second">故障定义：车辆感知系统数据异常</div></div><div class="record-card"><div class="record-top"><span class="tag tag-orange">异常事件</span><strong>超速行驶</strong><span>' + v.time + '</span></div><div class="record-second"><b>开始时间：</b>' + v.time + '　<b>结束时间：</b>进行中</div></div>' : '<div class="empty-list">今日暂无故障与异常记录</div>'; document.getElementById('pane-records').innerHTML = records; document.querySelectorAll('#vehicleModal .modal-tab').forEach(function (tab) { tab.classList.toggle('active', tab.dataset.tab === 'realtime'); }); document.querySelectorAll('#vehicleModal .modal-pane').forEach(function (pane) { pane.classList.toggle('active', pane.id === 'pane-realtime'); }); Common.openModal('vehicleModal'); }
-      function showTrack(v) { document.getElementById('trackTitle').textContent = displayId(v) + ' - 轨迹回放'; document.getElementById('trackModeText').textContent = modeText(v.mode); document.getElementById('trackModeText').className = 'tag ' + (v.mode === 'auto' ? 'tag-blue' : v.mode === 'manual' ? 'tag-default' : 'tag-green'); Common.openModal('trackModal'); }
+      function secondsFromTime(value) { var parts = value.split(':').map(Number); return parts[0] * 3600 + parts[1] * 60 + (parts[2] || 0); }
+      function formatTrackTime(seconds) { var value = Math.max(0, Math.min(86399, Math.round(seconds))); return [Math.floor(value / 3600), Math.floor(value % 3600 / 60), value % 60].map(function (part) { return String(part).padStart(2, '0'); }).join(':'); }
+      function makeTrackRoute(v) {
+        var offsets = [[-.018,-.025],[-.014,-.019],[-.010,-.012],[-.006,-.006],[-.002,.001],[.003,.007],[.006,.014],[.010,.020],[.014,.027],[.018,.033],[.021,.040]];
+        return offsets.map(function (point, index) { return [v.lat + point[0] + Math.sin(index * 1.4) * .0018, v.lng + point[1]]; });
+      }
+      function trackMarkerIcon(v) {
+        return L.divIcon({ className: '', html: '<div class="track-vehicle-marker">车<div class="track-vehicle-label">' + displayId(v) + '</div></div>', iconSize: [42, 62], iconAnchor: [21, 37] });
+      }
+      function renderTrackRoute(v) {
+        trackVehicle = v; trackRoute = makeTrackRoute(v);
+        if (trackRouteLayer) map.removeLayer(trackRouteLayer); if (trackPassedLayer) map.removeLayer(trackPassedLayer); if (trackMarker) map.removeLayer(trackMarker); trackDecorationLayer.clearLayers();
+        trackRouteLayer = L.polyline(trackRoute, { color: '#8dbcf8', weight: 6, opacity: .8, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+        trackPassedLayer = L.polyline([trackRoute[0]], { color: '#1677ff', weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+        L.circleMarker(trackRoute[0], { radius: 6, color: '#fff', weight: 2, fillColor: '#52c41a', fillOpacity: 1 }).addTo(trackDecorationLayer).bindTooltip('轨迹起点');
+        L.circleMarker(trackRoute[trackRoute.length - 1], { radius: 6, color: '#fff', weight: 2, fillColor: '#ff4d4f', fillOpacity: 1 }).addTo(trackDecorationLayer).bindTooltip('轨迹终点');
+        trackMarker = L.marker(trackRoute[0], { icon: trackMarkerIcon(v), zIndexOffset: 1000 }).addTo(map);
+        map.stop(); map.fitBounds(trackRouteLayer.getBounds(), { paddingTopLeft: [90, 70], paddingBottomRight: [90, 170], animate: false });
+        updateTrackProgress(0);
+      }
+      function updateTrackProgress(value) {
+        if (!trackVehicle || !trackRoute.length) return;
+        var range = document.getElementById('trackRange'), percent = Math.max(0, Math.min(100, Number(value))); range.value = percent; range.style.setProperty('--track-percent', percent + '%');
+        var scaled = percent / 100 * (trackRoute.length - 1), index = Math.min(trackRoute.length - 2, Math.floor(scaled)), ratio = scaled - index;
+        if (percent === 100) { index = trackRoute.length - 2; ratio = 1; }
+        var from = trackRoute[index], to = trackRoute[index + 1], position = [from[0] + (to[0] - from[0]) * ratio, from[1] + (to[1] - from[1]) * ratio];
+        trackMarker.setLatLng(position); trackPassedLayer.setLatLngs(trackRoute.slice(0, index + 1).concat([position]));
+        var start = secondsFromTime(document.getElementById('trackStartTime').value), end = secondsFromTime(document.getElementById('trackEndTime').value), current = start + (end - start) * percent / 100;
+        document.getElementById('trackClock').textContent = formatTrackTime(current);
+        document.getElementById('trackSpeed').textContent = (percent === 0 ? 0 : Math.max(3, trackVehicle.speed + Math.sin(percent / 9) * 4)).toFixed(0) + ' km/h';
+      }
+      function setTrackPlaying(playing) {
+        var button = document.getElementById('trackPlay'); clearInterval(trackTimer); trackTimer = null; button.classList.toggle('btn-primary', playing); button.setAttribute('aria-pressed', String(playing)); button.innerHTML = playing ? '<span aria-hidden="true">Ⅱ</span><span>暂停</span>' : '<span aria-hidden="true">▶</span><span>播放</span>';
+        if (!playing) return;
+        trackTimer = setInterval(function () { var range = document.getElementById('trackRange'), next = Number(range.value) + .65 * Number(document.getElementById('trackRate').value); if (next >= 100) { updateTrackProgress(100); setTrackPlaying(false); return; } updateTrackProgress(next); }, 250);
+      }
+      function queryTrack() {
+        var start = secondsFromTime(document.getElementById('trackStartTime').value), end = secondsFromTime(document.getElementById('trackEndTime').value), v = vehicles.find(function (item) { return item.id === Number(document.getElementById('trackVehicle').value); });
+        if (end <= start) { Common.showToast('结束时间必须晚于开始时间', 'warning'); return; }
+        if (!v) { Common.showToast('请选择需要回放的车辆', 'warning'); return; }
+        setTrackPlaying(false); document.getElementById('trackStartLabel').textContent = document.getElementById('trackStartTime').value; document.getElementById('trackEndLabel').textContent = document.getElementById('trackEndTime').value;
+        document.getElementById('trackModeText').textContent = modeText(v.mode); document.getElementById('trackModeText').style.color = v.mode === 'auto' ? '#1677ff' : v.mode === 'manual' ? '#8c8c8c' : '#52c41a'; renderTrackRoute(v); Common.showToast('已加载 ' + displayId(v) + ' 的轨迹数据', 'success');
+      }
+      function showTrack(v) {
+        if (!trackActive) trackViewBefore = { center: map.getCenter(), zoom: map.getZoom() };
+        trackActive = true; selectedId = v.id; closeToolbarPanels(); markerLayer.remove(); cityLayer.remove(); document.querySelector('.map-wrap').classList.add('track-active'); document.getElementById('trackPlayback').hidden = false; document.getElementById('trackVehicle').value = String(v.id); document.getElementById('trackModeText').textContent = modeText(v.mode); document.getElementById('trackModeText').style.color = v.mode === 'auto' ? '#1677ff' : v.mode === 'manual' ? '#8c8c8c' : '#52c41a'; renderTrackRoute(v);
+      }
+      function closeTrackPlayback() {
+        if (!trackActive) return;
+        setTrackPlaying(false); trackActive = false; document.getElementById('trackPlayback').hidden = true; document.querySelector('.map-wrap').classList.remove('track-active');
+        if (trackRouteLayer) map.removeLayer(trackRouteLayer); if (trackPassedLayer) map.removeLayer(trackPassedLayer); if (trackMarker) map.removeLayer(trackMarker); trackDecorationLayer.clearLayers(); trackRouteLayer = null; trackPassedLayer = null; trackMarker = null; trackRoute = []; trackVehicle = null;
+        markerLayer.addTo(map); cityLayer.addTo(map); renderMap(); if (trackViewBefore) map.setView(trackViewBefore.center, trackViewBefore.zoom); trackViewBefore = null;
+      }
       function showVideo(v) { document.getElementById('videoTitle').textContent = displayId(v) + ' - 实时视频'; Common.openModal('videoModal'); }
-      function searchVehicle() { var q = document.getElementById('mapSearch').value.trim(); var v = vehicles.find(function (item) { return item.vin === q || item.plate === q || item.network === q; }); if (!v) { Common.showToast('未找到匹配车辆，请输入完整 VIN、车牌号或网联编号', 'warning'); return; } selectVehicle(v.id, true); }
+      function searchVehicle() { var q = document.getElementById('mapSearch').value.trim(); if (!q) { applyFilters(); return; } var v = filteredVehicles()[0]; if (!v) { Common.showToast('当前筛选范围内未找到匹配车辆', 'warning'); applyFilters(); return; } selectVehicle(v.id, true); }
       function applyFilters() { expandedCity = null; renderMap(); renderList(); renderIssues(); }
-      document.getElementById('mapSearchBtn').addEventListener('click', searchVehicle); document.getElementById('mapSearch').addEventListener('keydown', function (e) { if (e.key === 'Enter') searchVehicle(); }); ['mapProject', 'mapRegion', 'mapModel', 'alertOnly'].forEach(function (id) { document.getElementById(id).addEventListener('change', applyFilters); }); document.getElementById('clearMapFilter').addEventListener('click', function () { ['mapProject', 'mapRegion', 'mapModel'].forEach(function (id) { Array.from(document.getElementById(id).options).forEach(function (option) { option.selected = false; }); }); document.getElementById('alertOnly').checked = false; document.getElementById('mapSearch').value = ''; applyFilters(); });
-      document.getElementById('drawerSearchBtn').addEventListener('click', function () { document.getElementById('mapSearch').value = document.getElementById('drawerSearch').value.trim(); searchVehicle(); }); document.getElementById('drawerSearch').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('drawerSearchBtn').click(); }); document.getElementById('drawerMoreBtn').addEventListener('click', function () { var more = document.getElementById('drawerMore'); more.classList.toggle('open'); this.textContent = more.classList.contains('open') ? '收起更多' : '展开更多'; }); document.getElementById('drawerReset').addEventListener('click', function () { ['drawerSearch', 'drawerProject', 'drawerModel', 'drawerRegion'].forEach(function (id) { document.getElementById(id).value = ''; }); document.getElementById('mapSearch').value = ''; applyFilters(); });
-      document.querySelector('.group-switch').addEventListener('click', function (e) { var btn = e.target.closest('.segment-btn'); if (!btn) return; groupMode = btn.dataset.group; document.querySelectorAll('.segment-btn').forEach(function (item) { item.classList.toggle('active', item === btn); }); renderList(); }); document.getElementById('groupList').addEventListener('click', function (e) { var row = e.target.closest('.vehicle-row'), head = e.target.closest('.group-head'); if (head) { head.parentElement.classList.toggle('collapsed'); return; } if (!row) return; var v = vehicles.find(function (item) { return item.id === Number(row.dataset.id); }); if (e.target.closest('.track-row')) showTrack(v); else if (e.target.closest('.video-row')) showVideo(v); else selectVehicle(v.id, true); });
-      document.getElementById('drawerToggle').addEventListener('click', function () { var drawer = document.getElementById('vehicleDrawer'); drawer.classList.toggle('collapsed'); this.textContent = drawer.classList.contains('collapsed') ? '›' : '‹'; this.setAttribute('aria-label', drawer.classList.contains('collapsed') ? '展开车辆列表' : '收起车辆列表'); setTimeout(function () { map.invalidateSize(); }, 240); }); document.getElementById('vehicleModal').addEventListener('click', function (e) { var tab = e.target.closest('.modal-tab'), action = e.target.closest('[data-action]'); if (tab) { document.querySelectorAll('#vehicleModal .modal-tab').forEach(function (item) { item.classList.toggle('active', item === tab); }); document.querySelectorAll('#vehicleModal .modal-pane').forEach(function (pane) { pane.classList.toggle('active', pane.id === 'pane-' + tab.dataset.tab); }); } if (action && selectedId) { var v = vehicles.find(function (item) { return item.id === selectedId; }); Common.closeModal('vehicleModal'); if (action.dataset.action === 'track') showTrack(v); else showVideo(v); } }); document.querySelectorAll('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { Common.closeModal(this.dataset.close); }); }); document.getElementById('trackPlay').addEventListener('click', function () { var self = this; self.textContent = '▶ 播放中'; clearInterval(trackTimer); trackTimer = setInterval(function () { var p = document.querySelector('.track-progress'); var width = parseFloat(p.style.width || '38'); p.style.width = (width >= 96 ? 12 : width + 6) + '%'; }, 700); }); document.getElementById('trackPause').addEventListener('click', function () { clearInterval(trackTimer); document.getElementById('trackPlay').textContent = '▶ 播放'; });
-      map.on('zoomend', renderMap); map.on('moveend', function () { if (map.getZoom() < 9) expandedCity = null; });
+      function updateFilterSummaries() { var config = [{ name: 'mapProject', text: 'mapProjectText', empty: '全部项目' }, { name: 'mapRegion', text: 'mapRegionText', empty: '全部区域' }, { name: 'mapModel', text: 'mapModelText', empty: '全部车型' }], count = document.getElementById('alertOnly').checked ? 1 : 0; config.forEach(function (item) { var values = checkedValues(item.name); count += values.length; document.getElementById(item.text).textContent = !values.length ? item.empty : values.length === 1 ? values[0] : '已选 ' + values.length + ' 项'; }); var badge = document.getElementById('filterActiveCount'); badge.textContent = count; badge.hidden = count === 0; }
+      function closeSelectMenus() { document.querySelectorAll('.select-menu').forEach(function (menu) { menu.hidden = true; menu.previousElementSibling.setAttribute('aria-expanded', 'false'); }); }
+      function closeToolbarPanels() { ['mapSearchPanel', 'mapFilterPanel'].forEach(function (id) { document.getElementById(id).hidden = true; }); ['mapSearchToggle', 'mapFilterToggle'].forEach(function (id) { var btn = document.getElementById(id); btn.classList.remove('active'); btn.setAttribute('aria-expanded', 'false'); }); closeSelectMenus(); }
+      function toggleToolbarPanel(panelId, buttonId) { var panel = document.getElementById(panelId), opening = panel.hidden; closeToolbarPanels(); if (opening) { var btn = document.getElementById(buttonId); panel.hidden = false; btn.classList.add('active'); btn.setAttribute('aria-expanded', 'true'); if (panelId === 'mapSearchPanel') document.getElementById('mapSearch').focus(); } }
+      document.getElementById('mapSearchToggle').addEventListener('click', function () { toggleToolbarPanel('mapSearchPanel', 'mapSearchToggle'); }); document.getElementById('mapFilterToggle').addEventListener('click', function () { toggleToolbarPanel('mapFilterPanel', 'mapFilterToggle'); }); document.getElementById('closeMapFilter').addEventListener('click', closeToolbarPanels);
+      document.getElementById('mapSearchBtn').addEventListener('click', searchVehicle); document.getElementById('mapSearch').addEventListener('keydown', function (e) { if (e.key === 'Enter') searchVehicle(); }); document.getElementById('mapSearch').addEventListener('search', function () { if (!this.value) applyFilters(); });
+      document.getElementById('mapFilterPanel').addEventListener('click', function (e) { var trigger = e.target.closest('.select-trigger'); if (!trigger) return; var menu = trigger.nextElementSibling, opening = menu.hidden; closeSelectMenus(); menu.hidden = !opening; trigger.setAttribute('aria-expanded', String(opening)); }); document.getElementById('mapFilterPanel').addEventListener('change', function (e) { if (!e.target.matches('input[type="checkbox"]')) return; updateFilterSummaries(); applyFilters(); }); document.getElementById('clearMapFilter').addEventListener('click', function () { document.querySelectorAll('#mapFilterPanel input[type="checkbox"]').forEach(function (input) { input.checked = false; }); updateFilterSummaries(); applyFilters(); });
+      document.addEventListener('click', function (e) { if (!e.target.closest('.map-toolbar')) closeToolbarPanels(); }); document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeToolbarPanels(); closeTrackPlayback(); } });
+      document.querySelector('.group-switch').addEventListener('click', function (e) { var btn = e.target.closest('.segment-btn'); if (!btn) return; groupMode = btn.dataset.group; document.querySelectorAll('.segment-btn').forEach(function (item) { item.classList.toggle('active', item === btn); }); renderList(); renderIssues(); }); document.getElementById('groupList').addEventListener('click', function (e) { var row = e.target.closest('.vehicle-row'), head = e.target.closest('.group-head'); if (head) { var group = head.parentElement; group.classList.toggle('collapsed'); head.setAttribute('aria-expanded', String(!group.classList.contains('collapsed'))); return; } if (!row) return; var v = vehicles.find(function (item) { return item.id === Number(row.dataset.id); }); if (e.target.closest('.track-row')) showTrack(v); else if (e.target.closest('.video-row')) showVideo(v); else selectVehicle(v.id, true); }); document.getElementById('issueList').addEventListener('click', function (e) { var item = e.target.closest('.issue-item'), head = e.target.closest('.group-head'); if (head) { var group = head.parentElement; group.classList.toggle('collapsed'); head.setAttribute('aria-expanded', String(!group.classList.contains('collapsed'))); return; } if (item) selectVehicle(Number(item.dataset.id), true); });
+      document.getElementById('drawerToggle').addEventListener('click', function () { var drawer = document.getElementById('vehicleDrawer'); drawer.classList.toggle('collapsed'); this.textContent = drawer.classList.contains('collapsed') ? '›' : '‹'; this.setAttribute('aria-label', drawer.classList.contains('collapsed') ? '展开车辆列表' : '收起车辆列表'); setTimeout(function () { map.invalidateSize(); }, 240); });
+      document.getElementById('vehicleModal').addEventListener('click', function (e) { var tab = e.target.closest('.modal-tab'), action = e.target.closest('[data-action]'); if (tab) { document.querySelectorAll('#vehicleModal .modal-tab').forEach(function (item) { item.classList.toggle('active', item === tab); }); document.querySelectorAll('#vehicleModal .modal-pane').forEach(function (pane) { pane.classList.toggle('active', pane.id === 'pane-' + tab.dataset.tab); }); } if (action && selectedId) { var v = vehicles.find(function (item) { return item.id === selectedId; }); Common.closeModal('vehicleModal'); if (action.dataset.action === 'track') showTrack(v); else showVideo(v); } });
+      document.querySelectorAll('[data-close]').forEach(function (btn) { btn.addEventListener('click', function () { Common.closeModal(this.dataset.close); }); });
+      document.getElementById('trackVehicle').innerHTML = vehicles.map(function (v) { return '<option value="' + v.id + '">' + displayId(v) + '（' + v.network + '）</option>'; }).join('');
+      document.getElementById('trackQuery').addEventListener('click', queryTrack);
+      document.getElementById('trackRange').addEventListener('input', function () { updateTrackProgress(this.value); });
+      document.getElementById('trackPlay').addEventListener('click', function () { if (Number(document.getElementById('trackRange').value) >= 100) updateTrackProgress(0); setTrackPlaying(this.getAttribute('aria-pressed') !== 'true'); });
+      document.getElementById('trackVideoReplay').addEventListener('click', function () { if (trackVehicle) showVideo(trackVehicle); });
+      document.getElementById('trackClose').addEventListener('click', closeTrackPlayback);
+      document.getElementById('trackLegendToggle').addEventListener('click', function () { var legend = document.getElementById('trackLegend'), visible = legend.hidden; legend.hidden = !visible; this.classList.toggle('active', visible); this.setAttribute('aria-pressed', String(visible)); });
+      document.getElementById('trackFitRoute').addEventListener('click', function () { if (trackRouteLayer) { map.stop(); map.fitBounds(trackRouteLayer.getBounds(), { paddingTopLeft: [90, 70], paddingBottomRight: [90, 170], animate: false }); } });
+      map.on('zoomend', function () { if (!trackActive) renderMap(); }); map.on('moveend', function () { if (!trackActive && map.getZoom() < 9) expandedCity = null; });
       document.querySelector('.drawer-tabs').addEventListener('click', function (e) { var tab = e.target.closest('.drawer-tab'); if (tab) switchDrawerTab(tab.dataset.drawerTab); });
-      var allBounds = L.latLngBounds(vehicles.map(function (v) { return [v.lat, v.lng]; })); map.fitBounds(allBounds, { padding: [80, 80] }); renderMap(); renderList(); renderIssues();
+      var allBounds = L.latLngBounds(vehicles.map(function (v) { return [v.lat, v.lng]; })); map.fitBounds(allBounds, { padding: [80, 80] }); updateFilterSummaries(); renderMap(); renderList(); renderIssues();
+      if (window.location.hash === '#track-preview') setTimeout(function () { showTrack(vehicles[0]); }, 500);
     }());
   </script>
 </body>
