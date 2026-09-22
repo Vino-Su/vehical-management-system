@@ -7,14 +7,14 @@
 <!--
   页面用途：车辆资产管理 — 单车360度档案 + 车辆资产详情页，展示单台车辆的完整档案与运行状态。
   核心功能：1) Tab 分区展示：车辆总览（默认） / 运行监控 / 车辆档案 / 业务记录 / 生命周期 / 变更日志；
-            2) 「车辆概览」聚合车辆身份、近期事件、运行/健康摘要、待办与自动驾驶/作业设备域指标（仅自动驾驶环卫机器人车型展示）；
+            2) 「车辆总览」由「运行总账」轻量指标条（累计里程/累计费用/车龄，费用口径悬浮提示）与当班决策看板（作业可用性/实时运行/当班保障/健康与损耗/合规与风险/当前提醒，提醒项可点击跳转）构成；
             3) 基础信息与售后信息支持查看态 ↔ 编辑态切换（编辑态底部固定操作栏，必填项校验 + 控件下方红字提示）；
             4) 调度信息、BOM清单、变更记录、变更日志均支持筛选、分页（默认 10 条/页）与导出（导出前二次确认）；
             5) 调度历史详情弹窗（步骤条 + 流程日志）、零部件变更时间线弹窗、图片预览。
   交互逻辑：编辑态由「编辑」按钮进入，需先保存或取消才能切换 Tab；
             弹窗统一使用公共 .modal-overlay（.active 显示），点击遮罩 / ESC / 右上角 × 关闭；
             顶部导航仅展示模块名（H3 20px），无面包屑、无页面大标题。
-  依据：单车360度档案与运行状态监管方案（V1.3）及《关于车辆生命周期的事件定义》
+  依据：单车360度档案与运行状态监管方案（V1.4）及《关于车辆生命周期的事件定义》
   依赖：../components/common.css、../components/form.css、../components/common.js（无 CDN、无外部资源）
 -->
 <link rel="stylesheet" href="../components/common.css">
@@ -42,10 +42,11 @@
 .overview-vehicle { font-size:16px; font-weight:600; color:var(--text-primary); }
 .overview-project { font-size:14px; color:var(--text-secondary); }
 .overview-identity-meta { display:flex; flex-wrap:wrap; gap:8px 24px; margin-top:8px; color:var(--text-secondary); font-family:var(--font-number); font-size:13px; line-height:20px; }
-.availability-banner { display:flex; align-items:flex-start; gap:16px; padding:14px 20px; background:#fffbe6; border-bottom:1px solid #ffe58f; }
+.availability-banner { display:flex; align-items:flex-start; gap:16px; padding:16px 20px 16px 16px; background:#fffbe6; border-bottom:1px solid #ffe58f; border-left:4px solid #faad14; }
 .availability-label { flex:0 0 auto; color:#ad6800; font-size:14px; font-weight:600; line-height:22px; }
 .availability-body { flex:1; min-width:0; }
-.availability-state { color:#d48806; font-size:16px; font-weight:600; line-height:22px; }
+.availability-state { display:flex; align-items:center; gap:8px; color:#d48806; font-size:20px; font-weight:600; line-height:28px; }
+.availability-state::before { width:8px; height:8px; flex:0 0 auto; border-radius:50%; background:#faad14; content:""; }
 .availability-reason { margin-top:3px; color:var(--text-primary); font-size:14px; line-height:22px; }
 .availability-update { margin-top:4px; color:var(--text-secondary); font-family:var(--font-number); font-size:12px; line-height:18px; }
 .overview-operating-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
@@ -56,11 +57,31 @@
 .operating-metrics { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px 20px; margin-top:12px; }
 .operating-metric { color:var(--text-primary); font-size:14px; line-height:22px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .operating-metric strong { font-family:var(--font-number); font-weight:600; }
+.operating-metric--warn { color:#d46b08; }
+.operating-metric--warn .metric-warn-icon { margin-right:4px; color:#fa8c16; }
 .operating-card-action { display:inline-flex; align-items:center; height:24px; margin-top:14px; padding:0; border:0; background:transparent; color:var(--primary); cursor:pointer; font-size:13px; }
 .operating-card-action:hover { color:var(--primary-hover); }
 .overview-reminder { display:flex; align-items:center; gap:12px; padding:14px 20px; background:#fff7e6; border-top:1px solid #ffd591; }
 .reminder-title { flex:0 0 auto; color:#ad4e00; font-size:14px; font-weight:600; }
 .reminder-items { min-width:0; color:var(--text-primary); font-size:14px; line-height:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.reminder-item { padding:0; border:0; background:transparent; color:var(--primary); cursor:pointer; font-size:14px; line-height:22px; }
+.reminder-item:hover { color:var(--primary-hover); text-decoration:underline; }
+.reminder-sep { margin:0 6px; color:#d9d9d9; }
+
+/* === 车辆总览：运行总账（累计口径，当班决策看板之上的轻量指标条） === */
+.overview-ledger { display:flex; align-items:center; flex-wrap:wrap; gap:10px 0; padding:12px 20px; background:var(--bg-container); border:1px solid var(--border-color); border-radius:var(--radius-lg); }
+.ledger-title { flex:0 0 auto; margin-right:20px; padding-right:20px; border-right:1px solid var(--border-color); color:var(--text-secondary); font-size:13px; line-height:20px; }
+.ledger-item { display:flex; align-items:baseline; gap:8px; flex:0 0 auto; margin-right:20px; padding-right:20px; border-right:1px solid var(--border-color); }
+.ledger-label { display:flex; align-items:center; gap:4px; color:var(--text-secondary); font-size:13px; line-height:20px; white-space:nowrap; }
+.ledger-value { color:var(--text-primary); font-family:var(--font-number); font-size:16px; font-weight:600; line-height:24px; white-space:nowrap; }
+.ledger-value--text { font-family:inherit; }
+.ledger-unit { margin-left:2px; color:var(--text-secondary); font-size:12px; font-weight:400; }
+.ledger-update { flex:0 0 auto; margin-left:auto; color:var(--text-secondary); font-family:var(--font-number); font-size:12px; line-height:18px; white-space:nowrap; }
+.ledger-tip { position:relative; display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; flex:0 0 auto; border:1px solid var(--text-secondary); border-radius:50%; color:var(--text-secondary); cursor:help; font-size:10px; line-height:1; }
+.ledger-tip-bubble { position:absolute; top:calc(100% + 8px); left:50%; z-index:30; box-sizing:border-box; width:max-content; max-width:280px; padding:6px 10px; border-radius:var(--radius); background:#000000d9; color:#fff; font-size:12px; font-weight:400; line-height:18px; text-align:left; white-space:normal; opacity:0; visibility:hidden; transform:translate(-50%, -4px); transition:opacity .15s ease, transform .15s ease, visibility .15s; pointer-events:none; }
+.ledger-tip-bubble::after { position:absolute; bottom:100%; left:50%; margin-left:-5px; border:5px solid transparent; border-bottom-color:#000000d9; content:""; }
+.ledger-tip:hover .ledger-tip-bubble, .ledger-tip:focus-visible .ledger-tip-bubble { opacity:1; visibility:visible; transform:translate(-50%, 0); }
+@media (max-width:900px) { .overview-ledger { gap:8px 0; } .ledger-title { margin-right:12px; padding-right:12px; } .ledger-item { margin-right:12px; padding-right:12px; } .ledger-update { width:100%; margin-left:0; padding-top:6px; } }
 
 /* === 车辆详情一级/二级导航 === */
 .business-subtab-bar { display:flex; align-items:center; gap:4px; min-height:40px; margin-bottom:16px; padding:4px; background:#fafafa; border:1px solid var(--border-color); border-radius:var(--radius); overflow-x:auto; }
@@ -1019,6 +1040,24 @@
           </div>
 
           <div class="overview-dashboard">
+            <section class="overview-ledger" aria-label="运行总账">
+              <div class="ledger-title">运行总账</div>
+              <div class="ledger-item">
+                <span class="ledger-label">累计里程</span>
+                <span class="ledger-value">12,847<span class="ledger-unit">km</span></span>
+              </div>
+              <div class="ledger-item">
+                <span class="ledger-label">累计费用
+                  <span class="ledger-tip" tabindex="0" aria-label="累计费用统计口径说明">?<span class="ledger-tip-bubble" role="tooltip">统计口径：已接入台账的运营费用（能耗、流量等），不含折旧及购置成本</span></span>
+                </span>
+                <span class="ledger-value">¥ 12,650</span>
+              </div>
+              <div class="ledger-item">
+                <span class="ledger-label">车龄</span>
+                <span class="ledger-value ledger-value--text">1年2个月</span>
+              </div>
+              <div class="ledger-update">统计截止 2026-09-15</div>
+            </section>
             <section class="overview-summary" aria-label="车辆当班概览">
               <div class="availability-banner">
                 <span class="availability-label">当前作业可用性</span>
@@ -1027,10 +1066,10 @@
               <div class="overview-operating-grid">
                 <section class="overview-operating-card"><div class="operating-card-title">实时运行</div><div class="operating-metrics"><span class="operating-metric">清扫中 · 自动驾驶</span><span class="operating-metric">速度 <strong>8 km/h</strong></span><span class="operating-metric">当前故障 <strong>0</strong></span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看运行监控</button></section>
                 <section class="overview-operating-card"><div class="operating-card-title">当班保障</div><div class="operating-metrics"><span class="operating-metric">电量 <strong>68%</strong> · 清水 <strong>12%</strong></span><span class="operating-metric">垃圾箱 <strong>40%</strong> · 设备 <strong>8/8</strong></span><span class="operating-metric">今日流量 <strong>1.2GB</strong></span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看保障详情</button></section>
-                <section class="overview-operating-card"><div class="operating-card-title">健康与损耗</div><div class="operating-metrics"><span class="operating-metric">左边刷：剩余 <strong>8 小时</strong></span><span class="operating-metric">摄像头：当前在线，待检查</span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看健康详情</button></section>
+                <section class="overview-operating-card"><div class="operating-card-title">健康与损耗</div><div class="operating-metrics"><span class="operating-metric operating-metric--warn"><span class="metric-warn-icon">⚠</span>左边刷：剩余 <strong>8 小时</strong></span><span class="operating-metric">摄像头：当前在线，待检查</span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看健康详情</button></section>
                 <section class="overview-operating-card"><div class="operating-card-title">合规与风险</div><div class="operating-metrics"><span class="operating-metric">证照剩余 <strong>15 天</strong></span><span class="operating-metric">年检已预约</span></div><button class="operating-card-action" onclick="showBusinessUnavailable('合规与风险')">查看合规与风险</button></section>
               </div>
-              <div class="overview-reminder"><span class="reminder-title">当前提醒：3 项</span><span class="reminder-items">清水补给、摄像头检查、证照续办</span></div>
+              <div class="overview-reminder"><span class="reminder-title">当前提醒：3 项</span><span class="reminder-items"><button class="reminder-item" type="button" onclick="switchTab('monitor')">清水补给</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="switchTab('monitor')">摄像头检查</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="showBusinessUnavailable('合规与风险')">证照续办</button></span></div>
             </section>
           </div>
         </div>
