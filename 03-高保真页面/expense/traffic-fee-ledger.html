@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流量费用明细 - 车辆管理系统</title>
+<link rel="stylesheet" href="../components/common.css">
+<link rel="stylesheet" href="../components/fixed-table.css">
+<link rel="stylesheet" href="./energy-ledger.css">
+<!-- 页面用途：以车辆为主体、按月度展示流量费用汇总明细。交互逻辑：统计月份/车牌号/VIN码/归属项目查询、合计统计、分页勾选、详情下钻与导出。 -->
+<style>
+  .fee-meter { display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 0; }
+  .fee-meter-value { font-family:var(--font-number); font-size:13px; line-height:18px; color:var(--text-primary); }
+  .fee-meter-value.is-over { color:var(--error); }
+  .fee-meter-track { width:76px; height:6px; overflow:hidden; border-radius:3px; background:#edf2f7; }
+  .fee-meter-fill { display:block; height:100%; border-radius:3px; background:var(--success); }
+  .fee-meter-fill.warn { background:var(--warning); }
+  .fee-meter-fill.over { background:var(--error); }
+  .fee-amount { color:var(--primary-active); font-family:var(--font-number); font-variant-numeric:tabular-nums; font-weight:600; }
+  .fee-detail-block { margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color); }
+  .fee-detail-title { margin-bottom:12px; font-size:16px; font-weight:500; line-height:24px; color:var(--text-primary); }
+  .fee-detail-table th, .fee-detail-table td { height:40px !important; padding:0 12px !important; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="layout"><aside class="sidebar" id="sidebar"></aside><main class="main-area"><header id="header"></header><section class="content"><div class="page-container">
+<div class="search-bar" data-visible-count="3"><div class="search-row"><div class="ledger-search-item"><label>统计月份</label><div class="ledger-date-range"><input id="startMonth" type="month" aria-label="开始月份"><span>至</span><input id="endMonth" type="month" aria-label="结束月份"></div></div><div class="ledger-search-item"><label>车牌号</label><input id="plateFilter" placeholder="支持模糊搜索"></div><div class="ledger-search-item"><label>VIN码</label><input id="vinFilter" placeholder="支持模糊搜索"></div><div class="ledger-search-item"><label>归属项目</label><select id="projectFilter"></select></div><div class="ledger-search-item"><button class="btn btn-primary" id="searchBtn" type="button">查询</button><button class="btn" id="resetBtn" type="button">重置</button></div></div></div>
+<div class="action-bar"><button class="btn push-right" id="exportBtn" type="button">导出</button></div>
+<div class="table-wrapper ledger-table fixed-table" data-fixed-first="2" data-fixed-last="2" data-fixed-min-width="1420px" style="--ledger-table-min-width:1420px"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+<div class="ledger-summary" id="summary"></div>
+<div id="paginationEl"></div>
+</div></section></main></div>
+<div class="modal-overlay" id="detailModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3 id="detailTitle">流量费用详情</h3><button class="modal-close" onclick="Common.closeModal('detailModal')">×</button></div><div class="modal-body" id="detailBody"></div><div class="modal-footer modal-footer--right"><button class="btn" onclick="Common.closeModal('detailModal')">关闭</button></div></div></div>
+<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/filter-component.js"></script><script src="../components/fixed-table.js"></script><script src="./traffic-fee-ledger.js"></script></body></html>

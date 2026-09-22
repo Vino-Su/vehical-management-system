@@ -81,7 +81,7 @@ const Common = {
       ]},
       { label: '流量费用', symbol: '流', items: [
         { label: '流量套餐管理', id: 'data-plan', disabled: true },
-        { label: '流量费用明细', id: 'data-fee', disabled: true },
+        { label: '流量费用明细', id: 'data-fee', href: 'expense/traffic-fee-ledger.html' },
       ]},
       { label: 'AI推理服务费用', symbol: 'AI', items: [
         { label: '模型套餐管理', id: 'model-plan', disabled: true },
