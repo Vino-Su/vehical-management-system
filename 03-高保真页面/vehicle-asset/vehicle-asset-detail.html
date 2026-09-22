@@ -6,7 +6,7 @@
 <title>资产详情 - 车辆管理系统</title>
 <!--
   页面用途：车辆资产管理 — 单车360度档案 + 车辆资产详情页，展示单台车辆的完整档案与运行状态。
-  核心功能：1) Tab 分区展示：车辆概览（默认） / 基础信息 / 调度信息 / BOM清单 / 售后维保 / 变更日志（合规、风险、费用暂未开放）；
+  核心功能：1) Tab 分区展示：车辆总览（默认） / 运行监控 / 车辆档案 / 业务记录 / 生命周期 / 变更日志；
             2) 「车辆概览」聚合车辆身份、近期事件、运行/健康摘要、待办与自动驾驶/作业设备域指标（仅自动驾驶环卫机器人车型展示）；
             3) 基础信息与售后信息支持查看态 ↔ 编辑态切换（编辑态底部固定操作栏，必填项校验 + 控件下方红字提示）；
             4) 调度信息、BOM清单、变更记录、变更日志均支持筛选、分页（默认 10 条/页）与导出（导出前二次确认）；
@@ -14,7 +14,7 @@
   交互逻辑：编辑态由「编辑」按钮进入，需先保存或取消才能切换 Tab；
             弹窗统一使用公共 .modal-overlay（.active 显示），点击遮罩 / ESC / 右上角 × 关闭；
             顶部导航仅展示模块名（H3 20px），无面包屑、无页面大标题。
-  依据：单车360度档案与运行状态监管方案（V1.1）阶段一
+  依据：单车360度档案与运行状态监管方案（V1.3）及《关于车辆生命周期的事件定义》
   依赖：../components/common.css、../components/form.css、../components/common.js（无 CDN、无外部资源）
 -->
 <link rel="stylesheet" href="../components/common.css">
@@ -379,6 +379,11 @@
 .transfer-search .date-range input { flex: 1; min-width: 0; }
 .transfer-search .date-range .sep { color: var(--text-disabled); }
 .transfer-search .filter-actions { display: flex; gap: 8px; margin-left: auto; }
+
+/* === 变更日志查询区：与业务记录筛选区保持一致的外置标签布局 === */
+.changelog-search { margin-bottom: 24px; }
+.changelog-search .form-row > .control { flex-basis: 220px; width: 220px; }
+.changelog-search .filter-actions { align-self: flex-end; }
 
 /* === 变更日志操作类型标签 ===
    青色（cyan）标签底色由 common.css 未提供，渲染时统一回退到 tag-blue（与其他页面一致） */
@@ -1343,38 +1348,43 @@
           </div>
         </div>
 
-        <!-- Tab Content: 生命周期（单车360度档案 V1.0 §5 - 以车辆为主线的事件档案） -->
+        <!-- Tab Content: 生命周期（车辆关键业务结果大事记） -->
         <div class="tab-content" id="tab-lifecycle" style="display:none">
-          <!-- 阶段步骤条（§5.5） -->
-          <div class="lifecycle-stage-bar" id="lifecycleStageBar"></div>
-
-          <!-- 多维筛选 -->
-          <div class="lifecycle-filter">
-            <div class="lifecycle-filter-group">
-              <span class="lifecycle-filter-label">类型</span>
-              <span class="lifecycle-chip active" data-filter-type="all">全部</span>
-              <span class="lifecycle-chip" data-filter-type="severe_fault">严重故障</span>
-              <span class="lifecycle-chip" data-filter-type="general_fault">一般故障</span>
-              <span class="lifecycle-chip" data-filter-type="warning">预警</span>
-              <span class="lifecycle-chip" data-filter-type="dispatch">调度流转</span>
-              <span class="lifecycle-chip" data-filter-type="maintenance">维保事件</span>
-              <span class="lifecycle-chip" data-filter-type="ota">软件升级</span>
-              <span class="lifecycle-chip" data-filter-type="asset">资产变更</span>
-              <span class="lifecycle-chip" data-filter-type="dispose">退出处置</span>
+          <div class="lifecycle-toolbar">
+            <div class="lifecycle-toolbar-head">
+              <div class="lifecycle-toolbar-title">车辆生命周期大事记</div>
+              <div class="lifecycle-result-count">当前显示 <strong id="lifecycleResultCount">0</strong> 条事件</div>
             </div>
-            <div class="lifecycle-filter-group">
-              <span class="lifecycle-filter-label">时间</span>
-              <span class="lifecycle-chip active" data-filter-range="all">全部</span>
-              <span class="lifecycle-chip" data-filter-range="7d">近 7 天</span>
-              <span class="lifecycle-chip" data-filter-range="30d">近 30 天</span>
-              <span class="lifecycle-chip" data-filter-range="90d">近 90 天</span>
-            </div>
-            <div class="lifecycle-filter-group" style="margin-left:auto">
-              <span class="btn-link" onclick="Common.showToast('阶段1原型演示，导出与高级管理后续接入','info')">导出</span>
+            <div class="lifecycle-filter">
+              <div class="lifecycle-filter-group">
+                <span class="lifecycle-filter-label">事件类型</span>
+                <button type="button" class="lifecycle-chip active" data-filter-type="all">全部</button>
+                <button type="button" class="lifecycle-chip" data-filter-type="archived">建档</button>
+                <button type="button" class="lifecycle-chip" data-filter-type="info_change">信息变更</button>
+                <button type="button" class="lifecycle-chip" data-filter-type="maintenance">维保</button>
+                <button type="button" class="lifecycle-chip" data-filter-type="fault">故障</button>
+                <button type="button" class="lifecycle-chip" data-filter-type="dispatch">调度</button>
+                <button type="button" class="lifecycle-chip" data-filter-type="compliance">合规</button>
+                <button type="button" class="lifecycle-chip" data-filter-type="risk">风险</button>
+                <button type="button" class="lifecycle-chip" data-filter-type="exit">退出处置</button>
+              </div>
+              <div class="lifecycle-filter-group">
+                <span class="lifecycle-filter-label">事件时间</span>
+                <button type="button" class="lifecycle-chip active" data-filter-range="all">全部</button>
+                <button type="button" class="lifecycle-chip" data-filter-range="7d">近 7 天</button>
+                <button type="button" class="lifecycle-chip" data-filter-range="30d">近 30 天</button>
+                <button type="button" class="lifecycle-chip" data-filter-range="90d">近 90 天</button>
+                <div class="lifecycle-date-range">
+                  <input type="date" id="lifecycleStartDate" aria-label="生命周期开始日期">
+                  <span class="lifecycle-date-separator">至</span>
+                  <input type="date" id="lifecycleEndDate" aria-label="生命周期结束日期">
+                  <button type="button" class="btn btn-sm" onclick="applyLifecycleDateRange()">查询</button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- 事件列表 -->
+          <!-- 事件列表：只读，按业务实际发生时间倒序 -->
           <div class="lifecycle-events" id="lifecycleEvents"></div>
         </div>
 
@@ -1384,8 +1394,36 @@
             提示：本表记录的是<strong style="color:var(--text-primary)">字段级操作审计</strong>（修改字段、改前改后值、操作人、操作时间、操作来源）。车辆从建档到当前的<strong style="color:var(--text-primary)">关键业务事件</strong>请见
             <a class="btn-link" onclick="switchTab('lifecycle')">「生命周期」Tab</a>。
           </div>
-          <div class="action-bar">
-            <button class="btn" onclick="exportChangelog()"><span class="btn-icon">⤓</span>导出</button>
+          <div class="transfer-search changelog-search" aria-label="变更日志查询条件">
+            <div class="form-row">
+              <label for="logTypeFilter">操作类型</label>
+              <div class="control">
+                <select id="logTypeFilter">
+                  <option value="">请选择</option>
+                  <option value="修改">修改</option>
+                  <option value="删除">删除</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <label for="logFieldFilter">修改字段</label>
+              <div class="control">
+                <select id="logFieldFilter">
+                  <option value="">请选择</option>
+                  <option value="车辆状态">车辆状态</option>
+                  <option value="归属项目">归属项目</option>
+                  <option value="运营负责人">运营负责人</option>
+                  <option value="资产来源">资产来源</option>
+                  <option value="备注">备注</option>
+                  <option value="网联编号">网联编号</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn btn-primary" type="button" onclick="searchLog()">查询</button>
+              <button class="btn" type="button" onclick="resetLogSearch()">重置</button>
+              <button class="btn" type="button" onclick="exportChangelog()"><span class="btn-icon">⤓</span>导出</button>
+            </div>
           </div>
 
           <div class="table-wrapper">
@@ -1545,7 +1583,7 @@ function switchTab(tab) {
   const contentEl = document.getElementById('tab-' + tab);
   if (contentEl) contentEl.style.display = '';
   if (tab === 'changelog') renderLogTable();
-  if (tab === 'lifecycle') { renderLifecycleStages(); renderLifecycleEvents(); }
+  if (tab === 'lifecycle') renderLifecycleEvents();
   if (tab === 'business') switchBusinessTab(currentBusinessTab);
   if (tab === 'archive') refreshArchiveDirectory();
   updateEditButton();
@@ -1594,273 +1632,227 @@ function renderOverviewByVehicleType() {
 }
 
 // =====================================================================
-// 单车360度档案 - 生命周期（单车档案与运行状态监管方案 V1.0 §5）
-// 阶段1：内存聚合层 + 占位数据。后续接入真实数据时仅替换 mockLifecycleEvents
-// 与 lifecycleStages 数据源，UI / 渲染 / 筛选逻辑不变。
+// 生命周期：仅展示来源业务已经形成的关键事实，页面本身只读。
+// 生产接入时由各来源模块按同一结构聚合，不在本页维护第二套业务数据。
 // =====================================================================
-
-// 7 个生命周期阶段（§5.2），顺序固定用于步骤条
-const lifecycleStages = [
-  { key: 'archived',   label: '建档入池', icon: '1' },
-  { key: 'asset',      label: '资产归属', icon: '2' },
-  { key: 'assigned',   label: '分配项目', icon: '3' },
-  { key: 'running',    label: '运行调度', icon: '4' },
-  { key: 'maintenance',label: '维保部件', icon: '5' },
-  { key: 'compliance', label: '合规风险', icon: '6' },
-  { key: 'dispose',    label: '退出归档', icon: '7' },
-];
-
-// 事件类型 → 阶段、tag、label 映射（§5.3 字段 + §5.2 阶段）
 const lifecycleTypeMap = {
-  archived:        { stage: 'archived',    tagCls: 'tag-blue',   label: '建档入池' },
-  asset:           { stage: 'asset',       tagCls: 'tag-purple', label: '资产变更' },
-  assigned:        { stage: 'asset',       tagCls: 'tag-purple', label: '项目分配' },
-  dispatch:        { stage: 'assigned',    tagCls: 'tag-blue',   label: '调度流转' },
-  severe_fault:    { stage: 'running',     tagCls: 'tag-red',    label: '严重故障' },
-  general_fault:   { stage: 'running',     tagCls: 'tag-orange', label: '一般故障' },
-  warning:         { stage: 'running',     tagCls: 'tag-yellow', label: '预警' },
-  maintenance:     { stage: 'maintenance', tagCls: 'tag-green',  label: '维保事件' },
-  ota:             { stage: 'running',     tagCls: 'tag-purple', label: '软件升级' },
-  compliance:      { stage: 'compliance',  tagCls: 'tag-blue',   label: '合规事件' },
-  dispose:         { stage: 'dispose',     tagCls: 'tag-default',label: '退出处置' },
+  archived:    { tagCls: 'tag-blue',    label: '建档' },
+  info_change: { tagCls: 'tag-purple',  label: '信息变更' },
+  maintenance: { tagCls: 'tag-green',   label: '维保事件' },
+  fault:       { tagCls: 'tag-red',     label: '故障' },
+  dispatch:    { tagCls: 'tag-blue',    label: '调度流转' },
+  compliance:  { tagCls: 'tag-blue',    label: '合规事件' },
+  risk:        { tagCls: 'tag-orange',  label: '风险事件' },
+  exit:        { tagCls: 'tag-default', label: '退出处置' },
 };
 
-// 严重度映射（事件 severity → tag 类 + 文案）
-const lifecycleSeverityMap = {
-  severe:  { tagCls: 'tag-red',    label: '严重' },
-  normal:  { tagCls: 'tag-orange', label: '一般' },
-  info:    { tagCls: 'tag-blue',   label: '提示' },
-};
-
-// 处理状态映射
-const lifecycleStatusMap = {
-  pending:   { tagCls: 'tag-yellow', label: '待确认' },
-  processing:{ tagCls: 'tag-blue',   label: '处理中' },
-  resolved:  { tagCls: 'tag-green',  label: '已解除' },
-  closed:    { tagCls: 'tag-default',label: '已关闭' },
-};
-
-// 数据源 → tag 颜色（用于数据来源标识）
-const lifecycleSourceMap = {
-  self:      { tagCls: 'tag-blue',   label: '本系统' },
-  iot:       { tagCls: 'tag-purple', label: '车载终端' },
-  ad:        { tagCls: 'tag-purple', label: '自动驾驶平台' },
-  service:   { tagCls: 'tag-green',  label: '售后系统' },
-  external:  { tagCls: 'tag-default',label: '外部系统' },
-};
-
-// 阶段1 内存事件（演示数据；占位覆盖 §5.4 五类沉淀规则）
-// 字段对齐方案 §5.3：id / occurred_at / type / stage / severity / title / source / operator / status / related / prev_state / new_state
-const mockLifecycleEvents = [
+// 原型数据代表已从来源业务形成的有效记录；异常、预警、OTA、费用及调度中间节点不进入此列表。
+const lifecycleEvents = [
   {
-    id: 'EVT-20260910-001', occurred_at: '2026-09-10 14:20:08',
-    type: 'general_fault', severity: 'normal',
-    title: '剩余电量低于阈值，车辆可用性由「可用」变为「受限可用」',
-    source: 'iot', operator: '车载终端 #NL-0091', status: 'pending',
-    prev_state: { availability: '可用' }, new_state: { availability: '受限可用' },
-    related: [
-      { kind: 'alert',   label: '查看告警', href: 'javascript:;' },
-      { kind: 'wo_new',  label: '发起工单', href: 'javascript:;' },
+    id: 'LC-20260918-001', occurred_at: '2026-09-18 16:40:00', type: 'maintenance', subtype: '保养',
+    title: '车辆保养完成', summary: '完成常规保养，更换空气滤芯',
+    source: '售后系统', operator: '服务顾问 王凯',
+    fields: [
+      { label: '工单编号', value: 'BY-20260918-007', number: true },
+      { label: '当前节点', value: '已完成' },
+      { label: '完成时间', value: '2026-09-18 16:40', number: true },
+      { label: '结算金额', value: '¥1,280.00', number: true },
     ],
+    detail: { label: '查看保养工单', target: '保养工单 BY-20260918-007', canView: true },
   },
   {
-    id: 'EVT-20260910-002', occurred_at: '2026-09-10 09:15:42',
-    type: 'dispatch', severity: 'info',
-    title: '调度单完成，车辆由 B 项目交接至 A 项目',
-    source: 'self', operator: '张三', status: 'closed',
-    prev_state: { project: 'B 项目' }, new_state: { project: 'A 项目 - 智慧园区' },
-    related: [
-      { kind: 'transfer', label: '查看调度详情', href: 'javascript:;' },
+    id: 'LC-20260910-001', occurred_at: '2026-09-10 09:15:42', type: 'dispatch',
+    title: '车辆完成项目调度', summary: '车辆由“椒北街道项目”调度至“鸠江项目”',
+    source: '调度任务及单车交接记录', operator: '张三',
+    fields: [
+      { label: '任务编号', value: 'DD-20260910-002', number: true },
+      { label: '调度前项目', value: '椒北街道项目' },
+      { label: '调度后项目', value: '鸠江项目' },
+      { label: '确认交接时间', value: '2026-09-10 09:15', number: true },
     ],
+    detail: { label: '查看调度详情', target: '调度任务 DD-20260910-002', canView: true },
   },
   {
-    id: 'EVT-20260909-001', occurred_at: '2026-09-09 16:32:11',
-    type: 'warning', severity: 'info',
-    title: '垃圾箱装载达 65%，接近预警阈值（80%）',
-    source: 'ad', operator: '自动驾驶平台', status: 'processing',
-    related: [
-      { kind: 'alert', label: '查看告警', href: 'javascript:;' },
+    id: 'LC-20260902-001', occurred_at: '2026-09-02 10:18:07', type: 'info_change',
+    title: '车辆关键信息发生变更', summary: '同一次保存涉及的关键字段已合并为一条事件',
+    source: '车辆档案变更日志', operator: '管理员 李四',
+    fields: [{ label: '操作时间', value: '2026-09-02 10:18', number: true }],
+    changes: [
+      { field: '资产属性', before: '运营车辆-电动', after: '智能驾驶设备' },
+      { field: '固定资产编码', before: 'FA-2024-0188', after: 'FA-2025-0001' },
     ],
+    detail: { label: '查看变更日志', target: '车辆变更日志 LC-20260902-001', canView: true },
   },
   {
-    id: 'EVT-20260908-001', occurred_at: '2026-09-08 16:40:00',
-    type: 'maintenance', severity: 'info',
-    title: '完成常规保养，更换空气滤芯',
-    source: 'service', operator: '售后工单 WO-20260908-007', status: 'closed',
-    related: [
-      { kind: 'wo',       label: '查看工单', href: 'javascript:;' },
-      { kind: 'bom_log',  label: '查看部件变更', href: 'javascript:;' },
+    id: 'LC-20260822-001', occurred_at: '2026-08-22 15:06:21', type: 'fault',
+    title: '车辆上报故障：左前侧视摄像头通信中断', summary: '车辆故障信息已被系统接收并形成有效记录',
+    source: '车辆故障信息',
+    fields: [
+      { label: '故障码', value: 'CAM-COMM-021', number: true },
+      { label: '故障定义', value: '左前侧视摄像头通信中断' },
+      { label: '上报时间', value: '2026-08-22 15:06', number: true },
     ],
+    detail: { label: '查看故障详情', target: '故障记录 CAM-COMM-021', canView: true },
   },
   {
-    id: 'EVT-20260905-001', occurred_at: '2026-09-05 11:02:33',
-    type: 'ota', severity: 'info',
-    title: 'OTA 远程升级至 v3.2.1，自检通过',
-    source: 'ad', operator: '运维 · 王五', status: 'closed',
-    new_state: { sw_version: 'v3.2.1' },
-    related: [
-      { kind: 'ota', label: '查看升级详情', href: 'javascript:;' },
+    id: 'LC-20260818-001', occurred_at: '2026-08-18 08:30:00', type: 'compliance', subtype: '保险',
+    title: '车辆保险办理完成', summary: '车辆商业险续保已办理完成并形成有效记录',
+    source: '保险记录',
+    fields: [
+      { label: '业务单号', value: 'BX-20260818-003', number: true },
+      { label: '完成时间', value: '2026-08-18 08:30', number: true },
     ],
+    detail: { label: '查看保险详情', target: '保险记录 BX-20260818-003', canView: false },
   },
   {
-    id: 'EVT-20260902-001', occurred_at: '2026-09-02 10:18:07',
-    type: 'asset', severity: 'info',
-    title: '资产属性由「运营车辆-电动」调整为「运营车辆-自动驾驶」',
-    source: 'self', operator: '管理员 · 李四', status: 'closed',
-    prev_state: { asset_attr: '运营车辆-电动' }, new_state: { asset_attr: '运营车辆-自动驾驶' },
-    related: [
-      { kind: 'basic', label: '查看基础信息', href: 'javascript:;' },
+    id: 'LC-20260805-001', occurred_at: '2026-08-05 14:10:00', type: 'compliance', subtype: '证照',
+    title: '车辆证照办理完成', summary: '道路运输证换证办理完成',
+    source: '证照记录', operator: '赵敏',
+    fields: [
+      { label: '证照类型', value: '道路运输证' },
+      { label: '业务单号', value: 'ZZ-20260805-016', number: true },
+      { label: '完成时间', value: '2026-08-05 14:10', number: true },
     ],
+    detail: { label: '查看证照详情', target: '证照记录 ZZ-20260805-016', canView: true },
   },
   {
-    id: 'EVT-20260822-001', occurred_at: '2026-08-22 15:06:21',
-    type: 'general_fault', severity: 'normal',
-    title: '左前侧视摄像头间歇性掉线，已自动恢复',
-    source: 'iot', operator: '车载终端 #NL-0091', status: 'resolved',
-    related: [
-      { kind: 'alert', label: '查看告警', href: 'javascript:;' },
+    id: 'LC-20260730-001', occurred_at: '2026-07-30 09:00:00', type: 'maintenance', subtype: '维修',
+    title: '车辆维修完成', summary: '左前轮制动组件维修完成，车辆已通过出厂检查',
+    source: '售后系统', operator: '维修技师 陈磊',
+    fields: [
+      { label: '工单编号', value: 'WX-20260730-003', number: true },
+      { label: '当前节点', value: '已完成' },
+      { label: '完成时间', value: '2026-07-30 09:00', number: true },
+      { label: '结算金额', value: '¥3,460.00', number: true },
     ],
+    detail: { label: '查看维修工单', target: '维修工单 WX-20260730-003', canView: true },
   },
   {
-    id: 'EVT-20260818-001', occurred_at: '2026-08-18 08:30:00',
-    type: 'compliance', severity: 'info',
-    title: '年审通过，记录归档',
-    source: 'external', operator: '车管所系统', status: 'closed',
-    related: [
-      { kind: 'ext', label: '查看年审详情', href: 'javascript:;' },
+    id: 'LC-20260712-001', occurred_at: '2026-07-12 11:20:00', type: 'risk', subtype: '违章',
+    title: '车辆发生违章', summary: '机动车违反禁止标线指示',
+    source: '违章记录',
+    fields: [
+      { label: '记录编号', value: 'WZ-20260712-021', number: true },
+      { label: '发生时间', value: '2026-07-12 11:20', number: true },
+      { label: '违章摘要', value: '机动车违反禁止标线指示' },
     ],
+    detail: { label: '查看违章详情', target: '违章记录 WZ-20260712-021', canView: true },
   },
   {
-    id: 'EVT-20260810-001', occurred_at: '2026-08-10 14:12:00',
-    type: 'dispatch', severity: 'info',
-    title: '调度申请提交，准备从 A 项目出库',
-    source: 'self', operator: '赵六', status: 'closed',
-    related: [
-      { kind: 'transfer', label: '查看调度详情', href: 'javascript:;' },
+    id: 'LC-20260603-001', occurred_at: '2026-06-03 17:25:00', type: 'risk', subtype: '事故',
+    title: '车辆发生事故', summary: '作业过程中与路侧护栏发生轻微剐蹭，无人员受伤',
+    source: '事故记录', operator: '上报人 周海',
+    fields: [
+      { label: '记录编号', value: 'SG-20260603-006', number: true },
+      { label: '发生时间', value: '2026-06-03 17:25', number: true },
+      { label: '事故摘要', value: '轻微剐蹭，无人员受伤' },
     ],
+    detail: { label: '查看事故详情', target: '事故记录 SG-20260603-006', canView: true },
   },
   {
-    id: 'EVT-20260730-001', occurred_at: '2026-07-30 09:00:00',
-    type: 'maintenance', severity: 'info',
-    title: '底盘季度检查完成',
-    source: 'service', operator: '售后工单 WO-20260730-003', status: 'closed',
-    related: [
-      { kind: 'wo', label: '查看工单', href: 'javascript:;' },
-    ],
-  },
-  {
-    id: 'EVT-20260315-001', occurred_at: '2026-03-15 10:00:00',
-    type: 'archived', severity: 'info',
-    title: '车辆建档入池，资产来源：外购',
-    source: 'self', operator: '系统', status: 'closed',
-    related: [
-      { kind: 'basic', label: '查看基础信息', href: 'javascript:;' },
-    ],
+    id: 'LC-20250315-001', occurred_at: '2025-03-15 10:00:00', type: 'archived',
+    title: '车辆完成建档', summary: '车辆由王伟完成建档',
+    source: '车辆建档', operator: '王伟',
+    fields: [{ label: '建档时间', value: '2025-03-15 10:00', number: true }],
+    detail: { label: '查看车辆档案', target: '当前车辆档案', canView: true },
   },
 ];
 
-// 当前筛选状态
-const lifecycleFilterState = { type: 'all', range: 'all' };
+const lifecycleFilterState = { type: 'all', range: 'all', start: '', end: '' };
 
-// 计算当前阶段完成度（步骤条 §5.5）
-function computeLifecycleStageProgress(events) {
-  const reached = new Set(events.map(e => (lifecycleTypeMap[e.type] || {}).stage).filter(Boolean));
-  let currentIndex = -1;
-  // 「当前阶段」= 步骤条中最后一个已触达且其后还有未触达的阶段
-  for (let i = lifecycleStages.length - 1; i >= 0; i--) {
-    if (reached.has(lifecycleStages[i].key)) { currentIndex = i; break; }
-  }
-  return currentIndex;
+function parseLifecycleTime(value) {
+  return Date.parse(String(value || '').replace(/-/g, '/'));
 }
 
-// 阶段筛选：把 §5.5 6 个阶段重新映射到 7 阶段定义（建档入池、资产归属、合并到"建档入池/资产归属"）
 function filterLifecycleEvents(events, state) {
   const now = Date.now();
-  const rangeMs = state.range === '7d'  ? 7  * 864e5
-                 : state.range === '30d' ? 30 * 864e5
-                 : state.range === '90d' ? 90 * 864e5
-                 : null;
+  const rangeMs = state.range === '7d' ? 7 * 864e5
+    : state.range === '30d' ? 30 * 864e5
+    : state.range === '90d' ? 90 * 864e5
+    : null;
+  const startTime = state.start ? Date.parse(state.start + 'T00:00:00') : null;
+  const endTime = state.end ? Date.parse(state.end + 'T23:59:59') : null;
+
   return events.filter(e => {
     if (state.type !== 'all' && e.type !== state.type) return false;
-    if (rangeMs !== null) {
-      const t = Date.parse(String(e.occurred_at).replace(/-/g, '/'));
-      if (isNaN(t) || (now - t) > rangeMs) return false;
-    }
+    const eventTime = parseLifecycleTime(e.occurred_at);
+    if (Number.isNaN(eventTime)) return false;
+    if (rangeMs !== null && (now - eventTime < 0 || now - eventTime > rangeMs)) return false;
+    if (state.range === 'custom' && startTime !== null && eventTime < startTime) return false;
+    if (state.range === 'custom' && endTime !== null && eventTime > endTime) return false;
     return true;
   }).sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
 }
 
-// 渲染步骤条
-function renderLifecycleStages() {
-  const wrap = document.getElementById('lifecycleStageBar');
-  if (!wrap) return;
-  const events = filterLifecycleEvents(mockLifecycleEvents, { type: 'all', range: 'all' });
-  const currentIdx = computeLifecycleStageProgress(events);
-  wrap.innerHTML = lifecycleStages.map((s, i) => {
-    let cls = '';
-    let meta = '';
-    const count = events.filter(e => (lifecycleTypeMap[e.type] || {}).stage === s.key).length;
-    if (count > 0) meta = `${count} 个事件`;
-    if (i < currentIdx) cls = 'lcs--done';
-    else if (i === currentIdx) cls = 'lcs--current';
-    return `<div class="lifecycle-stage ${cls}" data-stage="${s.key}" onclick="onStageClick('${s.key}')">
-      <div class="lifecycle-stage-dot">${cls === 'lcs--done' ? '✓' : s.icon}</div>
-      <div class="lifecycle-stage-label">${s.label}</div>
-      <div class="lifecycle-stage-meta">${meta}</div>
-    </div>`;
-  }).join('');
+function renderLifecycleFields(fields) {
+  const validFields = (fields || []).filter(item => item.value !== '' && item.value !== null && item.value !== undefined);
+  if (validFields.length === 0) return '';
+  return `<div class="lifecycle-field-grid">${validFields.map(item => `
+    <div class="lifecycle-field">
+      <span class="lifecycle-field-label">${escapeHtml(item.label)}</span>
+      <span class="lifecycle-field-value${item.number ? ' is-number' : ''}">${escapeHtml(item.value)}</span>
+    </div>`).join('')}</div>`;
 }
 
-// 渲染事件列表
+function renderLifecycleChanges(changes) {
+  if (!changes || changes.length === 0) return '';
+  return `<div class="lifecycle-change-table">
+    <div class="lifecycle-change-row lifecycle-change-row--head"><span>修改字段</span><span>修改前</span><span>修改后</span></div>
+    ${changes.map(item => `<div class="lifecycle-change-row"><span>${escapeHtml(item.field)}</span><span>${escapeHtml(item.before)}</span><span>${escapeHtml(item.after)}</span></div>`).join('')}
+  </div>`;
+}
+
+function renderLifecycleAction(event) {
+  if (!event.detail) return '';
+  if (!event.detail.canView) return '<span class="lifecycle-no-permission">无权查看来源详情</span>';
+  return `<button type="button" class="lifecycle-detail-link" data-event-id="${escapeHtml(event.id)}" onclick="openLifecycleDetail(this.dataset.eventId)">${escapeHtml(event.detail.label)}</button>`;
+}
+
 function renderLifecycleEvents() {
   const wrap = document.getElementById('lifecycleEvents');
   if (!wrap) return;
-  const events = filterLifecycleEvents(mockLifecycleEvents, lifecycleFilterState);
+  const events = filterLifecycleEvents(lifecycleEvents, lifecycleFilterState);
+  const count = document.getElementById('lifecycleResultCount');
+  if (count) count.textContent = String(events.length);
+
   if (events.length === 0) {
     wrap.innerHTML = `<div class="lifecycle-empty">
-      <div class="lifecycle-empty-icon">📋</div>
-      <div class="lifecycle-empty-text">当前筛选条件下暂无事件</div>
-      <div class="lifecycle-empty-hint">可调整筛选条件或切换时间范围</div>
+      <div class="lifecycle-empty-text">当前车辆暂无符合条件的生命周期事件</div>
+      <div class="lifecycle-empty-hint">可调整事件类型或事件时间后重新查询</div>
     </div>`;
     return;
   }
-  wrap.innerHTML = events.map(e => {
-    const t = (lifecycleTypeMap[e.type] || { tagCls: 'tag-default', label: e.type });
-    const sv = (lifecycleSeverityMap[e.severity] || {});
-    const st = (lifecycleStatusMap[e.status] || { tagCls: 'tag-default', label: e.status || '' });
-    const sr = (lifecycleSourceMap[e.source] || { tagCls: 'tag-default', label: e.source });
-    const related = (e.related || []).map(r => `<a class="btn-link" onclick="${escapeHtml(r.href || 'javascript:;')}">${escapeHtml(r.label)}</a>`).join('');
-    const stateChange = (e.prev_state || e.new_state) ? renderStateChange(e.prev_state, e.new_state) : '';
-    return `<div class="lifecycle-event">
-      <div class="lifecycle-event-time">${escapeHtml(e.occurred_at)}</div>
+
+  wrap.innerHTML = events.map(event => {
+    const type = lifecycleTypeMap[event.type] || { tagCls: 'tag-default', label: event.type };
+    const sourceMeta = [event.source ? `信息来源：${escapeHtml(event.source)}` : '', event.operator ? `操作人：${escapeHtml(event.operator)}` : ''].filter(Boolean).join(' · ');
+    return `<div class="lifecycle-event" data-event-type="${escapeHtml(event.type)}">
+      <div class="lifecycle-event-time">${escapeHtml(event.occurred_at)}</div>
+      <div class="lifecycle-event-rail"><span class="lifecycle-event-dot"></span></div>
       <div class="lifecycle-event-body">
         <div class="lifecycle-event-tags">
-          <span class="tag ${t.tagCls}">${escapeHtml(t.label)}</span>
-          ${sv.label ? `<span class="tag ${sv.tagCls}">严重度：${escapeHtml(sv.label)}</span>` : ''}
-          <span class="tag ${sr.tagCls}">来源：${escapeHtml(sr.label)}</span>
-          ${st.label ? `<span class="tag ${st.tagCls}">${escapeHtml(st.label)}</span>` : ''}
+          <span class="tag ${type.tagCls}">${escapeHtml(type.label)}</span>
+          ${event.subtype ? `<span class="tag tag-default">${escapeHtml(event.subtype)}</span>` : ''}
         </div>
-        <div class="lifecycle-event-title">${escapeHtml(e.title)}</div>
-        <div class="lifecycle-event-source">
-          责任主体：${escapeHtml(e.operator || '-')}
-          ${e.id ? ` · 事件编号：${escapeHtml(e.id)}` : ''}
-          ${stateChange}
-        </div>
+        <div class="lifecycle-event-title">${escapeHtml(event.title)}</div>
+        ${event.summary ? `<div class="lifecycle-event-summary">${escapeHtml(event.summary)}</div>` : ''}
+        ${renderLifecycleFields(event.fields)}
+        ${renderLifecycleChanges(event.changes)}
+        ${sourceMeta ? `<div class="lifecycle-event-source">${sourceMeta}</div>` : ''}
       </div>
-      <div class="lifecycle-event-actions">${related}</div>
+      <div class="lifecycle-event-actions">${renderLifecycleAction(event)}</div>
     </div>`;
   }).join('');
 }
 
-function renderStateChange(prev, next) {
-  const keys = new Set([...Object.keys(prev || {}), ...Object.keys(next || {})]);
-  if (keys.size === 0) return '';
-  const rows = [...keys].map(k => {
-    const p = prev && prev[k] !== undefined ? prev[k] : '—';
-    const n = next && next[k] !== undefined ? next[k] : '—';
-    return `<span style="color:var(--text-secondary)">${escapeHtml(k)}：</span><span style="text-decoration:line-through;color:var(--text-disabled);margin-right:4px">${escapeHtml(String(p))}</span>→ <span style="color:var(--primary)">${escapeHtml(String(n))}</span>`;
-  }).join('；');
-  return `<div style="margin-top:4px;font-size:12px;line-height:18px;">状态变化：${rows}</div>`;
+function openLifecycleDetail(eventId) {
+  const event = lifecycleEvents.find(item => item.id === eventId);
+  if (!event || !event.detail) return;
+  if (!event.detail.canView) {
+    Common.showToast('无权查看来源详情', 'error');
+    return;
+  }
+  Common.showToast('原型演示：进入' + event.detail.target, 'info');
 }
 
 // 转义避免 XSS / 引号破坏
@@ -1912,21 +1904,34 @@ function bindLifecycleFilter() {
       document.querySelectorAll('[data-filter-range]').forEach(x => x.classList.remove('active'));
       el.classList.add('active');
       lifecycleFilterState.range = el.getAttribute('data-filter-range');
+      lifecycleFilterState.start = '';
+      lifecycleFilterState.end = '';
+      const start = document.getElementById('lifecycleStartDate');
+      const end = document.getElementById('lifecycleEndDate');
+      if (start) start.value = '';
+      if (end) end.value = '';
       renderLifecycleEvents();
     });
   });
 }
 
-function onStageClick(stageKey) {
-  // 按阶段筛选：找到该阶段下所有事件类型，任选其一即可定位
-  const types = Object.keys(lifecycleTypeMap).filter(k => lifecycleTypeMap[k].stage === stageKey);
-  if (types.length === 0) return;
-  switchTab('lifecycle');
-  // 「全部」展示该阶段事件：选第一个作为主筛选；如需更细可改为多选，本期简化
-  document.querySelectorAll('[data-filter-type]').forEach(x => {
-    x.classList.toggle('active', x.getAttribute('data-filter-type') === types[0]);
-  });
-  lifecycleFilterState.type = types[0];
+function applyLifecycleDateRange() {
+  const start = document.getElementById('lifecycleStartDate');
+  const end = document.getElementById('lifecycleEndDate');
+  const startValue = start ? start.value : '';
+  const endValue = end ? end.value : '';
+  if (!startValue && !endValue) {
+    Common.showToast('请选择开始日期或结束日期', 'error');
+    return;
+  }
+  if (startValue && endValue && startValue > endValue) {
+    Common.showToast('开始日期不能晚于结束日期', 'error');
+    return;
+  }
+  document.querySelectorAll('[data-filter-range]').forEach(x => x.classList.remove('active'));
+  lifecycleFilterState.range = 'custom';
+  lifecycleFilterState.start = startValue;
+  lifecycleFilterState.end = endValue;
   renderLifecycleEvents();
 }
 
@@ -2985,11 +2990,21 @@ logData.forEach((d, i) => { d.id = 'LOG' + String(i + 1).padStart(3, '0'); });
 logData.sort((a, b) => b.time.localeCompare(a.time));
 
 let logPage = 1, logPageSize = 10, logSelected = new Set();
+const logFilterState = { type: '', field: '' };
+
+function getFilteredLogData() {
+  return logData.filter(d => {
+    if (logFilterState.type && d.type !== logFilterState.type) return false;
+    if (logFilterState.field && d.field !== logFilterState.field) return false;
+    return true;
+  });
+}
 
 function renderLogTable() {
   const tbody = document.getElementById('logTableBody');
+  const filteredData = getFilteredLogData();
   const start = (logPage - 1) * logPageSize;
-  const pageData = logData.slice(start, start + logPageSize);
+  const pageData = filteredData.slice(start, start + logPageSize);
   tbody.innerHTML = pageData.map(d => {
     const ck = logSelected.has(d.id) ? 'checked' : '';
     const typeTag = d.type === '修改' ? 'tag-blue log-type-modify' : 'tag-red log-type-delete';
@@ -3008,10 +3023,28 @@ function renderLogTable() {
   const checkAll = document.getElementById('logCheckAll');
   if (checkAll) checkAll.checked = pageData.length > 0 && pageData.every(d => logSelected.has(d.id));
   Common.renderPagination({
-    total: logData.length, currentPage: logPage, pageSize: logPageSize,
+    total: filteredData.length, currentPage: logPage, pageSize: logPageSize,
     containerId: 'logPagination', infoId: 'logTotalCount', pageInfoId: 'logPageInfo',
     onPageChange: p => { logPage = p; renderLogTable(); }
   });
+}
+function searchLog() {
+  logFilterState.type = document.getElementById('logTypeFilter').value;
+  logFilterState.field = document.getElementById('logFieldFilter').value;
+  logPage = 1;
+  logSelected.clear();
+  renderLogTable();
+  Common.showToast('查询完成', 'success');
+}
+function resetLogSearch() {
+  document.getElementById('logTypeFilter').value = '';
+  document.getElementById('logFieldFilter').value = '';
+  logFilterState.type = '';
+  logFilterState.field = '';
+  logPage = 1;
+  logSelected.clear();
+  renderLogTable();
+  Common.showToast('已重置查询条件', 'success');
 }
 function changeLogPageSize() {
   logPageSize = parseInt(document.getElementById('logPageSizeSelect').value);
@@ -3020,7 +3053,7 @@ function changeLogPageSize() {
 // 表头全选：仅选中/取消当前页所有行（不跨页）
 function toggleLogCheckAll(el) {
   const start = (logPage - 1) * logPageSize;
-  logData.slice(start, start + logPageSize).forEach(d => {
+  getFilteredLogData().slice(start, start + logPageSize).forEach(d => {
     if (el.checked) logSelected.add(d.id); else logSelected.delete(d.id);
   });
   renderLogTable();
@@ -3030,16 +3063,18 @@ function toggleLogCheck(id, el) {
 }
 // 导出：已勾选则导出选中数据，否则二次确认是否导出全部
 function exportChangelog() {
-  if (logSelected.size > 0) {
-    Common.showToast('已导出选中的 ' + logSelected.size + ' 条数据', 'success');
+  const filteredData = getFilteredLogData();
+  const selectedData = filteredData.filter(d => logSelected.has(d.id));
+  if (selectedData.length > 0) {
+    Common.showToast('已导出选中的 ' + selectedData.length + ' 条数据', 'success');
     return;
   }
   Common.confirm({
     title: '导出确认',
-    content: '是否导出所有数据？',
+    content: '是否导出当前筛选条件下的所有数据？',
     okText: '确定',
     cancelText: '取消',
-    onOk: () => Common.showToast('已导出所有数据（共 ' + logData.length + ' 条）', 'success')
+    onOk: () => Common.showToast('已导出所有数据（共 ' + filteredData.length + ' 条）', 'success')
   });
 }
 
@@ -3053,6 +3088,12 @@ renderOverviewByVehicleType();
 // 单车360度档案 - 生命周期 Tab 初始化（列表渲染在切到该 Tab 时触发）
 bindLifecycleFilter();
 updateEditButton();
+
+// 支持评审与回归测试直接打开指定一级Tab，例如 ?tab=lifecycle。
+(function resolveInitialTab() {
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  if (tab && document.querySelector(`.tab-item[data-tab="${tab}"]`)) switchTab(tab);
+})();
 
 // 根据URL参数中的车辆ID解析资产来源，决定是否显示BOM清单Tab
 (function resolveVehicleSource() {

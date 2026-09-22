@@ -20,6 +20,7 @@ const Common = {
       { label: 'SIM 卡管理', symbol: '卡', items: [
         { label: 'SIM卡台账', id: 'sim-ledger', href: 'sim-card/sim-card-list.html' },
         { label: 'SIM卡流量明细', id: 'sim-traffic-detail', href: 'sim-card/sim-card-traffic-detail.html' },
+        { label: '车辆流量明细', id: 'vehicle-traffic-detail', href: 'sim-card/vehicle-traffic-detail.html' },
       ]},
     ]},
     { id: 'operation', label: '运行监管', symbol: '运', groups: [
