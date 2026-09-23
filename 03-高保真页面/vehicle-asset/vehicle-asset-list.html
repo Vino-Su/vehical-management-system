@@ -27,16 +27,18 @@
         .search-item label {
             font-size: 14px; color: var(--text-secondary); white-space: nowrap;
         }
-        .search-item input,
+        /* 仅作用于文本/日期/下拉类控件：排除复选框，
+           避免标签筛选面板内的 checkbox 被误套输入框尺寸（32px 高 + 160px 宽 + 边框） */
+        .search-item input:not([type="checkbox"]),
         .search-item select {
             height: 32px; border: 1px solid var(--border-input);
             border-radius: var(--radius); padding: 0 12px;
             font-size: 14px; color: var(--text-primary); outline: none;
             transition: border-color .2s; min-width: 160px;
         }
-        .search-item input:focus,
+        .search-item input:not([type="checkbox"]):focus,
         .search-item select:focus { border-color: var(--primary); }
-        .search-item input::placeholder { color: var(--text-disabled); }
+        .search-item input:not([type="checkbox"])::placeholder { color: var(--text-disabled); }
         .search-item .date-sep { color: var(--text-disabled); margin: 0 4px; }
         /* 查询（主按钮）与重置（次按钮）间距 12px（规范二.2） */
         .search-actions {
@@ -49,6 +51,39 @@
         .toggle-expand:hover { color: var(--primary-hover); }
         .toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
         .toggle-expand.expanded .arrow { transform: rotate(180deg); }
+
+        /* ========== 复选框：严格对齐 Ant Design Checkbox ==========
+           作用范围：本页全部复选框（标签筛选面板、批量打标签/移出标签弹窗、列表全选与行选）
+           规格：16×16px、圆角 4px、边框 #d9d9d9；选中 #1677ff + 白色对勾；hover #4096ff；
+                键盘聚焦 outline 4px rgba(5,145,255,.1)；禁用 #f5f5f5 */
+        input[type="checkbox"] {
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px; flex-shrink: 0;
+            border: 1px solid var(--border-input); border-radius: var(--radius-sm);
+            background: var(--bg-container); cursor: pointer;
+            position: relative; vertical-align: middle;
+            transition: background-color .2s, border-color .2s;
+        }
+        input[type="checkbox"]:hover { border-color: var(--primary-hover); }
+        input[type="checkbox"]:checked { background: var(--primary); border-color: var(--primary); }
+        input[type="checkbox"]:checked:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+        /* 对勾：2px 白色描边旋转 45°，几何尺寸与 antd 一致 */
+        input[type="checkbox"]::after {
+            content: ''; position: absolute; top: 50%; left: 21.5%;
+            width: 5.71px; height: 9.14px;
+            border: 2px solid #fff; border-top: 0; border-left: 0;
+            opacity: 0;
+            transform: rotate(45deg) scale(0) translate(-50%, -50%);
+            transition: transform .1s cubic-bezier(.71,-.46,.88,.6), opacity .1s;
+        }
+        input[type="checkbox"]:checked::after {
+            opacity: 1;
+            transform: rotate(45deg) scale(1) translate(-50%, -50%);
+            transition: transform .2s cubic-bezier(.12,.4,.29,1.46) .1s, opacity .2s .1s;
+        }
+        input[type="checkbox"]:focus-visible { outline: 4px solid rgba(5,145,255,.1); outline-offset: 1px; }
+        input[type="checkbox"]:disabled { background: #f5f5f5; border-color: var(--border-input); cursor: not-allowed; }
+        input[type="checkbox"]:disabled::after { border-color: rgba(0,0,0,.25); }
 
         /* ========== 操作栏：由 common.css 的 .action-bar 提供（gap 8px + flex-wrap，规范二.2） ========== */
 
@@ -100,7 +135,8 @@
         }
         .tag-filter-panel.show { display: block; }
         .tag-filter-group-title { padding: 6px 12px 2px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
-        .tag-filter-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; cursor: pointer; }
+        /* 选项行高 32px，对齐 antd 下拉项 */
+        .tag-filter-item { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 12px; cursor: pointer; }
         .tag-filter-item:hover { background: var(--bg-hover); }
         .tag-filter-item input { margin: 0; }
         .tag-filter-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -112,7 +148,7 @@
         /* ========== 批量打标签选择器 ========== */
         .batch-tag-picker { border: 1px solid var(--border-color); border-radius: var(--radius); max-height: 220px; overflow-y: auto; padding: 4px 0; }
         .batch-tag-group-title { padding: 6px 12px 2px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
-        .batch-tag-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; cursor: pointer; }
+        .batch-tag-item { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 12px; cursor: pointer; }
         .batch-tag-item:hover { background: var(--bg-hover); }
         .batch-tag-item input { margin: 0; }
         .selected-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; min-height: 24px; }
@@ -564,7 +600,8 @@ function doSearch() {
     currentPage = 1; selectedIds.clear(); renderTable();
 }
 function doReset() {
-    document.querySelectorAll('.search-item input, .search-item select').forEach(el => {
+    // 排除复选框：复选框的选中态由 renderTagFilterPanel() 统一重置，清 value 会破坏标签 id
+    document.querySelectorAll('.search-item input:not([type="checkbox"]), .search-item select').forEach(el => {
         if (el.type === 'date') el.value = '';
         else if (el.tagName === 'SELECT') el.selectedIndex = 0;
         else el.value = '';
