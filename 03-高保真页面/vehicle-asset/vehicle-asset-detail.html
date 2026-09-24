@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>资产详情 - 车辆管理系统</title>
+<link rel="icon" href="data:,">
 <!--
   页面用途：车辆资产管理 — 单车360度档案 + 车辆资产详情页，展示单台车辆的完整档案与运行状态。
   核心功能：1) Tab 分区展示：车辆总览（默认） / 运行监控 / 车辆档案 / 业务记录 / 生命周期 / 变更日志；
@@ -95,6 +96,67 @@
 .monitor-placeholder { display:flex; align-items:center; justify-content:center; min-height:320px; border:1px dashed #b7d5ff; border-radius:var(--radius-lg); background:#fafcff; text-align:center; }
 .monitor-placeholder h3 { margin:0; color:var(--text-primary); font-size:16px; line-height:24px; }
 .monitor-placeholder p { max-width:480px; margin:8px 0 0; color:var(--text-secondary); font-size:14px; line-height:22px; }
+
+/* === 运行监控工作台：高保真阶段只呈现数据域、空态与下钻关系 === */
+.monitor-workbench { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.monitor-freshness { display:flex; align-items:flex-start; gap:12px; padding:12px 16px; border:1px solid #91caff; border-radius:var(--radius-lg); background:#e6f4ff; }
+.monitor-freshness-icon { display:flex; align-items:center; justify-content:center; width:22px; height:22px; flex:0 0 auto; border-radius:50%; background:#1677ff; color:#fff; font-size:13px; font-weight:700; }
+.monitor-freshness-body { min-width:0; flex:1; }
+.monitor-freshness-title { display:flex; align-items:center; flex-wrap:wrap; gap:8px; color:var(--text-primary); font-size:14px; font-weight:600; line-height:22px; }
+.monitor-freshness-copy { margin-top:2px; color:var(--text-secondary); font-size:12px; line-height:18px; }
+.monitor-freshness-actions { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+.monitor-state-tag { display:inline-flex; align-items:center; gap:5px; padding:1px 8px; border-radius:var(--radius-sm); background:#f2f3f5; color:#595959; font-size:12px; font-weight:400; line-height:20px; }
+.monitor-state-tag::before { width:6px; height:6px; border-radius:50%; background:#8c8c8c; content:""; }
+.monitor-grid-2 { display:grid; grid-template-columns:minmax(0, 1.08fr) minmax(0, .92fr); gap:16px; min-width:0; }
+.monitor-card { min-width:0; background:var(--bg-container); border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; }
+.monitor-card-head { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:52px; padding:0 16px; border-bottom:1px solid var(--border-color); }
+.monitor-card-title { display:flex; align-items:center; gap:8px; min-width:0; color:var(--text-primary); font-size:16px; font-weight:600; line-height:24px; }
+.monitor-card-title::before { width:3px; height:16px; border-radius:2px; background:var(--primary); content:""; }
+.monitor-card-meta { color:var(--text-secondary); font-size:12px; line-height:18px; white-space:nowrap; }
+.monitor-card-link { padding:0; border:0; background:transparent; color:var(--primary); cursor:pointer; font-size:13px; white-space:nowrap; }
+.monitor-card-link:hover { color:var(--primary-hover); text-decoration:underline; }
+.monitor-map-empty { display:flex; align-items:center; justify-content:center; min-height:270px; margin:16px; border:1px dashed #b7d5ff; border-radius:var(--radius); background:linear-gradient(135deg,#f7fbff,#fbfdff); }
+.monitor-empty-content { display:flex; align-items:center; flex-direction:column; max-width:390px; padding:20px; text-align:center; }
+.monitor-empty-icon { display:flex; align-items:center; justify-content:center; width:44px; height:44px; margin-bottom:10px; border:1px solid #91caff; border-radius:50%; background:#e6f4ff; color:var(--primary); font-size:21px; }
+.monitor-empty-title { color:var(--text-primary); font-size:14px; font-weight:600; line-height:22px; }
+.monitor-empty-copy { margin-top:4px; color:var(--text-secondary); font-size:12px; line-height:18px; }
+.monitor-map-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 16px 16px; color:var(--text-secondary); font-size:12px; line-height:18px; }
+.monitor-definition-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; padding:4px 16px 12px; }
+.monitor-definition-item { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; min-height:38px; border-bottom:1px solid #f5f5f5; }
+.monitor-definition-label { color:var(--text-secondary); font-size:13px; white-space:nowrap; }
+.monitor-definition-value { color:var(--text-disabled); font-family:var(--font-number); font-size:13px; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.monitor-definition-value.text { font-family:inherit; }
+.monitor-health-list { display:flex; flex-direction:column; gap:0; padding:4px 16px 12px; }
+.monitor-health-row { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:42px; border-bottom:1px solid #f5f5f5; }
+.monitor-health-name { color:var(--text-primary); font-size:13px; line-height:20px; }
+.monitor-health-status { display:inline-flex; align-items:center; gap:5px; color:var(--text-disabled); font-size:12px; white-space:nowrap; }
+.monitor-health-status::before { width:6px; height:6px; border-radius:50%; background:#bfbfbf; content:""; }
+.monitor-card-footnote { padding:0 16px 14px; color:var(--text-secondary); font-size:12px; line-height:18px; }
+.monitor-resource-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; padding:16px; }
+.monitor-resource-item { min-width:0; padding:12px; border:1px solid var(--border-color); border-radius:var(--radius); background:#fafafa; }
+.monitor-resource-label { color:var(--text-secondary); font-size:12px; line-height:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.monitor-resource-value { margin-top:4px; color:var(--text-disabled); font-family:var(--font-number); font-size:18px; font-weight:600; line-height:26px; }
+.monitor-resource-note { margin-top:2px; color:var(--text-disabled); font-size:12px; line-height:18px; }
+.monitor-task { display:grid; grid-template-columns:minmax(0,1fr) 180px; gap:16px; align-items:center; padding:16px; }
+.monitor-task-title { color:var(--text-disabled); font-size:15px; font-weight:600; line-height:24px; }
+.monitor-task-meta { margin-top:4px; color:var(--text-secondary); font-size:12px; line-height:18px; }
+.monitor-task-progress { height:8px; overflow:hidden; border-radius:10px; background:#f0f0f0; }
+.monitor-task-progress span { display:block; width:0; height:100%; background:#d9d9d9; }
+.monitor-task-progress-note { margin-top:6px; color:var(--text-disabled); font-size:12px; text-align:right; }
+.monitor-trend-toolbar { display:flex; align-items:center; gap:8px; padding:12px 16px 0; }
+.monitor-segment { display:inline-flex; padding:2px; border:1px solid var(--border-input); border-radius:var(--radius); background:#fafafa; }
+.monitor-segment button { height:26px; padding:0 10px; border:0; border-radius:4px; background:transparent; color:var(--text-secondary); cursor:pointer; font-size:12px; }
+.monitor-segment button.active { background:var(--primary-bg); color:var(--primary); font-weight:600; }
+.monitor-trend-empty { display:flex; align-items:center; justify-content:center; min-height:150px; margin:12px 16px 16px; border:1px dashed var(--border-color); border-radius:var(--radius); background:#fafafa; color:var(--text-secondary); font-size:13px; }
+.monitor-record-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.monitor-record-summary { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border-color); }
+.monitor-record-count { color:var(--text-disabled); font-family:var(--font-number); font-size:22px; font-weight:600; line-height:30px; }
+.monitor-record-copy { color:var(--text-secondary); font-size:12px; line-height:18px; }
+.monitor-record-empty { display:flex; align-items:center; justify-content:center; min-height:105px; padding:16px; color:var(--text-secondary); font-size:13px; text-align:center; }
+.monitor-record-actions { display:flex; justify-content:flex-end; padding:0 16px 14px; }
+.monitor-link-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; padding:14px 16px; border:1px solid var(--border-color); border-radius:var(--radius-lg); background:#fafafa; }
+.monitor-link-row-label { color:var(--text-secondary); font-size:13px; }
+@media (max-width:900px) { .monitor-freshness { flex-wrap:wrap; } .monitor-freshness-actions { width:100%; margin-left:34px; } .monitor-grid-2,.monitor-record-grid { grid-template-columns:minmax(0,1fr); } .monitor-definition-list { grid-template-columns:minmax(0,1fr); } .monitor-resource-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .monitor-task { grid-template-columns:minmax(0,1fr); } }
 @media (max-width:900px) { .overview-operating-grid { grid-template-columns:minmax(0, 1fr); } .overview-operating-card:nth-child(odd) { border-right:0; } .overview-operating-card:nth-last-child(2) { border-bottom:1px solid var(--border-color); } .overview-reminder { align-items:flex-start; flex-direction:column; gap:4px; } }
 
 /* === 单车360度档案 - 车辆概览 Tab === */
@@ -1065,18 +1127,102 @@
               </div>
               <div class="overview-operating-grid">
                 <section class="overview-operating-card"><div class="operating-card-title">实时运行</div><div class="operating-metrics"><span class="operating-metric">清扫中 · 自动驾驶</span><span class="operating-metric">速度 <strong>8 km/h</strong></span><span class="operating-metric">当前故障 <strong>0</strong></span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看运行监控</button></section>
-                <section class="overview-operating-card"><div class="operating-card-title">当班保障</div><div class="operating-metrics"><span class="operating-metric">电量 <strong>68%</strong> · 清水 <strong>12%</strong></span><span class="operating-metric">垃圾箱 <strong>40%</strong> · 设备 <strong>8/8</strong></span><span class="operating-metric">今日流量 <strong>1.2GB</strong></span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看保障详情</button></section>
-                <section class="overview-operating-card"><div class="operating-card-title">健康与损耗</div><div class="operating-metrics"><span class="operating-metric operating-metric--warn"><span class="metric-warn-icon">⚠</span>左边刷：剩余 <strong>8 小时</strong></span><span class="operating-metric">摄像头：当前在线，待检查</span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看健康详情</button></section>
+                 <section class="overview-operating-card"><div class="operating-card-title">当班保障</div><div class="operating-metrics"><span class="operating-metric">电量 <strong>68%</strong> · 清水 <strong>12%</strong></span><span class="operating-metric">垃圾箱 <strong>40%</strong> · 设备 <strong>8/8</strong></span><span class="operating-metric">今日流量 <strong>1.2GB</strong></span></div><button class="operating-card-action" onclick="openMonitorSection('monitor-resources')">查看资源明细</button></section>
+                 <section class="overview-operating-card"><div class="operating-card-title">健康与损耗</div><div class="operating-metrics"><span class="operating-metric operating-metric--warn"><span class="metric-warn-icon">⚠</span>左边刷：剩余 <strong>8 小时</strong></span><span class="operating-metric">摄像头：当前在线，待检查</span></div><button class="operating-card-action" onclick="openMonitorSection('monitor-safety')">查看安全诊断</button></section>
                 <section class="overview-operating-card"><div class="operating-card-title">合规与风险</div><div class="operating-metrics"><span class="operating-metric">证照剩余 <strong>15 天</strong></span><span class="operating-metric">年检已预约</span></div><button class="operating-card-action" onclick="showBusinessUnavailable('合规与风险')">查看合规与风险</button></section>
               </div>
-              <div class="overview-reminder"><span class="reminder-title">当前提醒：3 项</span><span class="reminder-items"><button class="reminder-item" type="button" onclick="switchTab('monitor')">清水补给</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="switchTab('monitor')">摄像头检查</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="showBusinessUnavailable('合规与风险')">证照续办</button></span></div>
+              <div class="overview-reminder"><span class="reminder-title">当前提醒：3 项</span><span class="reminder-items"><button class="reminder-item" type="button" onclick="openMonitorSection('monitor-resources')">清水补给</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="openMonitorSection('monitor-safety')">摄像头检查</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="showBusinessUnavailable('合规与风险')">证照续办</button></span></div>
             </section>
           </div>
         </div>
 
-        <!-- Tab Content: 运行监控（后续接入实时平台） -->
+        <!-- Tab Content: 运行监控（高保真阶段：只展示数据域、空态与下钻入口） -->
         <div class="tab-content" id="tab-monitor" style="display:none">
-          <div class="monitor-placeholder"><div><h3>运行监控待接入</h3><p>将接入车载终端、IoT 或自动驾驶平台的实时位置、设备状态、告警及趋势数据；当前仅保留页面入口，不展示模拟实时数据。</p></div></div>
+          <div class="monitor-workbench">
+            <section class="monitor-freshness" aria-label="数据新鲜度">
+              <span class="monitor-freshness-icon">i</span>
+              <div class="monitor-freshness-body">
+                <div class="monitor-freshness-title">运行监控详情待接入 <span class="monitor-state-tag">暂无监控快照</span></div>
+                <div class="monitor-freshness-copy">车辆总览已展示当前状态摘要。本 Tab 聚焦位置、遥测、系统诊断、资源明细、趋势和原始记录；接入后各数据域分别展示来源、采集时间与质量状态。</div>
+              </div>
+              <div class="monitor-freshness-actions"><button class="btn btn-sm" type="button" onclick="showMonitorUnavailable('实时数据刷新')">重试</button></div>
+            </section>
+
+            <div class="monitor-grid-2">
+              <section class="monitor-card" id="monitor-location" aria-label="位置与轨迹">
+                <div class="monitor-card-head"><div class="monitor-card-title">位置与轨迹</div><span class="monitor-card-meta">定位数据：暂无</span></div>
+                <div class="monitor-map-empty">
+                  <div class="monitor-empty-content"><div class="monitor-empty-icon">⌖</div><div class="monitor-empty-title">位置数据待接入</div><div class="monitor-empty-copy">接入定位数据后展示车辆点位、车头方向、作业区域与定位可信度。坐标无效或过期时不绘制点位。</div></div>
+                </div>
+                <div class="monitor-map-footer"><span>经纬度：暂无数据 · 定位时间：暂无数据</span><button class="monitor-card-link" type="button" onclick="openMonitorPage()">在监管一张图中定位 →</button></div>
+              </section>
+
+              <section class="monitor-card" aria-label="运行遥测">
+                <div class="monitor-card-head"><div class="monitor-card-title">运行遥测</div><button class="monitor-card-link" type="button" onclick="openRunningData()">查看完整运行数据 →</button></div>
+                <div class="monitor-definition-list">
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">VIN 码</span><span class="monitor-definition-value">LSVAU2A39EN000001</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">所属项目</span><span class="monitor-definition-value text">鸠江项目</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">经度 / 纬度</span><span class="monitor-definition-value">暂无数据</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">接管状态</span><span class="monitor-definition-value text">暂无数据</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">横向 / 纵向加速度</span><span class="monitor-definition-value">暂无数据</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">侧倾 / 横摆角速度</span><span class="monitor-definition-value">暂无数据</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">档位</span><span class="monitor-definition-value text">暂无数据</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">数据采集时间</span><span class="monitor-definition-value">暂无数据</span></div>
+                </div>
+                <div class="monitor-card-footnote">数据来源与采集时间将在实时接入后按字段显示。</div>
+              </section>
+            </div>
+
+            <div class="monitor-grid-2">
+              <section class="monitor-card" id="monitor-safety" aria-label="安全与系统诊断">
+                <div class="monitor-card-head"><div class="monitor-card-title">安全与系统诊断</div><span class="monitor-card-meta">诊断数据：待接入</span></div>
+                <div class="monitor-health-list">
+                  <div class="monitor-health-row"><span class="monitor-health-name">自动驾驶系统 / 自检结果</span><span class="monitor-health-status">暂无数据</span></div>
+                  <div class="monitor-health-row"><span class="monitor-health-name">急停与碰撞 / 近碰</span><span class="monitor-health-status">暂无数据</span></div>
+                  <div class="monitor-health-row"><span class="monitor-health-name">摄像头 / 激光雷达 / 毫米波雷达</span><span class="monitor-health-status">暂无数据</span></div>
+                  <div class="monitor-health-row"><span class="monitor-health-name">定位可信度 / 电子围栏越界</span><span class="monitor-health-status">暂无数据</span></div>
+                  <div class="monitor-health-row"><span class="monitor-health-name">软件与地图版本</span><span class="monitor-health-status">暂无数据</span></div>
+                </div>
+                <div class="monitor-card-footnote">不根据故障码或异常类型推断等级、来源和处理状态。</div>
+              </section>
+
+              <section class="monitor-card" id="monitor-resources" aria-label="资源与设备明细">
+                <div class="monitor-card-head"><div class="monitor-card-title">资源与设备明细</div><span class="monitor-card-meta">按车型能力展示</span></div>
+                <div class="monitor-resource-grid">
+                  <div class="monitor-resource-item"><div class="monitor-resource-label">电量 / 油量</div><div class="monitor-resource-value">—</div><div class="monitor-resource-note">暂无数据</div></div>
+                  <div class="monitor-resource-item"><div class="monitor-resource-label">预计续航</div><div class="monitor-resource-value">—</div><div class="monitor-resource-note">暂无数据</div></div>
+                  <div class="monitor-resource-item"><div class="monitor-resource-label">清水 / 污水</div><div class="monitor-resource-value">—</div><div class="monitor-resource-note">暂无数据</div></div>
+                  <div class="monitor-resource-item"><div class="monitor-resource-label">垃圾箱余量</div><div class="monitor-resource-value">—</div><div class="monitor-resource-note">暂无数据</div></div>
+                </div>
+              </section>
+            </div>
+
+            <section class="monitor-card" aria-label="当前任务关联">
+              <div class="monitor-card-head"><div class="monitor-card-title">当前任务关联</div><button class="monitor-card-link" type="button" onclick="showMonitorUnavailable('外部作业平台详情')">查看外部任务 →</button></div>
+              <div class="monitor-task"><div><div class="monitor-task-title">任务数据待接入</div><div class="monitor-task-meta">接入后展示任务名称、作业区域、任务状态、时间和进度；不重复建设外部平台的完整路线与作业明细。</div></div><div><div class="monitor-task-progress"><span></span></div><div class="monitor-task-progress-note">进度暂无数据</div></div></div>
+            </section>
+
+            <section class="monitor-card" aria-label="趋势分析">
+              <div class="monitor-card-head"><div class="monitor-card-title">趋势分析</div><span class="monitor-card-meta">来源：待接入</span></div>
+              <div class="monitor-trend-toolbar"><span class="monitor-card-meta">时间范围</span><div class="monitor-segment" role="group" aria-label="趋势时间范围"><button class="active" type="button" onclick="selectMonitorRange(this)">最近1小时</button><button type="button" onclick="selectMonitorRange(this)">最近24小时</button><button type="button" onclick="selectMonitorRange(this)">最近7天</button></div></div>
+              <div class="monitor-trend-empty" id="monitorTrendEmpty">当前时间范围暂无趋势数据，不生成虚假折线</div>
+            </section>
+
+            <div class="monitor-record-grid">
+              <section class="monitor-card" aria-label="故障记录">
+                <div class="monitor-card-head"><div class="monitor-card-title">故障记录</div><button class="monitor-card-link" type="button" onclick="openFaults()">查看全部故障 →</button></div>
+                <div class="monitor-record-summary"><span class="monitor-record-count">—</span><span class="monitor-record-copy">当前时间范围内<br>故障数量待接入</span></div>
+                <div class="monitor-record-empty">故障记录待接入<br>接入后按上报时间倒序展示</div>
+              </section>
+              <section class="monitor-card" aria-label="异常记录">
+                <div class="monitor-card-head"><div class="monitor-card-title">异常记录</div><button class="monitor-card-link" type="button" onclick="openAnomalies()">查看全部异常 →</button></div>
+                <div class="monitor-record-summary"><span class="monitor-record-count">—</span><span class="monitor-record-copy">当前时间范围内<br>异常数量待接入</span></div>
+                <div class="monitor-record-empty">异常记录待接入<br>支持超时停靠、超速行驶、限行区行驶事件下钻</div>
+              </section>
+            </div>
+
+            <div class="monitor-link-row" aria-label="关联页面入口"><span class="monitor-link-row-label">关联记录</span><button class="monitor-card-link" type="button" onclick="showMonitorUnavailable('维修/售后记录')">查看维修 / 售后记录 →</button><button class="monitor-card-link" type="button" onclick="switchTab('lifecycle')">查看生命周期事件 →</button></div>
+          </div>
         </div>
 
         <!-- Tab Content: 车辆档案（原基础信息） -->
@@ -1601,6 +1747,32 @@ let currentTab = 'overview';   // 默认展示「车辆总览」
 let isEditing = false;
 let currentAfterSalesSubTab = 'warranty-info';
 let currentBusinessTab = 'transfer';
+
+// 运行监控高保真阶段：保留跨页面联动，不伪造实时数据。
+function monitorVehicleQuery() {
+  const params = new URLSearchParams({ vehicleId: vehicleData.vin, vin: vehicleData.vin, plateNo: vehicleData.plate_no, iotCode: vehicleData.iot_code });
+  return params.toString();
+}
+function openMonitorPage() { window.location.href = '../monitor/vehicle-monitor.html?' + monitorVehicleQuery(); }
+function openRunningData() { window.location.href = '../monitor/vehicle-running-data.html?' + monitorVehicleQuery(); }
+function openFaults() { window.location.href = '../monitor/vehicle-fault-info.html?' + monitorVehicleQuery(); }
+function openAnomalies() { window.location.href = '../monitor/vehicle-anomaly-records.html?' + monitorVehicleQuery(); }
+function openMonitorSection(sectionId) {
+  switchTab('monitor');
+  window.requestAnimationFrame(function() {
+    const target = document.getElementById(sectionId);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+function showMonitorUnavailable(name) { Common.showToast(name + '暂未接入，当前仅保留入口', 'info'); }
+function selectMonitorRange(button) {
+  const group = button && button.parentElement;
+  if (!group) return;
+  group.querySelectorAll('button').forEach(item => item.classList.remove('active'));
+  button.classList.add('active');
+  const empty = document.getElementById('monitorTrendEmpty');
+  if (empty) empty.textContent = '当前时间范围暂无趋势数据，不生成虚假折线';
+}
 
 function switchTab(tab) {
   if (tab === 'basic') tab = 'archive'; // 兼容原有页内入口
