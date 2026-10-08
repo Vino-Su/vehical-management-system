@@ -20,6 +20,7 @@
 -->
 <link rel="stylesheet" href="../components/common.css">
 <link rel="stylesheet" href="../components/form.css">
+<link rel="stylesheet" href="../components/vendor/leaflet.css">
 <style>
 /* === 车辆总览：当班决策看板 === */
 .vehicle-global-info { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding:16px 0; border-bottom:1px solid var(--border-color); }
@@ -115,13 +116,46 @@
 .monitor-card-meta { color:var(--text-secondary); font-size:12px; line-height:18px; white-space:nowrap; }
 .monitor-card-link { padding:0; border:0; background:transparent; color:var(--primary); cursor:pointer; font-size:13px; white-space:nowrap; }
 .monitor-card-link:hover { color:var(--primary-hover); text-decoration:underline; }
-.monitor-map-empty { display:flex; align-items:center; justify-content:center; min-height:270px; margin:16px; border:1px dashed #b7d5ff; border-radius:var(--radius); background:linear-gradient(135deg,#f7fbff,#fbfdff); }
+.monitor-map-empty { position:relative; min-height:270px; margin:16px; overflow:hidden; border:1px solid #d6e4f0; border-radius:var(--radius); background:#dbe7ef; }
+.monitor-map { width:100%; height:290px; min-height:270px; background:#dbe7ef; }
+.monitor-map .leaflet-control-zoom { margin-top:10px; margin-left:10px; }
+.monitor-map .leaflet-control-attribution { font-size:10px; }
+.monitor-map-overlay { position:absolute; top:12px; right:12px; z-index:500; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.monitor-map-badge { padding:4px 8px; border:1px solid rgba(255,255,255,.86); border-radius:4px; background:rgba(255,255,255,.94); color:var(--text-secondary); font-size:12px; line-height:18px; box-shadow:0 1px 5px rgba(0,0,0,.12); }
+.monitor-map-badge.online { color:#237804; }
+.monitor-vehicle-marker { position:relative; width:74px; text-align:center; }
+.monitor-vehicle-marker .marker-pin { width:34px; height:34px; margin:0 auto 2px; display:block; border:2px solid #fff; border-radius:50%; background:#fff; color:#1677ff; box-shadow:0 2px 8px rgba(0,0,0,.28); }
+.monitor-vehicle-marker .marker-pin svg { display:block; width:100%; height:100%; }
+.monitor-vehicle-marker .marker-label { max-width:92px; margin:0 auto; padding:1px 4px; overflow:hidden; border-radius:3px; background:rgba(255,255,255,.95); color:var(--text-primary); font:11px/16px var(--font-number); text-overflow:ellipsis; white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.18); }
+.monitor-map-legend { position:absolute; left:12px; bottom:12px; z-index:500; padding:6px 8px; border:1px solid rgba(0,0,0,.08); border-radius:4px; background:rgba(255,255,255,.94); color:var(--text-secondary); font-size:11px; box-shadow:0 1px 5px rgba(0,0,0,.12); }
+.monitor-map-legend::before { display:inline-block; width:7px; height:7px; margin-right:5px; border-radius:50%; background:#52c41a; content:""; }
+.monitor-definition-value.value-ok { color:#237804; }
+.monitor-definition-value.value-warn { color:#d46b08; }
+.monitor-health-status.state-success { color:#237804; }
+.monitor-health-status.state-success::before { background:#52c41a; }
+.monitor-health-status.state-warning { color:#d46b08; }
+.monitor-health-status.state-warning::before { background:#fa8c16; }
+.monitor-resource-value.is-warn { color:#d46b08; }
+.monitor-task-title.is-active { color:var(--text-primary); }
+.monitor-task-progress.is-active span { background:#1677ff; }
+.monitor-trend { min-height:150px; margin:12px 16px 16px; padding:10px 12px 8px; border:1px solid #e6f4ff; border-radius:var(--radius); background:#f8fbff; }
+.monitor-trend svg { display:block; width:100%; height:120px; overflow:visible; }
+.monitor-trend .axis-label { fill:#8c8c8c; font:10px var(--font-number); }
+.monitor-trend .line-mileage { fill:none; stroke:#1677ff; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+.monitor-trend .area-mileage { fill:#e6f4ff; }
+.monitor-trend .trend-dot { fill:#fff; stroke:#1677ff; stroke-width:2; }
+.monitor-trend-caption { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:2px; color:var(--text-secondary); font-size:12px; line-height:18px; }
+.monitor-record-empty.has-records { display:block; min-height:0; padding:0 16px 12px; }
+.monitor-record-row { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:38px; border-bottom:1px solid #f5f5f5; color:var(--text-primary); font-size:12px; }
+.monitor-record-row:last-child { border-bottom:0; }
+.monitor-record-row strong { color:var(--text-primary); font-weight:500; }
+.monitor-record-row span { color:var(--text-secondary); font-family:var(--font-number); white-space:nowrap; }
 .monitor-empty-content { display:flex; align-items:center; flex-direction:column; max-width:390px; padding:20px; text-align:center; }
 .monitor-empty-icon { display:flex; align-items:center; justify-content:center; width:44px; height:44px; margin-bottom:10px; border:1px solid #91caff; border-radius:50%; background:#e6f4ff; color:var(--primary); font-size:21px; }
 .monitor-empty-title { color:var(--text-primary); font-size:14px; font-weight:600; line-height:22px; }
 .monitor-empty-copy { margin-top:4px; color:var(--text-secondary); font-size:12px; line-height:18px; }
 .monitor-map-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 16px 16px; color:var(--text-secondary); font-size:12px; line-height:18px; }
-.monitor-definition-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; padding:4px 16px 12px; }
+.monitor-definition-list { display:grid; grid-template-columns:minmax(0,1fr); gap:0; padding:4px 16px 12px; }
 .monitor-definition-item { display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; min-height:38px; border-bottom:1px solid #f5f5f5; }
 .monitor-definition-label { color:var(--text-secondary); font-size:13px; white-space:nowrap; }
 .monitor-definition-value { color:var(--text-disabled); font-family:var(--font-number); font-size:13px; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -156,7 +190,7 @@
 .monitor-record-actions { display:flex; justify-content:flex-end; padding:0 16px 14px; }
 .monitor-link-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; padding:14px 16px; border:1px solid var(--border-color); border-radius:var(--radius-lg); background:#fafafa; }
 .monitor-link-row-label { color:var(--text-secondary); font-size:13px; }
-@media (max-width:900px) { .monitor-freshness { flex-wrap:wrap; } .monitor-freshness-actions { width:100%; margin-left:34px; } .monitor-grid-2,.monitor-record-grid { grid-template-columns:minmax(0,1fr); } .monitor-definition-list { grid-template-columns:minmax(0,1fr); } .monitor-resource-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .monitor-task { grid-template-columns:minmax(0,1fr); } }
+@media (max-width:900px) { .monitor-freshness { flex-wrap:wrap; } .monitor-freshness-actions { width:100%; margin-left:34px; } .monitor-grid-2,.monitor-record-grid { grid-template-columns:minmax(0,1fr); } .monitor-resource-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .monitor-task { grid-template-columns:minmax(0,1fr); } }
 @media (max-width:900px) { .overview-operating-grid { grid-template-columns:minmax(0, 1fr); } .overview-operating-card:nth-child(odd) { border-right:0; } .overview-operating-card:nth-last-child(2) { border-bottom:1px solid var(--border-color); } .overview-reminder { align-items:flex-start; flex-direction:column; gap:4px; } }
 
 /* === 单车360度档案 - 车辆概览 Tab === */
@@ -1136,88 +1170,78 @@
           </div>
         </div>
 
-        <!-- Tab Content: 运行监控（高保真阶段：只展示数据域、空态与下钻入口） -->
+        <!-- Tab Content: 运行监控（与车辆监管一张图共享快照数据） -->
         <div class="tab-content" id="tab-monitor" style="display:none">
           <div class="monitor-workbench">
             <section class="monitor-freshness" aria-label="数据新鲜度">
               <span class="monitor-freshness-icon">i</span>
               <div class="monitor-freshness-body">
-                <div class="monitor-freshness-title">运行监控详情待接入 <span class="monitor-state-tag">暂无监控快照</span></div>
-                <div class="monitor-freshness-copy">车辆总览已展示当前状态摘要。本 Tab 聚焦位置、遥测、系统诊断、资源明细、趋势和原始记录；接入后各数据域分别展示来源、采集时间与质量状态。</div>
+                <div class="monitor-freshness-title">实时运行快照 <span class="monitor-state-tag" id="monitorFreshnessTag">在线 · 数据正常</span></div>
+                <div class="monitor-freshness-copy" id="monitorFreshnessCopy">数据来源：车载 T-Box / 自动驾驶平台 · 最近采集：2026-09-15 14:32:18 · 延迟约 18 秒</div>
               </div>
               <div class="monitor-freshness-actions"><button class="btn btn-sm" type="button" onclick="showMonitorUnavailable('实时数据刷新')">重试</button></div>
             </section>
 
             <div class="monitor-grid-2">
               <section class="monitor-card" id="monitor-location" aria-label="位置与轨迹">
-                <div class="monitor-card-head"><div class="monitor-card-title">位置与轨迹</div><span class="monitor-card-meta">定位数据：暂无</span></div>
-                <div class="monitor-map-empty">
-                  <div class="monitor-empty-content"><div class="monitor-empty-icon">⌖</div><div class="monitor-empty-title">位置数据待接入</div><div class="monitor-empty-copy">接入定位数据后展示车辆点位、车头方向、作业区域与定位可信度。坐标无效或过期时不绘制点位。</div></div>
-                </div>
-                <div class="monitor-map-footer"><span>经纬度：暂无数据 · 定位时间：暂无数据</span><button class="monitor-card-link" type="button" onclick="openMonitorPage()">在监管一张图中定位 →</button></div>
+                <div class="monitor-card-head"><div class="monitor-card-title">位置与轨迹</div><span class="monitor-card-meta">定位数据：正常 · 约 5 m</span></div>
+                <div class="monitor-map-empty"><div class="monitor-map" id="vehicleDetailMap" aria-label="车辆当前位置地图"></div><div class="monitor-map-overlay"><span class="monitor-map-badge online" id="monitorMapStatus">在线 · 定位可信</span><span class="monitor-map-badge" id="monitorMapAccuracy">约 5 m</span></div><div class="monitor-map-legend">当前车辆 · 位置更新时间 14:32:18</div></div>
+                <div class="monitor-map-footer"><span id="monitorMapFooter">经纬度：31.386600, 118.401800 · 芜湖市鸠江区万春街道附近 · 定位时间：2026-09-15 14:32:18</span><button class="monitor-card-link" type="button" onclick="openMonitorPage()">在监管一张图中定位 →</button></div>
               </section>
 
               <section class="monitor-card" aria-label="运行遥测">
                 <div class="monitor-card-head"><div class="monitor-card-title">运行遥测</div><button class="monitor-card-link" type="button" onclick="openRunningData()">查看完整运行数据 →</button></div>
                 <div class="monitor-definition-list">
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">VIN 码</span><span class="monitor-definition-value">LSVAU2A39EN000001</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">所属项目</span><span class="monitor-definition-value text">鸠江项目</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">经度 / 纬度</span><span class="monitor-definition-value">暂无数据</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">接管状态</span><span class="monitor-definition-value text">暂无数据</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">横向 / 纵向加速度</span><span class="monitor-definition-value">暂无数据</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">侧倾 / 横摆角速度</span><span class="monitor-definition-value">暂无数据</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">档位</span><span class="monitor-definition-value text">暂无数据</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">数据采集时间</span><span class="monitor-definition-value">暂无数据</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">VIN 码</span><span class="monitor-definition-value" id="monitorVin">LSVAU2A39EN000001</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">驾驶 / 作业模式</span><span class="monitor-definition-value text" id="monitorMode">自动驾驶 · 工作</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">经度 / 纬度</span><span class="monitor-definition-value" id="monitorCoordinates">118.401800 / 31.386600</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">接管状态</span><span class="monitor-definition-value text value-ok" id="monitorTakeover">未接管</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">车辆速度</span><span class="monitor-definition-value" id="monitorSpeed">8 km/h</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">横向 / 纵向加速度</span><span class="monitor-definition-value" id="monitorAcceleration">0.06 / 0.02 m/s²</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">侧倾 / 横摆角速度</span><span class="monitor-definition-value" id="monitorRotation">0.01 / 0.02 °/s</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">档位 / 终端状态</span><span class="monitor-definition-value text" id="monitorGear">D · 在线</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">SOC / 数据采集时间</span><span class="monitor-definition-value" id="monitorSoc">68% · 2026-09-15 14:32:18</span></div>
                 </div>
-                <div class="monitor-card-footnote">数据来源与采集时间将在实时接入后按字段显示。</div>
+                <div class="monitor-card-footnote" id="monitorTelemetryFootnote">来源：车载 T-Box / 自动驾驶平台 · 数据质量：正常 · 延迟约 18 秒</div>
               </section>
             </div>
 
             <div class="monitor-grid-2">
               <section class="monitor-card" id="monitor-safety" aria-label="安全与系统诊断">
-                <div class="monitor-card-head"><div class="monitor-card-title">安全与系统诊断</div><span class="monitor-card-meta">诊断数据：待接入</span></div>
-                <div class="monitor-health-list">
-                  <div class="monitor-health-row"><span class="monitor-health-name">自动驾驶系统 / 自检结果</span><span class="monitor-health-status">暂无数据</span></div>
-                  <div class="monitor-health-row"><span class="monitor-health-name">急停与碰撞 / 近碰</span><span class="monitor-health-status">暂无数据</span></div>
-                  <div class="monitor-health-row"><span class="monitor-health-name">摄像头 / 激光雷达 / 毫米波雷达</span><span class="monitor-health-status">暂无数据</span></div>
-                  <div class="monitor-health-row"><span class="monitor-health-name">定位可信度 / 电子围栏越界</span><span class="monitor-health-status">暂无数据</span></div>
-                  <div class="monitor-health-row"><span class="monitor-health-name">软件与地图版本</span><span class="monitor-health-status">暂无数据</span></div>
+                <div class="monitor-card-head"><div class="monitor-card-title">安全与系统诊断</div><span class="monitor-card-meta" id="monitorHealthMeta">诊断数据：正常</span></div>
+                <div class="monitor-health-list" id="monitorHealthList">
                 </div>
-                <div class="monitor-card-footnote">不根据故障码或异常类型推断等级、来源和处理状态。</div>
+                <div class="monitor-card-footnote">诊断证据来自车载终端和自动驾驶平台；关注项不直接改写车辆总览可用性结论。</div>
               </section>
 
               <section class="monitor-card" id="monitor-resources" aria-label="资源与设备明细">
                 <div class="monitor-card-head"><div class="monitor-card-title">资源与设备明细</div><span class="monitor-card-meta">按车型能力展示</span></div>
-                <div class="monitor-resource-grid">
-                  <div class="monitor-resource-item"><div class="monitor-resource-label">电量 / 油量</div><div class="monitor-resource-value">—</div><div class="monitor-resource-note">暂无数据</div></div>
-                  <div class="monitor-resource-item"><div class="monitor-resource-label">预计续航</div><div class="monitor-resource-value">—</div><div class="monitor-resource-note">暂无数据</div></div>
-                  <div class="monitor-resource-item"><div class="monitor-resource-label">清水 / 污水</div><div class="monitor-resource-value">—</div><div class="monitor-resource-note">暂无数据</div></div>
-                  <div class="monitor-resource-item"><div class="monitor-resource-label">垃圾箱余量</div><div class="monitor-resource-value">—</div><div class="monitor-resource-note">暂无数据</div></div>
+                <div class="monitor-resource-grid" id="monitorResourceGrid">
                 </div>
               </section>
             </div>
 
             <section class="monitor-card" aria-label="当前任务关联">
               <div class="monitor-card-head"><div class="monitor-card-title">当前任务关联</div><button class="monitor-card-link" type="button" onclick="showMonitorUnavailable('外部作业平台详情')">查看外部任务 →</button></div>
-              <div class="monitor-task"><div><div class="monitor-task-title">任务数据待接入</div><div class="monitor-task-meta">接入后展示任务名称、作业区域、任务状态、时间和进度；不重复建设外部平台的完整路线与作业明细。</div></div><div><div class="monitor-task-progress"><span></span></div><div class="monitor-task-progress-note">进度暂无数据</div></div></div>
+              <div class="monitor-task"><div><div class="monitor-task-title is-active" id="monitorTaskTitle">鸠江区主干道午后清扫</div><div class="monitor-task-meta" id="monitorTaskMeta">万春街道 A 线 · 执行中 · 2026-09-15 13:30 开始 · 预计 15:10 完成</div></div><div><div class="monitor-task-progress is-active"><span id="monitorTaskProgress" style="width:62%"></span></div><div class="monitor-task-progress-note" id="monitorTaskProgressNote">已完成 62%</div></div></div>
             </section>
 
             <section class="monitor-card" aria-label="趋势分析">
-              <div class="monitor-card-head"><div class="monitor-card-title">趋势分析</div><span class="monitor-card-meta">来源：待接入</span></div>
+              <div class="monitor-card-head"><div class="monitor-card-title">趋势分析</div><span class="monitor-card-meta">来源：车载 T-Box</span></div>
               <div class="monitor-trend-toolbar"><span class="monitor-card-meta">时间范围</span><div class="monitor-segment" role="group" aria-label="趋势时间范围"><button class="active" type="button" onclick="selectMonitorRange(this)">最近1小时</button><button type="button" onclick="selectMonitorRange(this)">最近24小时</button><button type="button" onclick="selectMonitorRange(this)">最近7天</button></div></div>
-              <div class="monitor-trend-empty" id="monitorTrendEmpty">当前时间范围暂无趋势数据，不生成虚假折线</div>
+              <div class="monitor-trend" id="monitorTrend" aria-label="里程趋势图"></div>
             </section>
 
             <div class="monitor-record-grid">
               <section class="monitor-card" aria-label="故障记录">
                 <div class="monitor-card-head"><div class="monitor-card-title">故障记录</div><button class="monitor-card-link" type="button" onclick="openFaults()">查看全部故障 →</button></div>
-                <div class="monitor-record-summary"><span class="monitor-record-count">—</span><span class="monitor-record-copy">当前时间范围内<br>故障数量待接入</span></div>
-                <div class="monitor-record-empty">故障记录待接入<br>接入后按上报时间倒序展示</div>
+                <div class="monitor-record-summary"><span class="monitor-record-count" id="monitorFaultCount">0</span><span class="monitor-record-copy">当前时间范围内<br>故障数量</span></div>
+                <div class="monitor-record-empty" id="monitorFaultRecords">当前时间范围内暂无故障记录</div>
               </section>
               <section class="monitor-card" aria-label="异常记录">
                 <div class="monitor-card-head"><div class="monitor-card-title">异常记录</div><button class="monitor-card-link" type="button" onclick="openAnomalies()">查看全部异常 →</button></div>
-                <div class="monitor-record-summary"><span class="monitor-record-count">—</span><span class="monitor-record-copy">当前时间范围内<br>异常数量待接入</span></div>
-                <div class="monitor-record-empty">异常记录待接入<br>支持超时停靠、超速行驶、限行区行驶事件下钻</div>
+                <div class="monitor-record-summary"><span class="monitor-record-count" id="monitorAnomalyCount">1</span><span class="monitor-record-copy">当前时间范围内<br>异常数量</span></div>
+                <div class="monitor-record-empty has-records" id="monitorAnomalyRecords"></div>
               </section>
             </div>
 
@@ -1655,6 +1679,8 @@
 <script src="../components/common.js"></script>
 <script src="../components/pagination-component.js"></script>
 <script src="../components/filter-component.js"></script>
+<script src="../components/vendor/leaflet.js"></script>
+<script src="../components/vehicle-monitor-data.js"></script>
 <script>
 // ===== 初始化布局（规范二.5：顶部导航仅展示模块名，不展示面包屑） =====
 Common.initLayout({
@@ -1667,11 +1693,14 @@ Common.initLayout({
 
 // ===== 车辆模拟数据 =====
 const vehicleData = {
+  asset_id: 12,
   // 单车360度档案 - 阶段1 占位：是否自动驾驶环卫机器人；后续接入自动驾驶平台时改为真实计算字段
   isAutonomous: true, isSweepingRobot: true,
   vin: 'LSVAU2A39EN000001', gbt_vin: 'GB0000000001', plate_no: '京ADG090', factory_no: 'FN2025030001',
   is_test: '否', is_network: '是', iot_code: '14156',
   city: '上海', project: '鸠江项目', operator: '王强', asset_source: '外购',
+  // 建档审计字段：创建后不可被车辆档案编辑覆盖，后续维护写入变更日志。
+  creator_id: 'U-1008', creator_name: '王强', created_at: '2025-03-15 10:30:00', create_type: '单个录入',
   asset_class: '固定资产', contract_entity: '北京XXX科技有限公司', fixed_asset_code: 'FA-2025-0001',
   asset_attr: '运营车辆-电动', vehicle_status: '在库-正常使用',
   photo_front: true, photo_45: true,
@@ -1747,8 +1776,11 @@ let currentTab = 'overview';   // 默认展示「车辆总览」
 let isEditing = false;
 let currentAfterSalesSubTab = 'warranty-info';
 let currentBusinessTab = 'transfer';
+const monitorSnapshot = (window.VehicleMonitorData && window.VehicleMonitorData.snapshot) || null;
+let vehicleDetailMap = null;
+let vehicleDetailMarker = null;
 
-// 运行监控高保真阶段：保留跨页面联动，不伪造实时数据。
+// 运行监控与监管一张图复用同一份车辆快照数据。
 function monitorVehicleQuery() {
   const params = new URLSearchParams({ vehicleId: vehicleData.vin, vin: vehicleData.vin, plateNo: vehicleData.plate_no, iotCode: vehicleData.iot_code });
   return params.toString();
@@ -1757,6 +1789,57 @@ function openMonitorPage() { window.location.href = '../monitor/vehicle-monitor.
 function openRunningData() { window.location.href = '../monitor/vehicle-running-data.html?' + monitorVehicleQuery(); }
 function openFaults() { window.location.href = '../monitor/vehicle-fault-info.html?' + monitorVehicleQuery(); }
 function openAnomalies() { window.location.href = '../monitor/vehicle-anomaly-records.html?' + monitorVehicleQuery(); }
+const VEHICLE_ICON_SVG = '<svg viewBox="0 0 1024 1024" fill="currentColor" aria-hidden="true"><path d="M698.349 350.796c-5.392-26.617-29.05-45.569-56.2-45.027-70.081-3.048-140.498-5.417-210.581-6.096a299.68 299.68 0 0 0-67.708 10.496 38.595 38.595 0 0 0-24.716 16.929c-18.958 40.964-33.178 83.284-49.767 128.649a1069.52 1069.52 0 0 0 442.828 0c-12.527-37.581-25.055-71.095-33.856-104.951zM756.917 542.075a734.032 734.032 0 0 0-101.566 38.598c-14.896 7.108-9.479 26.745 7.449 30.467a380.674 380.674 0 0 0 45.706 4.065v0.335a482.943 482.943 0 0 0 53.15-6.769c25.393-5.755 19.977-26.408 19.297-44.35-0.675-17.944-10.157-26.408-24.036-22.346zM363.521 576.27a791.755 791.755 0 0 0-84.64-33.854c-14.22-4.741-30.469-3.724-33.852 16.249-6.774 29.455 0 45.706 22.003 50.445 17.267 3.387 33.856 4.061 52.815 5.757l-1.692 0.673a165.09 165.09 0 0 0 36.226-2.031 33.842 33.842 0 0 0 22.004-16.587c1.694-5.08-6.093-17.604-12.864-20.652z"></path><path d="M512 0C229.23 0 0 229.23 0 512s229.23 512 512 512 512-229.23 512-512S794.77 0 512 0z m338.358 506.189l-38.596 10.498a340.983 340.983 0 0 1 4.739 40.624v187.558a53.488 53.488 0 0 1-11.512 31.148 316.864 316.864 0 0 1-108.334 2.03c-25.055-15.91-9.479-42.657-17.607-64.324H349.979c-6.436 23.02-10.157 61.614-17.605 64.324a321.638 321.638 0 0 1-111.045 0 60.573 60.573 0 0 1-12.188-35.887c-2.031-27.082-2.031-52.814-2.031-79.22 0-49.091 0-98.181 2.031-147.608l-35.887-9.478a38.957 38.957 0 0 1 0-16.589c10.158-27.085 23.699-48.075 58.568-45.028 4.061 0 11.849-8.126 14.22-14.222a910.559 910.559 0 0 0 33.855-92.424c13.021-46.38 53.549-79.746 101.565-83.62 18.62-3.388 37.918-5.757 56.539-8.805l1.016 1.356a491.198 491.198 0 0 1 145.239 0c33.855 6.771 67.708 12.188 99.534 20.99a71.09 71.09 0 0 1 50.105 47.058 3361.6 3361.6 0 0 0 43.336 115.445c2.708 6.435 10.831 15.914 15.572 15.236 26.853-4.536 52.413 13.205 57.555 39.948a43.657 43.657 0 0 1 0 20.99z"></path></svg>';
+function renderMonitorMap() {
+  const d = monitorSnapshot;
+  const host = document.getElementById('vehicleDetailMap');
+  if (!d || !host || !window.L) return;
+  if (!vehicleDetailMap) {
+    vehicleDetailMap = L.map(host, { zoomControl: true, attributionControl: true, preferCanvas: true }).setView([d.lat, d.lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 }).addTo(vehicleDetailMap);
+    vehicleDetailMarker = L.marker([d.lat, d.lng], {
+      icon: L.divIcon({ className: '', html: '<div class="monitor-vehicle-marker"><div class="marker-pin">' + VEHICLE_ICON_SVG + '</div><div class="marker-label">' + escapeHtml(d.plate) + '</div></div>', iconSize: [74, 54], iconAnchor: [37, 17] }),
+      title: d.plate
+    }).addTo(vehicleDetailMap).bindPopup('<strong>' + escapeHtml(d.plate) + '</strong><br>' + escapeHtml(d.model) + '<br>速度 ' + d.speed + ' km/h · ' + escapeHtml(d.workMode));
+    L.circle([d.lat, d.lng], { radius: 80, color: '#1677ff', weight: 1, fillColor: '#1677ff', fillOpacity: .08 }).addTo(vehicleDetailMap);
+  }
+  window.requestAnimationFrame(function () { vehicleDetailMap.invalidateSize(); vehicleDetailMap.setView([d.lat, d.lng], 14, { animate: false }); });
+}
+function renderMonitorTrend(range) {
+  const d = monitorSnapshot;
+  const host = document.getElementById('monitorTrend');
+  if (!d || !host) return;
+  const values = d.trend[range] || d.trend.hour;
+  const labels = range === 'week' ? ['09-09','09-10','09-11','09-12','09-13','09-14','09-15'] : range === 'day' ? ['00:00','04:00','08:00','12:00','16:00','20:00'] : ['13:32','13:44','13:56','14:08','14:20','14:32'];
+  const width = 620, height = 120, left = 18, right = 12, top = 12, bottom = 24;
+  const max = Math.max.apply(null, values) || 1;
+  const points = values.map(function (value, index) { const x = left + (width - left - right) * index / Math.max(1, values.length - 1); const y = top + (height - top - bottom) * (1 - value / max); return [x, y]; });
+  const line = points.map(function (point) { return point.join(','); }).join(' ');
+  const area = left + ',' + (height - bottom) + ' ' + line + ' ' + (width - right) + ',' + (height - bottom);
+  host.innerHTML = '<div class="monitor-trend-caption"><span>里程增量（km）</span><span>来源：车载 T-Box · 采样至 ' + escapeHtml(d.time.slice(11, 16)) + '</span></div><svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="里程趋势"><polygon class="area-mileage" points="' + area + '"></polygon><polyline class="line-mileage" points="' + line + '"></polyline>' + points.map(function (point, index) { return '<circle class="trend-dot" cx="' + point[0] + '" cy="' + point[1] + '" r="3"></circle><text class="axis-label" x="' + point[0] + '" y="' + (height - 6) + '" text-anchor="middle">' + labels[index] + '</text>'; }).join('') + '</svg>';
+}
+function renderMonitorData() {
+  const d = monitorSnapshot;
+  if (!d) return;
+  const text = function (id, value) { const el = document.getElementById(id); if (el) el.textContent = value; };
+  text('monitorFreshnessCopy', '数据来源：' + d.source + ' · 最近采集：' + d.time + ' · 延迟约 18 秒');
+  text('monitorMapFooter', '经纬度：' + d.lat.toFixed(6) + ', ' + d.lng.toFixed(6) + ' · ' + d.address + ' · 定位时间：' + d.time);
+  text('monitorMapAccuracy', d.accuracy);
+  text('monitorVin', d.vin); text('monitorMode', d.modeText + ' · ' + d.workMode); text('monitorCoordinates', d.lng.toFixed(6) + ' / ' + d.lat.toFixed(6));
+  text('monitorTakeover', d.takeover); text('monitorSpeed', d.speed + ' km/h'); text('monitorAcceleration', d.accL.toFixed(2) + ' / ' + d.accW.toFixed(2) + ' m/s²');
+  text('monitorRotation', d.roll.toFixed(2) + ' / ' + d.yaw.toFixed(2) + ' °/s'); text('monitorGear', d.gear + ' · ' + d.online); text('monitorSoc', d.soc + '% · ' + d.time);
+  text('monitorTelemetryFootnote', '来源：' + d.source + ' · 数据质量：正常 · 延迟约 18 秒');
+  const health = document.getElementById('monitorHealthList');
+  if (health) health.innerHTML = d.health.map(function (item) { return '<div class="monitor-health-row"><span class="monitor-health-name">' + escapeHtml(item.name) + '</span><span class="monitor-health-status state-' + item.state + '">' + escapeHtml(item.value) + '</span></div>'; }).join('');
+  const resources = document.getElementById('monitorResourceGrid');
+  if (resources) resources.innerHTML = [['电量', d.soc + '%', '工作中 · 续航 ' + d.range + ' km'], ['预计续航', d.range + ' km', '按当前作业负载估算'], ['清水 / 污水', d.water + '% / ' + d.sewage + '%', '清水偏低，建议补给'], ['垃圾箱余量', d.bin + '%', '当前设备在线 ' + d.equipmentOnline]].map(function (item, index) { return '<div class="monitor-resource-item"><div class="monitor-resource-label">' + item[0] + '</div><div class="monitor-resource-value' + (index === 2 ? ' is-warn' : '') + '">' + item[1] + '</div><div class="monitor-resource-note">' + item[2] + '</div></div>'; }).join('');
+  text('monitorTaskTitle', d.task.name); text('monitorTaskMeta', d.task.area + ' · ' + d.task.status + ' · ' + d.task.start + ' 开始 · ' + d.task.eta); text('monitorTaskProgressNote', '已完成 ' + d.task.progress + '%');
+  const progress = document.getElementById('monitorTaskProgress'); if (progress) progress.style.width = d.task.progress + '%';
+  text('monitorFaultCount', d.faults.length); text('monitorAnomalyCount', d.anomalies.length);
+  const faultHost = document.getElementById('monitorFaultRecords'); if (faultHost) faultHost.innerHTML = d.faults.length ? d.faults.map(function (item) { return '<div class="monitor-record-row"><strong>' + escapeHtml(item.code) + '</strong><span>' + escapeHtml(item.reportTime) + '</span></div>'; }).join('') : '当前时间范围内暂无故障记录';
+  const anomalyHost = document.getElementById('monitorAnomalyRecords'); if (anomalyHost) anomalyHost.innerHTML = d.anomalies.map(function (item) { return '<div class="monitor-record-row"><strong>' + escapeHtml(item.type) + '</strong><span>' + escapeHtml(item.reported) + '</span></div>'; }).join('');
+  renderMonitorTrend('hour');
+}
 function openMonitorSection(sectionId) {
   switchTab('monitor');
   window.requestAnimationFrame(function() {
@@ -1770,8 +1853,8 @@ function selectMonitorRange(button) {
   if (!group) return;
   group.querySelectorAll('button').forEach(item => item.classList.remove('active'));
   button.classList.add('active');
-  const empty = document.getElementById('monitorTrendEmpty');
-  if (empty) empty.textContent = '当前时间范围暂无趋势数据，不生成虚假折线';
+  const range = button.textContent.indexOf('24') > -1 ? 'day' : button.textContent.indexOf('7') > -1 ? 'week' : 'hour';
+  renderMonitorTrend(range);
 }
 
 function switchTab(tab) {
@@ -1793,6 +1876,7 @@ function switchTab(tab) {
   if (tab === 'lifecycle') renderLifecycleEvents();
   if (tab === 'business') switchBusinessTab(currentBusinessTab);
   if (tab === 'archive') refreshArchiveDirectory();
+  if (tab === 'monitor') { renderMonitorData(); renderMonitorMap(); }
   updateEditButton();
 }
 
@@ -1957,10 +2041,10 @@ const lifecycleEvents = [
     detail: { label: '查看事故详情', target: '事故记录 SG-20260603-006', canView: true },
   },
   {
-    id: 'LC-20250315-001', occurred_at: '2025-03-15 10:00:00', type: 'archived',
-    title: '车辆完成建档', summary: '车辆由王伟完成建档',
-    source: '车辆建档', operator: '王伟',
-    fields: [{ label: '建档时间', value: '2025-03-15 10:00', number: true }],
+    id: 'LC-20250315-001', occurred_at: '2025-03-15 10:30:00', type: 'archived',
+    title: '车辆完成建档', summary: '车辆由王强完成建档',
+    source: '车辆建档', operator: '王强',
+    fields: [{ label: '建档时间', value: '2025-03-15 10:30', number: true }],
     detail: { label: '查看车辆档案', target: '当前车辆档案', canView: true },
   },
 ];
@@ -2324,6 +2408,12 @@ function renderBasicView() {
     <div class="info-section"><div class="info-section-title">车辆标签</div><div class="info-grid cols-1">
       <div class="info-field"><span class="field-label">当前标签</span><span class="field-value">${renderDetailTags()}</span></div>
     </div></div>
+
+    <div class="info-section"><div class="info-section-title">建档信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">建档人</span><span class="field-value">${v(d.creator_name)}</span></div>
+      <div class="info-field"><span class="field-label">建档时间</span><span class="field-value">${v(d.created_at)}</span></div>
+      <div class="info-field"><span class="field-label">建档方式</span><span class="field-value">${v(d.create_type)}</span></div>
+    </div></div>
   `;
 }
 
@@ -2480,6 +2570,11 @@ function renderBasicEdit() {
         <div id="detailTagEditor" style="padding:12px 0;">${renderDetailTagEditor()}</div>
       </div>
     </form>
+    <div class="info-section"><div class="info-section-title">建档信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">建档人</span><span class="field-value">${d.creator_name || '—'}</span></div>
+      <div class="info-field"><span class="field-label">建档时间</span><span class="field-value">${d.created_at || '—'}</span></div>
+      <div class="info-field"><span class="field-label">建档方式</span><span class="field-value">${d.create_type || '—'}</span></div>
+    </div></div>
   `;
   syncAllEditHardwareSimStates();
 }
@@ -3292,6 +3387,7 @@ refreshArchiveDirectory();
 renderVehicleGlobalInfo();
 // 单车360度档案 - 阶段1：默认展示车辆概览；按车型控制自动驾驶域/作业设备域显示
 renderOverviewByVehicleType();
+renderMonitorData();
 // 单车360度档案 - 生命周期 Tab 初始化（列表渲染在切到该 Tab 时触发）
 bindLifecycleFilter();
 updateEditButton();

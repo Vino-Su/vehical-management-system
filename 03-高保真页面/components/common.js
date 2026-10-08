@@ -36,6 +36,9 @@ const Common = {
         { label: '车辆故障信息', id: 'vehicle-fault', href: 'monitor/vehicle-fault-info.html' },
         { label: '车辆异常记录', id: 'vehicle-alert', href: 'monitor/vehicle-anomaly-records.html' },
       ]},
+      { label: '车辆运营', symbol: '营', items: [
+        { label: '用车记录', id: 'vehicle-use-records', href: 'vehicle-operation/vehicle-use-records.html' },
+      ]},
     ]},
     { id: 'maintenance', label: '维保管理', symbol: '维', groups: [
       { label: '维修管理', symbol: '修', items: [

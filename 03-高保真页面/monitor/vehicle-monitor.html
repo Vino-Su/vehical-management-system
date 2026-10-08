@@ -98,10 +98,10 @@
     .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
     .legend-dot.parallel { background: var(--parallel); } .legend-dot.auto { background: var(--auto); } .legend-dot.manual { background: #8c8c8c; }
     .leaflet-control-zoom { margin-top: 76px !important; }
-    .vehicle-marker { position: relative; width: 72px; text-align: center; transform: translate(-50%, -100%); cursor: pointer; }
-    .vehicle-marker .marker-icon { width: 34px; height: 34px; margin: 0 auto 2px; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); color: #fff; font-size: 15px; box-shadow: 0 2px 7px rgba(0,0,0,.25); }
-    .vehicle-marker .marker-icon span { transform: rotate(45deg); }
-    .vehicle-marker.parallel .marker-icon { background: var(--parallel); } .vehicle-marker.auto .marker-icon { background: var(--auto); } .vehicle-marker.manual .marker-icon { background: #8c8c8c; }
+    .vehicle-marker { position: relative; width: 72px; text-align: center; cursor: pointer; }
+    .vehicle-marker .marker-icon { width: 34px; height: 34px; margin: 0 auto 2px; display: block; border: 2px solid #fff; border-radius: 50%; background: #fff; box-shadow: 0 2px 7px rgba(0,0,0,.25); }
+    .vehicle-marker .marker-icon svg { display: block; width: 100%; height: 100%; }
+    .vehicle-marker.parallel .marker-icon { color: var(--parallel); } .vehicle-marker.auto .marker-icon { color: var(--auto); } .vehicle-marker.manual .marker-icon { color: #8c8c8c; }
     .vehicle-marker .marker-label { max-width: 88px; margin: 0 auto; padding: 1px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; background: rgba(255,255,255,.92); color: var(--text-primary); font: 11px/16px var(--font-number); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
     .vehicle-marker.has-alert .marker-icon { animation: markerPulse 1.25s ease-in-out infinite; }
     .alert-badge { position: absolute; top: -3px; right: 12px; min-width: 17px; height: 17px; padding: 0 4px; border: 2px solid #fff; border-radius: 9px; background: var(--error); color: #fff; font: 11px/13px var(--font-number); }
@@ -187,8 +187,8 @@
     .track-range { --track-percent: 0%; width: 100%; height: 4px; margin: 0; appearance: none; border-radius: 2px; outline: 0; background: linear-gradient(to right, var(--primary) 0 var(--track-percent), #e5e6eb var(--track-percent) 100%); cursor: pointer; }
     .track-range::-webkit-slider-thumb { width: 16px; height: 16px; appearance: none; border: 3px solid var(--primary); border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(22,119,255,.28); }
     .track-range::-moz-range-thumb { width: 12px; height: 12px; border: 3px solid var(--primary); border-radius: 50%; background: #fff; }
-    .track-vehicle-marker { position: relative; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border: 3px solid #fff; border-radius: 50%; background: var(--primary); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.28); }
-    .track-vehicle-marker::after { content: ""; position: absolute; right: 1px; bottom: -5px; width: 10px; height: 10px; transform: rotate(45deg); border-right: 3px solid #fff; border-bottom: 3px solid #fff; background: var(--primary); }
+    .track-vehicle-marker { position: relative; width: 42px; height: 42px; border: 2px solid #fff; border-radius: 50%; background: #fff; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,.28); }
+    .track-vehicle-marker svg { display: block; width: 100%; height: 100%; }
     .track-vehicle-label { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,.96); color: var(--text-primary); font: 11px/16px var(--font-number); white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.16); }
     .video-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; } .video-tile { aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #162436; color: #a9c7e8; font-size: 12px; }
     .empty-list { padding: 38px 16px; color: var(--text-disabled); text-align: center; }
@@ -284,6 +284,7 @@
 
   <script src="../components/common.js"></script>
   <script src="../components/vendor/leaflet.js"></script>
+  <script src="../components/vehicle-monitor-data.js"></script>
   <script>
     (function () {
       'use strict';
@@ -299,7 +300,8 @@
         { id: 5, plate: '皖B8K560', network: '11642', vin: 'LZ9ADG2E6RA002509', model: '麒麟清扫车', project: '鸠江江北项目', region: '芜湖市', city: '芜湖市', lat: 31.4171, lng: 118.4596, mode: 'parallel', alerts: 0, speed: 9.4, takeover: '未接管', accL: 0.04, accW: 0.03, roll: 0.02, yaw: 0.01, gear: 'D', time: '2026-09-15 09:38:21' },
         { id: 6, plate: '琼A8D725', network: '11805', vin: 'LZ9ADG2E6RA002687', model: '泰坦智能驾驶洒水车', project: '陵水项目', region: '陵水市', city: '陵水市', lat: 18.505, lng: 110.037, mode: 'parallel', alerts: 4, speed: 15.8, takeover: '未接管', accL: 0.16, accW: 0.08, roll: 0.04, yaw: 0.05, gear: 'D', time: '2026-09-15 09:37:54' },
         { id: 7, plate: '琼A3C682', network: '13704', vin: 'LZ9ADG2E6RA003829', model: '独角兽', project: '陵水项目', region: '陵水市', city: '陵水市', lat: 18.475, lng: 110.009, mode: 'auto', alerts: 0, speed: 4.8, takeover: '未接管', accL: 0.02, accW: 0.01, roll: 0.01, yaw: 0.01, gear: 'D', time: '2026-09-15 09:36:15' },
-        { id: 8, plate: '浙JAR6538', network: '14156', vin: 'LZ9ADG2E6RA001156', model: '泰坦智能驾驶洒水车', project: '椒北街道', region: '台州市', city: '台州市', lat: 28.6564, lng: 121.4208, mode: 'manual', alerts: 1, speed: 21.1, takeover: '人工驾驶', accL: 0.22, accW: 0.13, roll: 0.06, yaw: 0.08, gear: 'D', time: '2026-09-15 09:35:42' }
+        { id: 8, plate: '浙JAR6538', network: '14156', vin: 'LZ9ADG2E6RA001156', model: '泰坦智能驾驶洒水车', project: '椒北街道', region: '台州市', city: '台州市', lat: 28.6564, lng: 121.4208, mode: 'manual', alerts: 1, speed: 21.1, takeover: '人工驾驶', accL: 0.22, accW: 0.13, roll: 0.06, yaw: 0.08, gear: 'D', time: '2026-09-15 09:35:42' },
+        Object.assign({ id: 12 }, (window.VehicleMonitorData && window.VehicleMonitorData.snapshot) || {})
       ];
       var groupMode = 'project', drawerTab = 'vehicles', selectedId = null, expandedCity = null, markerLayer = L.layerGroup(), cityLayer = L.layerGroup(), trackTimer = null;
       var trackRouteLayer = null, trackPassedLayer = null, trackDecorationLayer = null, trackMarker = null, trackRoute = [], trackVehicle = null, trackActive = false, trackViewBefore = null;
@@ -317,6 +319,7 @@
         return vehicles.filter(function (v) { return (!f.project.length || f.project.indexOf(v.project) >= 0) && (!f.region.length || f.region.indexOf(v.region) >= 0) && (!f.model.length || f.model.indexOf(v.model) >= 0) && (!f.alert || v.alerts > 0) && (!q || v.vin === q || v.plate === q || v.network === q); });
       }
       function cityGroups(list) { var groups = {}; list.forEach(function (v) { (groups[v.city] || (groups[v.city] = [])).push(v); }); return groups; }
+      function vehicleIcon() { return '<svg viewBox="0 0 1024 1024" fill="currentColor" aria-hidden="true"><path d="M698.349 350.796c-5.392-26.617-29.05-45.569-56.2-45.027-70.081-3.048-140.498-5.417-210.581-6.096a299.68 299.68 0 0 0-67.708 10.496 38.595 38.595 0 0 0-24.716 16.929c-18.958 40.964-33.178 83.284-49.767 128.649a1069.52 1069.52 0 0 0 442.828 0c-12.527-37.581-25.055-71.095-33.856-104.951zM756.917 542.075a734.032 734.032 0 0 0-101.566 38.598c-14.896 7.108-9.479 26.745 7.449 30.467a380.674 380.674 0 0 0 45.706 4.065v0.335a482.943 482.943 0 0 0 53.15-6.769c25.393-5.755 19.977-26.408 19.297-44.35-0.675-17.944-10.157-26.408-24.036-22.346zM363.521 576.27a791.755 791.755 0 0 0-84.64-33.854c-14.22-4.741-30.469-3.724-33.852 16.249-6.774 29.455 0 45.706 22.003 50.445 17.267 3.387 33.856 4.061 52.815 5.757l-1.692 0.673a165.09 165.09 0 0 0 36.226-2.031 33.842 33.842 0 0 0 22.004-16.587c1.694-5.08-6.093-17.604-12.864-20.652z"></path><path d="M512 0C229.23 0 0 229.23 0 512s229.23 512 512 512 512-229.23 512-512S794.77 0 512 0z m338.358 506.189l-38.596 10.498a340.983 340.983 0 0 1 4.739 40.624v187.558a53.488 53.488 0 0 1-11.512 31.148 316.864 316.864 0 0 1-108.334 2.03c-25.055-15.91-9.479-42.657-17.607-64.324H349.979c-6.436 23.02-10.157 61.614-17.605 64.324a321.638 321.638 0 0 1-111.045 0 60.573 60.573 0 0 1-12.188-35.887c-2.031-27.082-2.031-52.814-2.031-79.22 0-49.091 0-98.181 2.031-147.608l-35.887-9.478a38.957 38.957 0 0 1 0-16.589c10.158-27.085 23.699-48.075 58.568-45.028 4.061 0 11.849-8.126 14.22-14.222a910.559 910.559 0 0 0 33.855-92.424c13.021-46.38 53.549-79.746 101.565-83.62 18.62-3.388 37.918-5.757 56.539-8.805l1.016 1.356a491.198 491.198 0 0 1 145.239 0c33.855 6.771 67.708 12.188 99.534 20.99a71.09 71.09 0 0 1 50.105 47.058 3361.6 3361.6 0 0 0 43.336 115.445c2.708 6.435 10.831 15.914 15.572 15.236 26.853-4.536 52.413 13.205 57.555 39.948a43.657 43.657 0 0 1 0 20.99z"></path></svg>'; }
       function trackIcon() { return '<svg viewBox="0 0 1024 1024" aria-hidden="true"><path d="M1024 992c0 17.7-14.3 32-32 32H240.3v-.6l-.3.6h-1c-35.9 0-69.8-14-95.6-39.5-26-25.9-40.4-60.1-40.4-96.5s14.4-70.6 40.4-96.5c26-25.8 60.3-39.8 96.6-39.5h575c17.3 0 32-14.7 32-32 0-17.4-14.7-32-32-32H432l48-64h336c52.5.5 95 43.4 95 96s-42.5 95.5-95 96H239c-18.9 0-36.9 7.4-50.5 21-13.8 13.7-21.5 31.8-21.5 51s7.6 37.3 21.5 51c13.7 13.6 31.6 21 50.5 21h.7l.3.6v-.6h752c17.7 0 32 14.3 32 32zM288.4 64.4c59.7 0 115.9 23.3 158.1 65.5C488.8 172.2 512 228.3 512 288c0 49.8-16.3 97.1-47 137l-.3.4-.3.4-176 236.4-181.1-243c-27.9-38.5-42.6-83.9-42.6-131.3 0-59.7 23.3-115.9 65.5-158.1C172.5 87.7 228.6 64.4 288.4 64.4m0-64C129.5.4.7 129.3.7 288.1c0 63.1 20.4 121.5 55 169.2l232.7 312.3 227.3-305.3c37.7-48.8 60.4-109.6 60.4-176.1C576 129.3 447.2.4 288.4.4zM288 211.8c44.1 0 80 35.9 80 80s-35.9 80-80 80-80-35.9-80-80 35.9-80 80-80m0-64c-79.5 0-144 64.5-144 144s64.5 144 144 144 144-64.5 144-144-64.5-144-144-144z"></path></svg>'; }
       function videoIcon() { return '<svg viewBox="0 0 1026 1024" aria-hidden="true"><path d="M945.643 234.058h-34.627c-9.585 0-17.325 8.19-17.325 18.338v-3.938L720.554 431.81v-161.1c0-40.5-31.028-73.35-69.278-73.35H131.819c-38.25 0-69.278 32.828-69.278 73.35v476.73c0 40.477 31.005 73.328 69.278 73.328h519.457c38.25 0 69.278-32.85 69.278-73.328V586.317l173.137 183.33v-3.893c0 10.102 7.74 18.315 17.325 18.315h34.627c9.562 0 17.325-8.213 17.325-18.315v-513.36c0-10.148-7.762-18.338-17.325-18.338zM651.275 505.16l-3.713 3.915 3.713 3.915v234.45H131.819V270.71h519.457v234.45zM893.713 665.922 745.551 509.075l148.162-156.87v313.717z"></path></svg>'; }
       function renderMap() {
@@ -328,7 +331,7 @@
             var center = rows.reduce(function (acc, v) { return [acc[0] + v.lat / rows.length, acc[1] + v.lng / rows.length]; }, [0, 0]);
             var icon = L.divIcon({ className: '', html: '<div class="city-cluster" title="点击查看车辆">' + rows.length + '<small>辆</small></div>', iconSize: [54, 54], iconAnchor: [27, 27] });
             var marker = L.marker(center, { icon: icon }).addTo(cityLayer); marker.on('click', function () { expandedCity = city; var bounds = L.latLngBounds(rows.map(function (v) { return [v.lat, v.lng]; })); map.fitBounds(bounds, { padding: [80, 80], maxZoom: 12 }); renderMap(); });
-          } else rows.forEach(function (v) { var icon = L.divIcon({ className: '', html: '<div class="vehicle-marker ' + modeClass(v.mode) + (v.alerts ? ' has-alert' : '') + '"><div class="marker-icon"><span>▰</span></div>' + (v.alerts ? '<span class="alert-badge">' + v.alerts + '</span>' : '') + '<div class="marker-label">' + displayId(v) + '</div></div>', iconSize: [88, 70], iconAnchor: [44, 70] }); var marker = L.marker([v.lat, v.lng], { icon: icon, title: displayId(v) }).addTo(markerLayer); marker.on('click', function () { selectVehicle(v.id, true); }); });
+          } else rows.forEach(function (v) { var icon = L.divIcon({ className: '', html: '<div class="vehicle-marker ' + modeClass(v.mode) + (v.alerts ? ' has-alert' : '') + '"><div class="marker-icon">' + vehicleIcon() + '</div>' + (v.alerts ? '<span class="alert-badge">' + v.alerts + '</span>' : '') + '<div class="marker-label">' + displayId(v) + '</div></div>', iconSize: [72, 54], iconAnchor: [36, 17] }); var marker = L.marker([v.lat, v.lng], { icon: icon, title: displayId(v) }).addTo(markerLayer); marker.on('click', function () { selectVehicle(v.id, true); }); });
         });
         document.getElementById('statTotal').textContent = list.length; document.getElementById('statAlert').textContent = list.filter(function (v) { return v.alerts > 0; }).length;
       }
@@ -355,7 +358,7 @@
         return offsets.map(function (point, index) { return [v.lat + point[0] + Math.sin(index * 1.4) * .0018, v.lng + point[1]]; });
       }
       function trackMarkerIcon(v) {
-        return L.divIcon({ className: '', html: '<div class="track-vehicle-marker">车<div class="track-vehicle-label">' + displayId(v) + '</div></div>', iconSize: [42, 62], iconAnchor: [21, 37] });
+        return L.divIcon({ className: '', html: '<div class="track-vehicle-marker">' + vehicleIcon() + '<div class="track-vehicle-label">' + displayId(v) + '</div></div>', iconSize: [42, 62], iconAnchor: [21, 37] });
       }
       function renderTrackRoute(v) {
         trackVehicle = v; trackRoute = makeTrackRoute(v);
@@ -428,6 +431,9 @@
       document.querySelector('.drawer-tabs').addEventListener('click', function (e) { var tab = e.target.closest('.drawer-tab'); if (tab) switchDrawerTab(tab.dataset.drawerTab); });
       var allBounds = L.latLngBounds(vehicles.map(function (v) { return [v.lat, v.lng]; })); map.fitBounds(allBounds, { padding: [80, 80] }); updateFilterSummaries(); renderMap(); renderList(); renderIssues();
       if (window.location.hash === '#track-preview') setTimeout(function () { showTrack(vehicles[0]); }, 500);
+      var query = new URLSearchParams(window.location.search), queryValue = query.get('vehicleId') || query.get('vin') || query.get('plateNo') || query.get('iotCode');
+      var queryVehicle = queryValue && vehicles.find(function (v) { return [v.vin, v.plate, v.network, String(v.id)].indexOf(queryValue) > -1; });
+      if (queryVehicle) setTimeout(function () { selectedId = queryVehicle.id; expandedCity = queryVehicle.city; map.setView([queryVehicle.lat, queryVehicle.lng], 14); renderMap(); renderList(); }, 350);
     }());
   </script>
 </body>

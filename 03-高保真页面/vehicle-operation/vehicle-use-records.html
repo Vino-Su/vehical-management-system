@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用车记录 - 车辆管理系统</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../components/common.css">
+  <link rel="stylesheet" href="../components/fixed-table.css">
+  <!-- 页面用途：查询车辆绑车与交车记录，查看明细并导出记录。 -->
+  <style>
+    .page-container .filter-bar { padding:0; margin-bottom:24px; border-radius:0; }
+    .page-container .filter-bar .filter-item { gap:8px; }
+    .page-container .filter-bar .filter-item label { color:var(--text-secondary); }
+    .page-container .filter-bar .filter-actions { gap:12px; }
+    .filter-bar .filter-item .ant-input { width:176px; }
+    .filter-bar .date-pair { display:inline-flex; align-items:center; gap:8px; }
+    .filter-bar .date-pair .ant-input { width:144px; }
+    .filter-bar .date-pair span { color:var(--text-secondary); }
+    .selection-summary { display:none; align-items:center; gap:8px; color:var(--text-secondary); }
+    .selection-summary.visible { display:flex; }
+    .selection-summary strong { color:var(--primary); font-family:var(--font-number); }
+    .selection-clear { border:0; background:transparent; color:var(--primary); cursor:pointer; }
+    .records-table table { min-width:1220px; table-layout:fixed; }
+    .records-table th, .records-table td { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .records-table thead th, .records-table tbody td { text-align:center; }
+    .records-table input[type="checkbox"] {
+      appearance:none; width:16px; height:16px; border:1px solid var(--border-input);
+      border-radius:var(--radius-sm); background:var(--bg-container); cursor:pointer;
+      position:relative; vertical-align:middle;
+    }
+    .records-table input[type="checkbox"]:hover { border-color:var(--primary-hover); }
+    .records-table input[type="checkbox"]:checked { background:var(--primary); border-color:var(--primary); }
+    .records-table input[type="checkbox"]:checked::after {
+      content:''; position:absolute; left:4px; top:1px; width:5px; height:9px;
+      border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);
+    }
+    .records-table input[type="checkbox"]:indeterminate { background:var(--primary); border-color:var(--primary); }
+    .records-table input[type="checkbox"]:indeterminate::after { content:''; position:absolute; left:3px; top:7px; width:8px; border-top:2px solid #fff; }
+    .records-table input[type="checkbox"]:focus-visible { outline:4px solid rgba(5,145,255,.1); outline-offset:1px; }
+    .record-link { border:0; padding:0; background:transparent; }
+    .selection-clear:hover { color:var(--primary-hover); text-decoration:underline; }
+    .empty-row td { height:220px !important; text-align:center; color:var(--text-secondary) !important; }
+    .detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 24px; }
+    .detail-item { display:grid; grid-template-columns:98px minmax(0,1fr); gap:12px; line-height:22px; }
+    .detail-item dt { color:var(--text-secondary); text-align:right; }
+    .detail-item dd { margin:0; overflow-wrap:anywhere; }
+    .detail-item.full { grid-column:1 / -1; }
+    .export-field { display:flex; align-items:center; gap:12px; margin-top:16px; }
+    .export-name { flex:1; min-width:0; }
+    @media (max-width:700px) {
+      .page-container .filter-bar[data-progressive-filter] .filter-row.filter-primary { flex-wrap:wrap; }
+      .page-container .filter-bar .filter-actions { margin-left:0; }
+      .content { padding:16px; }
+      .filter-bar .filter-item { max-width:100%; flex-wrap:wrap; }
+      .filter-bar .filter-item .ant-input { max-width:100%; }
+      .filter-bar .date-pair { max-width:100%; }
+      .filter-bar .date-pair .ant-input { width:min(120px,34vw); }
+      .detail-grid { grid-template-columns:1fr; }
+      .detail-item.full { grid-column:auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-area">
+      <div id="header"></div>
+      <main class="content">
+        <section class="page-container">
+          <div class="filter-bar" data-progressive-filter aria-label="用车记录筛选">
+            <div class="filter-row filter-primary">
+              <div class="filter-item"><label for="driverFilter">司机名称</label><input class="ant-input" id="driverFilter" type="text" placeholder="支持模糊搜索"></div>
+              <div class="filter-item"><label for="plateFilter">车牌号</label><input class="ant-input" id="plateFilter" type="text" placeholder="支持模糊搜索"></div>
+              <div class="filter-actions"><button class="btn btn-primary" id="searchButton" type="button">查询</button><button class="btn" id="resetButton" type="button">重置</button></div>
+              <button class="filter-more-toggle" type="button" aria-expanded="false"><span class="filter-more-text">展开更多</span><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>
+            </div>
+            <div class="filter-row filter-extra">
+              <div class="filter-item"><label for="statusFilter">状态</label><select class="ant-input" id="statusFilter"><option value="">全部</option><option value="returned">已交车</option><option value="using">用车中</option></select></div>
+              <div class="filter-item"><label for="bindStart">绑车时间</label><span class="date-pair"><input class="ant-input" id="bindStart" type="date" aria-label="绑车开始日期"><span>至</span><input class="ant-input" id="bindEnd" type="date" aria-label="绑车结束日期"></span></div>
+              <div class="filter-item"><label for="returnStart">交车时间</label><span class="date-pair"><input class="ant-input" id="returnStart" type="date" aria-label="交车开始日期"><span>至</span><input class="ant-input" id="returnEnd" type="date" aria-label="交车结束日期"></span></div>
+            </div>
+          </div>
+          <div class="action-bar">
+            <div class="selection-summary" id="selectionSummary"><span>已选择 <strong id="selectedCount">0</strong> 条</span><button class="selection-clear" id="clearSelectionButton" type="button">清空选择</button></div>
+            <button class="btn push-right" id="exportButton" type="button">导出</button>
+          </div>
+          <div class="table-wrapper fixed-table records-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1220px">
+            <table>
+              <thead><tr>
+                <th class="col-center" style="width:50px"><input id="checkAll" type="checkbox" aria-label="全选当前页"></th>
+                <th class="col-center" style="width:140px">司机名称</th><th class="col-center" style="width:150px">关联车牌号</th>
+                <th class="col-center" style="width:180px">绑车时间</th><th class="col-center" style="width:180px">交车时间</th>
+                <th class="col-center" style="width:150px">用车时长（min）</th><th class="col-center" style="width:150px">轨迹里程（km）</th>
+                <th class="col-center" style="width:120px">状态</th><th class="col-center" style="width:100px">操作</th>
+              </tr></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination-area">
+            <div class="pagination-left"><div class="pagination-info">共 <strong id="totalCount">0</strong> 条记录</div><span class="pagination-pages" id="pageInfo"></span></div>
+            <div id="paginationBar"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="modal-box modal-box--lg">
+      <div class="modal-header"><h3 id="detailTitle">用车记录详情</h3><button class="modal-close" type="button" data-close="detailModal" aria-label="关闭">×</button></div>
+      <div class="modal-body"><dl class="detail-grid" id="detailGrid"></dl></div>
+      <div class="modal-footer modal-footer--right"><button class="btn" type="button" data-close="detailModal">关闭</button></div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="modal-box">
+      <div class="modal-header"><h3 id="exportTitle">导出用车记录</h3><button class="modal-close" type="button" data-close="exportModal" aria-label="关闭">×</button></div>
+      <div class="modal-body"><p id="exportDescription"></p><div class="export-field"><label for="exportFileName">文件名</label><input class="export-name" id="exportFileName" type="text"></div></div>
+      <div class="modal-footer"><button class="btn" type="button" data-close="exportModal">取消</button><button class="btn btn-primary" id="confirmExportButton" type="button">确认导出</button></div>
+    </div>
+  </div>
+
+  <script src="../components/common.js"></script>
+  <script src="../components/filter-component.js"></script>
+  <script src="../components/export-component.js"></script>
+  <script src="../components/pagination-component.js"></script>
+  <script src="../components/fixed-table.js"></script>
+  <script src="./vehicle-use-records.js"></script>
+</body>
+</html>

@@ -244,14 +244,16 @@
 <script src="../components/filter-component.js"></script>
 <script src="../components/export-component.js"></script>
 <script src="../components/fixed-table.js"></script>
+<script src="../components/vehicle-monitor-data.js"></script>
 <script>
 Common.initLayout({
     basePath: '../', sidebarId: 'sidebar', activeMenuId: 'vehicle-runtime', headerId: 'header',
     headerOptions: { showProject: false }
 });
 
+const sharedVehicle = (window.VehicleMonitorData && window.VehicleMonitorData.snapshot) || {};
 const vehicles = [
-    { id: 1, vin: 'LSVAU2A39EN000001', plate: '浙JAR6538', iot: '14156', model: '麒麟清扫车', project: '鸠江项目', online: true },
+    { id: 1, vin: sharedVehicle.vin || 'LSVAU2A39EN000001', plate: sharedVehicle.plate || '京ADG090', iot: sharedVehicle.network || '14156', model: sharedVehicle.model || '麒麟清扫车', project: sharedVehicle.project || '鸠江项目', online: sharedVehicle.online !== false },
     { id: 2, vin: 'LSVAU2A39EN000002', plate: '浙JDB1062', iot: '11527', model: '爱瑞特纯电动高压冲洗车', project: '椒北街道', online: true },
     { id: 3, vin: 'LSVAU2A39EN000003', plate: '皖B·A5106', iot: '14158', model: '中联清洗车', project: '镜湖区项目', online: false },
     { id: 4, vin: 'LSVAU2A39EN000004', plate: '皖B·A7321', iot: '11530', model: '泰坦智能驾驶洒水车', project: '经开东区项目', online: true },
@@ -269,7 +271,7 @@ const takeoverStates = ['未接管', '未接管', '人工接管', '远程接管'
 const telemetry = [];
 vehicles.forEach((vehicle, vehicleIndex) => {
     for (let i = 0; i < 26; i += 1) {
-        const minute = 58 - i * 2;
+        const minute = vehicleIndex === 0 ? 32 - i * 2 : 58 - i * 2;
         const hour = minute >= 0 ? 14 : 13;
         const normalizedMinute = minute >= 0 ? minute : minute + 60;
         const timestamp = `2026-09-15 ${String(hour).padStart(2, '0')}:${String(normalizedMinute).padStart(2, '0')}:${String((vehicleIndex * 7 + i * 3) % 60).padStart(2, '0')}`;
@@ -277,17 +279,17 @@ vehicles.forEach((vehicle, vehicleIndex) => {
         const moving = mode === '工作' || mode === '转场';
         telemetry.push({
             id: `${vehicle.id}-${i}`, vehicleId: vehicle.id, vin: vehicle.vin, project: vehicle.project || '无分组',
-            longitude: (118.365421 + vehicleIndex * .0132 + i * .00011).toFixed(6),
-            latitude: (31.326482 + vehicleIndex * .0087 + i * .00008).toFixed(6),
-            drivingMode: drivingModes[(i + vehicleIndex) % drivingModes.length],
-            takeover: takeoverStates[(i + vehicleIndex) % takeoverStates.length],
-            speed: moving ? (18 + ((i * 7 + vehicleIndex) % 28)).toFixed(1) : '0.0',
+            longitude: (vehicleIndex === 0 ? sharedVehicle.lng + i * .00011 : 118.365421 + vehicleIndex * .0132 + i * .00011).toFixed(6),
+            latitude: (vehicleIndex === 0 ? sharedVehicle.lat + i * .00008 : 31.326482 + vehicleIndex * .0087 + i * .00008).toFixed(6),
+            drivingMode: vehicleIndex === 0 && i === 0 ? sharedVehicle.modeText : drivingModes[(i + vehicleIndex) % drivingModes.length],
+            takeover: vehicleIndex === 0 && i === 0 ? sharedVehicle.takeover : takeoverStates[(i + vehicleIndex) % takeoverStates.length],
+            speed: vehicleIndex === 0 && i === 0 ? Number(sharedVehicle.speed).toFixed(1) : moving ? (18 + ((i * 7 + vehicleIndex) % 28)).toFixed(1) : '0.0',
             lateralAcceleration: moving ? (((i % 7) - 3) * .07).toFixed(2) : '0.00',
             longitudinalAcceleration: moving ? (((i % 9) - 4) * .09).toFixed(2) : '0.00',
             rollRate: moving ? (((i % 6) - 2) * .12).toFixed(2) : '0.00',
             yawRate: moving ? (((i % 8) - 3) * .15).toFixed(2) : '0.00',
-            gear: moving ? (i % 5 === 0 ? 'R' : 'D') : 'P', online: vehicle.online && mode !== '关机',
-            soc: Math.max(18, 91 - i - vehicleIndex).toFixed(1),
+            gear: vehicleIndex === 0 && i === 0 ? sharedVehicle.gear : moving ? (i % 5 === 0 ? 'R' : 'D') : 'P', online: vehicle.online && mode !== '关机',
+            soc: vehicleIndex === 0 && i === 0 ? Number(sharedVehicle.soc).toFixed(1) : Math.max(18, 91 - i - vehicleIndex).toFixed(1),
             collectedAt: timestamp, workMode: mode
         });
     }
@@ -548,7 +550,12 @@ function doExport() {
 
 ['filterVin', 'filterPlate', 'filterModel'].forEach(id => document.getElementById(id).addEventListener('keydown', event => { if (event.key === 'Enter') queryVehicles(); }));
 ensureSelectedVehicle();
+const initialQuery = new URLSearchParams(window.location.search);
+const initialVehicleKey = initialQuery.get('vehicleId') || initialQuery.get('vin') || initialQuery.get('plateNo') || initialQuery.get('iotCode');
+const initialVehicle = initialVehicleKey && vehicles.find(item => [item.vin, item.plate, item.iot, String(item.id)].includes(initialVehicleKey));
+if (initialVehicle) selectedVehicleId = initialVehicle.id;
 renderVehicleGroups();
+if (initialVehicle) { renderSelectedSummary(); renderTelemetry(); }
 </script>
 </body>
 </html>
