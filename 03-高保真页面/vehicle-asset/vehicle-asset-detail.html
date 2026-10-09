@@ -36,6 +36,19 @@
 .vehicle-global-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; flex:0 0 auto; }
 @media (max-width:900px) { .vehicle-global-info { gap:12px; flex-direction:column; } .vehicle-global-actions { justify-content:flex-start; } }
 
+/* === 车辆二维码 === */
+.vehicle-qr-trigger { display:inline-flex; align-items:center; gap:6px; }
+.vehicle-qr-trigger-icon { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border:1px solid currentColor; border-radius:2px; font-size:11px; line-height:1; }
+.vehicle-qr-modal { width:440px; max-width:90vw; }
+.vehicle-qr-body { display:flex; flex-direction:column; align-items:center; gap:14px; padding:24px; }
+.vehicle-qr-frame { display:flex; align-items:center; justify-content:center; width:240px; height:240px; padding:12px; border:1px solid var(--border-color); border-radius:var(--radius-lg); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.vehicle-qr-frame img { display:block; width:216px; height:216px; image-rendering:pixelated; }
+.vehicle-qr-title { color:var(--text-primary); font-size:16px; font-weight:600; line-height:24px; }
+.vehicle-qr-meta { display:grid; grid-template-columns:auto minmax(0, 1fr); gap:8px 12px; margin:0; color:var(--text-secondary); font-size:13px; line-height:20px; }
+.vehicle-qr-meta dt { text-align:right; }
+.vehicle-qr-meta dd { margin:0; color:var(--text-primary); font-family:var(--font-number); overflow-wrap:anywhere; }
+.vehicle-qr-tip { color:var(--text-secondary); font-size:12px; line-height:18px; text-align:center; }
+
 .overview-dashboard { display:flex; flex-direction:column; gap:16px; }
 .overview-summary { background:var(--bg-container); border:1px solid var(--border-color); border-radius:var(--radius-lg); overflow:hidden; }
 .overview-identity { padding:18px 20px; border-bottom:1px solid var(--border-color); }
@@ -1679,6 +1692,8 @@
 <script src="../components/common.js"></script>
 <script src="../components/pagination-component.js"></script>
 <script src="../components/filter-component.js"></script>
+<script src="../components/vendor/qrcode.js"></script>
+<script src="./vehicle-qr.js"></script>
 <script src="../components/vendor/leaflet.js"></script>
 <script src="../components/vehicle-monitor-data.js"></script>
 <script>
@@ -1698,9 +1713,11 @@ const vehicleData = {
   isAutonomous: true, isSweepingRobot: true,
   vin: 'LSVAU2A39EN000001', gbt_vin: 'GB0000000001', plate_no: '京ADG090', factory_no: 'FN2025030001',
   is_test: '否', is_network: '是', iot_code: '14156',
+  wifi_password: '',
   city: '上海', project: '鸠江项目', operator: '王强', asset_source: '外购',
-  // 建档审计字段：创建后不可被车辆档案编辑覆盖，后续维护写入变更日志。
+  // 维护审计字段：创建信息保持不变，更新信息在车辆档案保存成功后刷新。
   creator_id: 'U-1008', creator_name: '王强', created_at: '2025-03-15 10:30:00', create_type: '单个录入',
+  updater_name: '王强', updated_at: '2025-05-20 10:15:00',
   asset_class: '固定资产', contract_entity: '北京XXX科技有限公司', fixed_asset_code: 'FA-2025-0001',
   asset_attr: '运营车辆-电动', vehicle_status: '在库-正常使用',
   photo_front: true, photo_45: true,
@@ -1724,6 +1741,7 @@ const vehicleData = {
   cam_list: [{name:'前视摄像头',tid:'1',minbr:'2',maxbr:'8',fixed:'否',fps:'30',res:'1920x1080',pri:'高',platform:'均支持'}],
   history_img: '是', history_video: '有', realtime_video: '腾讯云',
   parallel_cockpit: '有', network_protocol: '新网联', stream_type: 'WebRTC',
+  intercom_bound: '无',
   cam_img_list: [
     {name:'前视摄像头',tid:'1',support_history:'是',history_quality:'80',support_perception:'是',perception_quality:'90',support_cloud:'是',cloud_quality:'85',support_vehicle:'否',vehicle_quality:'—'},
     {name:'后视摄像头',tid:'2',support_history:'是',history_quality:'75',support_perception:'否',perception_quality:'—',support_cloud:'否',cloud_quality:'—',support_vehicle:'否',vehicle_quality:'—'}
@@ -2174,10 +2192,42 @@ function renderVehicleGlobalInfo() {
       </div>
     </div>
     <div class="vehicle-global-actions">
+      <button class="btn vehicle-qr-trigger" type="button" onclick="openVehicleQrPreview()" aria-label="查看车辆二维码">
+        <span class="vehicle-qr-trigger-icon" aria-hidden="true">▦</span>车辆二维码
+      </button>
       <button class="btn" onclick="goBack()">关闭</button>
       <button class="btn btn-primary" id="editBtn" onclick="toggleEdit()">编辑</button>
     </div>
   `;
+}
+
+// 与列表批量导出使用同一编码器：二维码实际内容为当前车辆 VIN。
+function buildVehicleQrSvg(text) {
+  return VehicleQr.buildSvg(text);
+}
+
+function getVehicleQrDataUrl() {
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(buildVehicleQrSvg(vehicleData.vin));
+}
+
+function openVehicleQrPreview() {
+  const img = document.getElementById('vehicleQrPreviewImage');
+  if (img) img.src = getVehicleQrDataUrl();
+  [['vehicleQrPreviewVin', vehicleData.vin], ['vehicleQrPreviewPlate', vehicleData.plate_no], ['vehicleQrPreviewIot', vehicleData.iot_code]].forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value || '—';
+  });
+  Common.openModal('vehicleQrModal');
+}
+
+async function downloadVehicleQr() {
+  try {
+    const blob = await VehicleQr.toPng(vehicleData.vin);
+    VehicleQr.download(blob, '车辆二维码_' + vehicleData.vin + '.png');
+    Common.showToast('二维码已下载', 'success');
+  } catch (error) {
+    Common.showToast('二维码下载失败，请重试', 'error');
+  }
 }
 
 // 筛选 / 阶段点击
@@ -2236,7 +2286,7 @@ function refreshArchiveDirectory() {
   sections.forEach((section, index) => {
     const titleEl = section.querySelector('.info-section-title, .section-title');
     const title = titleEl ? titleEl.textContent.trim() : `分组 ${index + 1}`;
-    section.id = 'archive-section-' + index;
+    section.id = mode.id + '-section-' + index;
     section.classList.add('archive-section');
   });
   list.innerHTML = sections.map((section, index) => {
@@ -2288,6 +2338,7 @@ function renderBasicView() {
       <div class="info-field"><span class="field-label">是否为测试车</span><span class="field-value">${v(d.is_test)}</span></div>
       <div class="info-field"><span class="field-label">是否支持联网</span><span class="field-value">${v(d.is_network)}</span></div>
       <div class="info-field"><span class="field-label">网联编号</span><span class="field-value">${v(d.iot_code)}</span></div>
+      <div class="info-field"><span class="field-label">车载WIFI密码</span><span class="field-value">${escapeHtml(v(d.wifi_password))}</span></div>
     </div></div>
 
     <div class="info-section"><div class="info-section-title">归属信息</div><div class="info-grid">
@@ -2394,6 +2445,7 @@ function renderBasicView() {
       <div class="info-field"><span class="field-label">平行驾驶座舱通话</span><span class="field-value">${v(d.parallel_cockpit)}</span></div>
       <div class="info-field"><span class="field-label">网联协议</span><span class="field-value">${v(d.network_protocol)}</span></div>
       <div class="info-field"><span class="field-label">推拉流类型</span><span class="field-value">${v(d.stream_type)}</span></div>
+      <div class="info-field"><span class="field-label">绑定对讲机</span><span class="field-value">${v(d.intercom_bound)}</span></div>
     </div></div>
 
     <div class="info-section"><div class="info-section-title">摄像头图片配置</div>
@@ -2409,10 +2461,12 @@ function renderBasicView() {
       <div class="info-field"><span class="field-label">当前标签</span><span class="field-value">${renderDetailTags()}</span></div>
     </div></div>
 
-    <div class="info-section"><div class="info-section-title">建档信息</div><div class="info-grid">
-      <div class="info-field"><span class="field-label">建档人</span><span class="field-value">${v(d.creator_name)}</span></div>
-      <div class="info-field"><span class="field-label">建档时间</span><span class="field-value">${v(d.created_at)}</span></div>
-      <div class="info-field"><span class="field-label">建档方式</span><span class="field-value">${v(d.create_type)}</span></div>
+    <div class="info-section"><div class="info-section-title">维护信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">创建人</span><span class="field-value">${v(d.creator_name)}</span></div>
+      <div class="info-field"><span class="field-label">创建时间</span><span class="field-value">${v(d.created_at)}</span></div>
+      <div class="info-field"><span class="field-label">创建方式</span><span class="field-value">${v(d.create_type)}</span></div>
+      <div class="info-field"><span class="field-label">更新人</span><span class="field-value">${v(d.updater_name)}</span></div>
+      <div class="info-field"><span class="field-label">更新时间</span><span class="field-value">${v(d.updated_at)}</span></div>
     </div></div>
   `;
 }
@@ -2431,6 +2485,7 @@ function renderBasicEdit() {
         <div class="form-row" data-required="1" data-label="是否为测试车"><label><span class="required">*</span>是否为测试车</label><div class="control"><div class="radio-group"><label><input type="radio" name="isTest" data-field="is_test" value="1" ${d.is_test==='是'?'checked':''}> 是</label><label><input type="radio" name="isTest" data-field="is_test" value="0" ${d.is_test==='否'?'checked':''}> 否</label></div></div></div>
         <div class="form-row" data-required="1" data-label="是否支持联网"><label><span class="required">*</span>是否支持联网</label><div class="control"><div class="radio-group"><label><input type="radio" name="isNetwork" data-field="is_network" value="1" ${d.is_network==='是'?'checked':''}> 是</label><label><input type="radio" name="isNetwork" data-field="is_network" value="0" ${d.is_network==='否'?'checked':''}> 否</label></div></div></div>
         <div class="form-row"><label>网联编号</label><div class="control"><input type="text" data-field="iot_code" value="${d.iot_code}"></div></div>
+        <div class="form-row"><label for="vehicleWifiPassword">车载WIFI密码</label><div class="control"><input id="vehicleWifiPassword" type="text" data-field="wifi_password" value="${escapeHtml(d.wifi_password || '')}" placeholder="请输入车载WIFI密码" autocomplete="off"></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">归属信息</div><div class="form-grid">
@@ -2542,6 +2597,7 @@ function renderBasicEdit() {
         <div class="form-row"><label>平行驾驶座舱通话</label><div class="control"><div class="radio-group"><label><input type="radio" name="parallelCockpit" data-field="parallel_cockpit" value="1" ${d.parallel_cockpit==='有'?'checked':''}> 有</label><label><input type="radio" name="parallelCockpit" data-field="parallel_cockpit" value="0" ${d.parallel_cockpit==='无'?'checked':''}> 无</label></div></div></div>
         <div class="form-row"><label>网联协议</label><div class="control"><select data-field="network_protocol"><option value="">请选择</option>${sel(d.network_protocol,['新网联','旧网联','无'])}</select></div></div>
         <div class="form-row"><label>推拉流类型</label><div class="control"><select data-field="stream_type"><option value="">请选择</option>${sel(d.stream_type,['WebRTC','ZLMediaKit','其他'])}</select></div></div>
+        <div class="form-row"><label>绑定对讲机</label><div class="control"><div class="radio-group" role="radiogroup" aria-label="绑定对讲机"><label><input type="radio" name="intercomBound" data-field="intercom_bound" value="有" ${d.intercom_bound==='有'?'checked':''}> 有</label><label><input type="radio" name="intercomBound" data-field="intercom_bound" value="无" ${d.intercom_bound==='无'?'checked':''}> 无</label></div></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">摄像头图片配置</div>
@@ -2570,10 +2626,12 @@ function renderBasicEdit() {
         <div id="detailTagEditor" style="padding:12px 0;">${renderDetailTagEditor()}</div>
       </div>
     </form>
-    <div class="info-section"><div class="info-section-title">建档信息</div><div class="info-grid">
-      <div class="info-field"><span class="field-label">建档人</span><span class="field-value">${d.creator_name || '—'}</span></div>
-      <div class="info-field"><span class="field-label">建档时间</span><span class="field-value">${d.created_at || '—'}</span></div>
-      <div class="info-field"><span class="field-label">建档方式</span><span class="field-value">${d.create_type || '—'}</span></div>
+    <div class="info-section"><div class="info-section-title">维护信息</div><div class="info-grid">
+      <div class="info-field"><span class="field-label">创建人</span><span class="field-value">${d.creator_name || '—'}</span></div>
+      <div class="info-field"><span class="field-label">创建时间</span><span class="field-value">${d.created_at || '—'}</span></div>
+      <div class="info-field"><span class="field-label">创建方式</span><span class="field-value">${d.create_type || '—'}</span></div>
+      <div class="info-field"><span class="field-label">更新人</span><span class="field-value">${d.updater_name || '—'}</span></div>
+      <div class="info-field"><span class="field-label">更新时间</span><span class="field-value">${d.updated_at || '—'}</span></div>
     </div></div>
   `;
   syncAllEditHardwareSimStates();
@@ -2656,6 +2714,7 @@ function toggleEdit() {
   if (isEditing) return;
   if (currentTab === 'archive') {
     switchTab('archive');
+    renderBasicEdit();
     isEditing = true;
     document.getElementById('basicViewMode').style.display = 'none';
     document.getElementById('basicEditMode').style.display = '';
@@ -2749,7 +2808,7 @@ function collectBasicFormData() {
       const wrap = el.closest('label');
       vehicleData[el.dataset.field] = wrap ? wrap.textContent.trim() : el.value;
     } else {
-      vehicleData[el.dataset.field] = el.value.trim();
+      vehicleData[el.dataset.field] = el.dataset.field === 'wifi_password' ? el.value : el.value.trim();
     }
   });
   // 动态子表（硬件/软件/摄像头/摄像头图片配置）写回
@@ -2793,6 +2852,10 @@ function saveEdit() {
     collectBasicFormData();
     const simError = validateVehicleHardwareSims(vehicleData.hw_list);
     if (simError) { Common.showToast(simError, 'error'); return; }
+    vehicleData.updater_name = document.querySelector('#header .user-name').textContent.trim();
+    const updateTime = new Date();
+    const padTime = value => String(value).padStart(2, '0');
+    vehicleData.updated_at = `${updateTime.getFullYear()}-${padTime(updateTime.getMonth() + 1)}-${padTime(updateTime.getDate())} ${padTime(updateTime.getHours())}:${padTime(updateTime.getMinutes())}:${padTime(updateTime.getSeconds())}`;
     renderVehicleGlobalInfo();
     initBomTab(); // 资产来源可能变化，同步 BOM 清单 Tab 显隐
     document.getElementById('basicViewMode').style.display = '';
@@ -2807,7 +2870,10 @@ function saveEdit() {
   document.getElementById('editBtn').style.display = '';
   showEditFooter(false);
   Common.showToast('保存成功', 'success');
-  if (currentTab === 'archive') renderBasicView();
+  if (currentTab === 'archive') {
+    renderBasicView();
+    refreshArchiveDirectory();
+  }
   if (currentTab === 'business' && currentBusinessTab === 'aftersales') renderWarrantyInfoView();
 }
 
@@ -3983,6 +4049,27 @@ document.addEventListener('keydown', function(e) {
     <div class="modal-body change-timeline-body" id="bomTimelineBody"></div>
     <div class="modal-footer modal-footer--right">
       <button class="btn" onclick="closeBomTimeline()">关闭</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="vehicleQrModal">
+  <div class="modal-box vehicle-qr-modal" role="dialog" aria-modal="true" aria-labelledby="vehicleQrModalTitle">
+    <div class="modal-header">
+      <h3 id="vehicleQrModalTitle">车辆二维码</h3>
+      <button class="modal-close" type="button" onclick="Common.closeModal('vehicleQrModal')" aria-label="关闭车辆二维码预览">×</button>
+    </div>
+    <div class="modal-body vehicle-qr-body">
+      <div class="vehicle-qr-frame"><img id="vehicleQrPreviewImage" src="" alt="车辆二维码"></div>
+      <dl class="vehicle-qr-meta">
+        <dt>VIN码</dt><dd id="vehicleQrPreviewVin"></dd>
+        <dt>车牌号</dt><dd id="vehicleQrPreviewPlate"></dd>
+        <dt>网联编号</dt><dd id="vehicleQrPreviewIot"></dd>
+      </dl>
+      <div class="vehicle-qr-tip">二维码内容与当前车辆 VIN 绑定，下载后可用于打印或现场识别。</div>
+    </div>
+    <div class="modal-footer modal-footer--right">
+      <button class="btn" type="button" onclick="Common.closeModal('vehicleQrModal')">关闭</button>
+      <button class="btn btn-primary" type="button" onclick="downloadVehicleQr()">下载二维码</button>
     </div>
   </div>
 </div>

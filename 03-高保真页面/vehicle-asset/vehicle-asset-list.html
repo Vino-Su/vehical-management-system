@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>车辆资产管理 - 列表页</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="../components/common.css">
     <link rel="stylesheet" href="../components/fixed-table.css">
     <!--
@@ -250,7 +251,8 @@
                     <button class="btn" id="btnStatusChange" onclick="openStatusChangeModal()">状态变更</button>
                     <button class="btn" id="btnTagAdd" onclick="openBatchTagModal()">批量打标签</button>
                     <button class="btn" id="btnTagRemove" onclick="openBatchRemoveTagModal()">批量移出标签</button>
-                    <button class="btn push-right" onclick="doExport()">导出</button>
+                    <button class="btn push-right" id="btnQrExport" type="button" onclick="doQrExport()">批量导出二维码</button>
+                    <button class="btn" onclick="doExport()">导出</button>
                 </div>
 
                 <!-- 数据列表（列宽依据 PRD 3.1.4）
@@ -425,6 +427,9 @@
 <script src="../components/pagination-component.js"></script>
 <script src="../components/filter-component.js"></script>
 <script src="../components/fixed-table.js"></script>
+<script src="../components/vendor/qrcode.js"></script>
+<script src="../components/vendor/jszip.min.js"></script>
+<script src="./vehicle-qr.js"></script>
 <script>
 // ===== 初始化布局 =====
 Common.initLayout({
@@ -533,6 +538,10 @@ function renderTable() {
             </td>`;
         tbody.appendChild(tr);
     });
+    const checkAll = document.getElementById('checkAll');
+    const checkedCount = pageData.filter(item => selectedIds.has(item.id)).length;
+    checkAll.checked = pageData.length > 0 && checkedCount === pageData.length;
+    checkAll.indeterminate = checkedCount > 0 && checkedCount < pageData.length;
     renderPagination();
 }
 
@@ -644,6 +653,41 @@ function doExport() {
 }
 function closeExportModal() { document.getElementById('exportModal').classList.remove('active'); }
 function confirmExport() { closeExportModal(); Common.showToast('已导出所有数据（共 ' + filteredData.length + ' 条）', 'success'); }
+
+// ===== 批量导出二维码（以点击时的跨页选中车辆为准） =====
+let qrExporting = false;
+async function doQrExport() {
+    if (qrExporting) return;
+    const vehicles = mockData.filter(item => selectedIds.has(item.id)).map(item => ({ vin: item.vin }));
+    if (!vehicles.length) { Common.showToast('未选择车辆', 'warning'); return; }
+    const button = document.getElementById('btnQrExport');
+    qrExporting = true;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    try {
+        const zip = new JSZip();
+        for (let i = 0; i < vehicles.length; i++) {
+            button.textContent = '生成二维码（' + (i + 1) + '/' + vehicles.length + '）';
+            const vehicle = vehicles[i];
+            zip.file('车辆二维码_' + vehicle.vin + '.png', await VehicleQr.toPng(vehicle.vin));
+        }
+        button.textContent = '正在打包…';
+        const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+        const now = new Date();
+        const stamp = [now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds()]
+            .map(value => String(value).padStart(2, '0')).join('');
+        VehicleQr.download(blob, '车辆二维码_' + stamp + '.zip');
+        Common.showToast('已开始下载 ' + vehicles.length + ' 辆车的二维码压缩包', 'success');
+    } catch (error) {
+        console.error('批量导出二维码失败', error);
+        Common.showToast('二维码导出失败，请重试', 'error');
+    } finally {
+        qrExporting = false;
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.textContent = '批量导出二维码';
+    }
+}
 
 // ===== 车辆分配弹窗 =====
 function openAssignModal() {
