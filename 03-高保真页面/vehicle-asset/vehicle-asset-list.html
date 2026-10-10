@@ -408,10 +408,10 @@
     <div class="modal-box modal-box--lg">
         <div class="modal-header"><h3>批量移出标签</h3><span class="modal-close" onclick="closeBatchRemoveTagModal()">×</span></div>
         <div class="modal-body">
-            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">勾选每辆车要移出的标签（仅显示该车当前已有的标签）：</p>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">每辆车已有标签默认全部勾选。取消勾选要移出的标签，点击“确定”后生效；保持勾选的标签将保留。</p>
             <div class="table-wrapper">
                 <table class="assign-table">
-                    <thead><tr><th>车架号</th><th>网联编号</th><th>车型名称</th><th>移出标签</th></tr></thead>
+                    <thead><tr><th>车架号</th><th>网联编号</th><th>车型名称</th><th>已有标签（勾选保留）</th></tr></thead>
                     <tbody id="batchRemoveTableBody"></tbody>
                 </table>
             </div>
@@ -907,7 +907,7 @@ function openBatchRemoveTagModal() {
     tbody.innerHTML = '';
     items.forEach(it => {
         const tags = (vehicleLabels[it.vin] || []).map(lid => { for (const g of labelGroups) { const l = g.labels.find(x => x.id === lid); if (l) { const c = colorMap[l.color] || colorMap.gray; return { id: lid, name: l.name, tag: c.tag }; } } return null; }).filter(Boolean);
-        const tagHtml = tags.map(t => `<label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer;"><input type="checkbox" value="${t.id}" data-vin="${it.vin}"><span class="tag ${t.tag}">${t.name}</span></label>`).join(' ');
+        const tagHtml = tags.map(t => `<label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer;"><input type="checkbox" value="${t.id}" data-vin="${it.vin}" checked><span class="tag ${t.tag}">${t.name}</span></label>`).join(' ');
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${it.vin}</td><td>${it.iot_code}</td><td>${it.model_name}</td><td><div class="cell-tags">${tagHtml || '—'}</div></td>`;
         tbody.appendChild(tr);
@@ -916,9 +916,9 @@ function openBatchRemoveTagModal() {
 }
 function closeBatchRemoveTagModal() { document.getElementById('batchRemoveTagModal').classList.remove('active'); }
 function doBatchRemoveTag() {
-    const checked = document.querySelectorAll('#batchRemoveTableBody input:checked');
-    if (checked.length === 0) { Common.showToast('请选择要移出的标签', 'warning'); return; }
-    checked.forEach(cb => {
+    const unchecked = document.querySelectorAll('#batchRemoveTableBody input[type="checkbox"]:not(:checked)');
+    if (unchecked.length === 0) { Common.showToast('请取消勾选要移出的标签', 'warning'); return; }
+    unchecked.forEach(cb => {
         const vin = cb.dataset.vin, lid = cb.value;
         if (vehicleLabels[vin]) vehicleLabels[vin] = vehicleLabels[vin].filter(x => x !== lid);
         if (vehicleLabels[vin] && vehicleLabels[vin].length === 0) delete vehicleLabels[vin];

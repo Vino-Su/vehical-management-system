@@ -2438,6 +2438,10 @@ function renderBasicView() {
       <div class="table-wrapper"><table class="dynamic-table"><thead><tr><th>名称</th><th>Track_ID</th><th>最小码率</th><th>最大码率</th><th>是否固定码率</th><th>帧率</th><th>分辨率</th><th>优先级</th><th>应用平台</th></tr></thead><tbody>${camRows}</tbody></table></div>
     </div>
 
+    <div class="info-section"><div class="info-section-title">摄像头图片配置</div>
+      <div class="table-wrapper"><table class="dynamic-table"><thead><tr><th>名称</th><th>Track_ID</th><th>是否支持历史图片</th><th>历史图片质量</th><th>是否支持感知标记</th><th>感知标记图片质量</th><th>是否支持云端打标</th><th>云端打标图片质量</th><th>是否支持车端打标</th><th>车端打标图片质量</th></tr></thead><tbody>${d.cam_img_list.map(c=>`<tr><td>${c.name}</td><td>${c.tid}</td><td>${c.support_history}</td><td>${v(c.history_quality)}</td><td>${c.support_perception}</td><td>${v(c.perception_quality)}</td><td>${c.support_cloud}</td><td>${v(c.cloud_quality)}</td><td>${c.support_vehicle}</td><td>${v(c.vehicle_quality)}</td></tr>`).join('')}</tbody></table></div>
+    </div>
+
     <div class="info-section"><div class="info-section-title">车辆功能配置</div><div class="info-grid">
       <div class="info-field"><span class="field-label">历史图片</span><span class="field-value">${v(d.history_img)}</span></div>
       <div class="info-field"><span class="field-label">历史视频</span><span class="field-value">${v(d.history_video)}</span></div>
@@ -2447,10 +2451,6 @@ function renderBasicView() {
       <div class="info-field"><span class="field-label">推拉流类型</span><span class="field-value">${v(d.stream_type)}</span></div>
       <div class="info-field"><span class="field-label">绑定对讲机</span><span class="field-value">${v(d.intercom_bound)}</span></div>
     </div></div>
-
-    <div class="info-section"><div class="info-section-title">摄像头图片配置</div>
-      <div class="table-wrapper"><table class="dynamic-table"><thead><tr><th>名称</th><th>Track_ID</th><th>是否支持历史图片</th><th>历史图片质量</th><th>是否支持感知标记</th><th>感知标记图片质量</th><th>是否支持云端打标</th><th>云端打标图片质量</th><th>是否支持车端打标</th><th>车端打标图片质量</th></tr></thead><tbody>${d.cam_img_list.map(c=>`<tr><td>${c.name}</td><td>${c.tid}</td><td>${c.support_history}</td><td>${v(c.history_quality)}</td><td>${c.support_perception}</td><td>${v(c.perception_quality)}</td><td>${c.support_cloud}</td><td>${v(c.cloud_quality)}</td><td>${c.support_vehicle}</td><td>${v(c.vehicle_quality)}</td></tr>`).join('')}</tbody></table></div>
-    </div>
 
     <div class="info-section"><div class="info-section-title">平行驾驶配置</div><div class="info-grid">
       <div class="info-field"><span class="field-label">是否平行驾驶</span><span class="field-value">${v(d.is_parallel)}</span></div>
@@ -2485,7 +2485,7 @@ function renderBasicEdit() {
         <div class="form-row" data-required="1" data-label="是否为测试车"><label><span class="required">*</span>是否为测试车</label><div class="control"><div class="radio-group"><label><input type="radio" name="isTest" data-field="is_test" value="1" ${d.is_test==='是'?'checked':''}> 是</label><label><input type="radio" name="isTest" data-field="is_test" value="0" ${d.is_test==='否'?'checked':''}> 否</label></div></div></div>
         <div class="form-row" data-required="1" data-label="是否支持联网"><label><span class="required">*</span>是否支持联网</label><div class="control"><div class="radio-group"><label><input type="radio" name="isNetwork" data-field="is_network" value="1" ${d.is_network==='是'?'checked':''}> 是</label><label><input type="radio" name="isNetwork" data-field="is_network" value="0" ${d.is_network==='否'?'checked':''}> 否</label></div></div></div>
         <div class="form-row"><label>网联编号</label><div class="control"><input type="text" data-field="iot_code" value="${d.iot_code}"></div></div>
-        <div class="form-row"><label for="vehicleWifiPassword">车载WIFI密码</label><div class="control"><input id="vehicleWifiPassword" type="text" data-field="wifi_password" value="${escapeHtml(d.wifi_password || '')}" placeholder="请输入车载WIFI密码" autocomplete="off"></div></div>
+        <div class="form-row"><label for="vehicleWifiPassword">车载WIFI密码</label><div class="control"><input id="vehicleWifiPassword" type="text" readonly class="readonly" value="${escapeHtml(d.wifi_password || '—')}" autocomplete="off"></div></div>
       </div></div>
 
       <div class="form-section"><div class="section-title">归属信息</div><div class="form-grid">
@@ -2590,16 +2590,6 @@ function renderBasicEdit() {
         <div class="add-row-btn" onclick="addEditCamRow()">＋ 添加摄像头</div>
       </div>
 
-      <div class="form-section"><div class="section-title">车辆功能配置</div><div class="form-grid">
-        <div class="form-row"><label>历史图片</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyImg" data-field="history_img" value="1" ${d.history_img==='是'?'checked':''}> 是</label><label><input type="radio" name="historyImg" data-field="history_img" value="0" ${d.history_img==='否'?'checked':''}> 否</label></div></div></div>
-        <div class="form-row"><label>历史视频</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyVideo" data-field="history_video" value="1" ${d.history_video==='有'?'checked':''}> 有</label><label><input type="radio" name="historyVideo" data-field="history_video" value="0" ${d.history_video==='无'?'checked':''}> 无</label></div></div></div>
-        <div class="form-row"><label>实时视频</label><div class="control"><select data-field="realtime_video"><option value="">请选择</option>${sel(d.realtime_video,['腾讯云','WebRTC','GB28181','新GB28181','无'])}</select></div></div>
-        <div class="form-row"><label>平行驾驶座舱通话</label><div class="control"><div class="radio-group"><label><input type="radio" name="parallelCockpit" data-field="parallel_cockpit" value="1" ${d.parallel_cockpit==='有'?'checked':''}> 有</label><label><input type="radio" name="parallelCockpit" data-field="parallel_cockpit" value="0" ${d.parallel_cockpit==='无'?'checked':''}> 无</label></div></div></div>
-        <div class="form-row"><label>网联协议</label><div class="control"><select data-field="network_protocol"><option value="">请选择</option>${sel(d.network_protocol,['新网联','旧网联','无'])}</select></div></div>
-        <div class="form-row"><label>推拉流类型</label><div class="control"><select data-field="stream_type"><option value="">请选择</option>${sel(d.stream_type,['WebRTC','ZLMediaKit','其他'])}</select></div></div>
-        <div class="form-row"><label>绑定对讲机</label><div class="control"><div class="radio-group" role="radiogroup" aria-label="绑定对讲机"><label><input type="radio" name="intercomBound" data-field="intercom_bound" value="有" ${d.intercom_bound==='有'?'checked':''}> 有</label><label><input type="radio" name="intercomBound" data-field="intercom_bound" value="无" ${d.intercom_bound==='无'?'checked':''}> 无</label></div></div></div>
-      </div></div>
-
       <div class="form-section"><div class="section-title">摄像头图片配置</div>
         <div class="table-wrapper"><table class="dynamic-table" id="editCamImgTable"><thead><tr><th>名称</th><th>Track_ID</th><th>是否支持历史图片</th><th>历史图片质量</th><th>是否支持感知标记</th><th>感知标记图片质量</th><th>是否支持云端打标</th><th>云端打标图片质量</th><th>是否支持车端打标</th><th>车端打标图片质量</th><th>操作</th></tr></thead>
         <tbody>${d.cam_img_list.map(c=>`<tr>
@@ -2616,6 +2606,16 @@ function renderBasicEdit() {
         </tr>`).join('')}</tbody></table></div>
         <div class="add-row-btn" onclick="addEditCamImgRow()">＋ 添加摄像头图片配置</div>
       </div>
+
+      <div class="form-section"><div class="section-title">车辆功能配置</div><div class="form-grid">
+        <div class="form-row"><label>历史图片</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyImg" data-field="history_img" value="1" ${d.history_img==='是'?'checked':''}> 是</label><label><input type="radio" name="historyImg" data-field="history_img" value="0" ${d.history_img==='否'?'checked':''}> 否</label></div></div></div>
+        <div class="form-row"><label>历史视频</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyVideo" data-field="history_video" value="1" ${d.history_video==='有'?'checked':''}> 有</label><label><input type="radio" name="historyVideo" data-field="history_video" value="0" ${d.history_video==='无'?'checked':''}> 无</label></div></div></div>
+        <div class="form-row"><label>实时视频</label><div class="control"><select data-field="realtime_video"><option value="">请选择</option>${sel(d.realtime_video,['腾讯云','WebRTC','GB28181','新GB28181','无'])}</select></div></div>
+        <div class="form-row"><label>平行驾驶座舱通话</label><div class="control"><div class="radio-group"><label><input type="radio" name="parallelCockpit" data-field="parallel_cockpit" value="1" ${d.parallel_cockpit==='有'?'checked':''}> 有</label><label><input type="radio" name="parallelCockpit" data-field="parallel_cockpit" value="0" ${d.parallel_cockpit==='无'?'checked':''}> 无</label></div></div></div>
+        <div class="form-row"><label>网联协议</label><div class="control"><select data-field="network_protocol"><option value="">请选择</option>${sel(d.network_protocol,['新网联','旧网联','无'])}</select></div></div>
+        <div class="form-row"><label>推拉流类型</label><div class="control"><select data-field="stream_type"><option value="">请选择</option>${sel(d.stream_type,['WebRTC','ZLMediaKit','其他'])}</select></div></div>
+        <div class="form-row"><label>绑定对讲机</label><div class="control"><div class="radio-group" role="radiogroup" aria-label="绑定对讲机"><label><input type="radio" name="intercomBound" data-field="intercom_bound" value="有" ${d.intercom_bound==='有'?'checked':''}> 有</label><label><input type="radio" name="intercomBound" data-field="intercom_bound" value="无" ${d.intercom_bound==='无'?'checked':''}> 无</label></div></div></div>
+      </div></div>
 
       <div class="form-section"><div class="section-title">平行驾驶配置</div><div class="form-grid">
         <div class="form-row"><label>是否平行驾驶</label><div class="control"><div class="radio-group"><label><input type="radio" name="isParallel" data-field="is_parallel" value="1" ${d.is_parallel==='是'?'checked':''}> 是</label><label><input type="radio" name="isParallel" data-field="is_parallel" value="0" ${d.is_parallel==='否'?'checked':''}> 否</label></div></div></div>
@@ -2808,7 +2808,7 @@ function collectBasicFormData() {
       const wrap = el.closest('label');
       vehicleData[el.dataset.field] = wrap ? wrap.textContent.trim() : el.value;
     } else {
-      vehicleData[el.dataset.field] = el.dataset.field === 'wifi_password' ? el.value : el.value.trim();
+      vehicleData[el.dataset.field] = el.value.trim();
     }
   });
   // 动态子表（硬件/软件/摄像头/摄像头图片配置）写回
@@ -3483,6 +3483,7 @@ updateEditButton();
 // 检查URL参数是否为编辑模式
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('mode') === 'edit') {
+  switchTab('archive');
   toggleEdit();
 }
 

@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="../components/fixed-table.css">
     <!--
       车辆建档 - 新增页
-      页面用途：录入车辆档案全量信息（基础/归属/证照/车型/整车/底盘/发动机/上装/硬件/软件/摄像头/功能配置等分组）
+      页面用途：录入车辆档案信息（基础/归属/证照/车型/整车/底盘/发动机/上装/硬件/软件/摄像头/功能配置/标签等分组）
       核心功能：分组表单（标签左置外置）、照片与铭牌上传、多组动态表格增删行、提交校验与错误提示
       交互逻辑：底部固定操作栏（取消/确定）；校验失败在控件下方显示红色错误文字；保存成功 Toast 后返回列表页
     -->
@@ -31,6 +31,13 @@
         .radio-group { display: flex; align-items: center; gap: 20px; height: 32px; }
         .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-primary); cursor: pointer; }
         .radio-group input[type="radio"] { accent-color: var(--primary); }
+        .vehicle-tag-group { margin: 0 0 16px; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: var(--radius); }
+        .vehicle-tag-group legend { padding: 0 8px; font-size: 14px; color: var(--text-secondary); }
+        .vehicle-tag-options { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+        .vehicle-tag-option { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+        .vehicle-tag-option input { accent-color: var(--primary); }
+        .vehicle-tag-group:disabled { opacity: .55; }
+        .vehicle-tag-group:disabled .vehicle-tag-option { cursor: not-allowed; }
 
         /* ===== 上传 ===== */
         .upload-area { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -104,7 +111,7 @@
                             <div class="form-row"><label><span class="required">*</span>资产分类</label><div class="control"><select id="f_class"><option value="">请选择</option><option>固定资产</option></select></div></div>
                             <div class="form-row"><label>合同主体</label><div class="control"><select id="f_entity"><option value="">请选择</option><option>北京XXX科技有限公司</option><option>上海XXX信息技术有限公司</option></select></div></div>
                             <div class="form-row"><label>固定资产编码</label><div class="control"><input type="text" id="f_asset_code" placeholder="请输入"></div></div>
-                            <div class="form-row"><label><span class="required">*</span>资产属性</label><div class="control"><select id="f_attr"><option value="">请选择</option><option>非机动车</option><option>运营车辆-电动</option><option>运营车辆-油动</option><option>智能驾驶设备</option><option>运输设备</option><option>乘用车</option></select></div></div>
+                            <div class="form-row"><label><span class="required">*</span>资产属性</label><div class="control"><select id="f_attr"><option value="">请选择</option><option>非机动车</option><option>运营车辆-电动</option><option>运营车辆-油动</option><option>运营车辆-气动</option><option>智能驾驶设备</option><option>运输设备</option><option>乘用车</option></select></div></div>
                         </div>
                     </div>
 
@@ -133,7 +140,7 @@
                         <div class="section-title">车型信息</div>
                         <div class="form-grid">
                             <div class="form-row"><label><span class="required">*</span>车型名称（中）</label><div class="control"><select id="f_model_name"><option value="">请选择</option><option>爱瑞特纯电动高压冲洗车</option><option>长城多用途货车</option><option>独角兽</option><option>麒麟清扫车</option><option>麒麟无人化扫地车</option><option>三力洒水车</option><option>泰坦智能驾驶洒水车</option><option>中联清洗车</option></select></div></div>
-                            <div class="form-row"><label>车型版本</label><div class="control"><select id="f_model_ver"><option value="">请选择</option><option>标准版</option><option>加强版</option><option>豪华版</option></select></div></div>
+                            <div class="form-row"><label for="f_model_ver"><span class="required">*</span>车型版本</label><div class="control"><select id="f_model_ver" disabled><option value="">请先选择车型名称</option></select></div></div>
                             <div class="form-row"><label>车辆类别</label><div class="control"><input type="text" readonly class="readonly" id="f_category"></div></div>
                             <div class="form-row"><label>车型别名</label><div class="control"><select id="f_alias"><option value="">请选择</option><option>扫路车</option><option>运输车</option><option>小型清洗机</option><option>小型扫路机</option><option>皮卡</option></select></div></div>
                             <div class="form-row"><label>车型分类</label><div class="control"><input type="text" readonly class="readonly" id="f_mclass"></div></div>
@@ -262,19 +269,6 @@
                         <div class="add-row-btn" onclick="addCamRow()">＋ 添加摄像头</div>
                     </div>
 
-                    <!-- 车辆功能配置 -->
-                    <div class="form-section">
-                        <div class="section-title">车辆功能配置</div>
-                        <div class="form-grid">
-                            <div class="form-row"><label>历史图片</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyImg" value="1"> 是</label><label><input type="radio" name="historyImg" value="0"> 否</label></div></div></div>
-                            <div class="form-row"><label>历史视频</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyVideo" value="1"> 有</label><label><input type="radio" name="historyVideo" value="0"> 无</label></div></div></div>
-                            <div class="form-row"><label>实时视频</label><div class="control"><select id="f_realtime"><option value="">请选择</option><option>腾讯云</option><option>WebRTC</option><option>GB28181</option><option>新GB28181</option><option>无</option></select></div></div>
-                            <div class="form-row form-row--wide"><label>平行驾驶座舱通话</label><div class="control"><div class="radio-group"><label><input type="radio" name="parallelCockpit" value="1"> 有</label><label><input type="radio" name="parallelCockpit" value="0"> 无</label></div></div></div>
-                            <div class="form-row"><label>网联协议</label><div class="control"><select id="f_protocol"><option value="">请选择</option><option>新网联</option><option>旧网联</option><option>无</option></select></div></div>
-                            <div class="form-row"><label>推拉流类型</label><div class="control"><select id="f_stream_type"><option value="">请选择</option><option>WebRTC</option><option>ZLMediaKit</option><option>其他</option></select></div></div>
-                        </div>
-                    </div>
-
                     <!-- 摄像头图片配置 -->
                     <div class="form-section">
                         <div class="section-title">摄像头图片配置</div>
@@ -315,6 +309,20 @@
                         <div class="add-row-btn" onclick="addCamImgRow()">＋ 添加摄像头图片配置</div>
                     </div>
 
+                    <!-- 车辆功能配置 -->
+                    <div class="form-section">
+                        <div class="section-title">车辆功能配置</div>
+                        <div class="form-grid">
+                            <div class="form-row"><label>历史图片</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyImg" value="1"> 是</label><label><input type="radio" name="historyImg" value="0"> 否</label></div></div></div>
+                            <div class="form-row"><label>历史视频</label><div class="control"><div class="radio-group"><label><input type="radio" name="historyVideo" value="1"> 有</label><label><input type="radio" name="historyVideo" value="0"> 无</label></div></div></div>
+                            <div class="form-row"><label>实时视频</label><div class="control"><select id="f_realtime"><option value="">请选择</option><option>腾讯云</option><option>WebRTC</option><option>GB28181</option><option>新GB28181</option><option>无</option></select></div></div>
+                            <div class="form-row form-row--wide"><label>平行驾驶座舱通话</label><div class="control"><div class="radio-group"><label><input type="radio" name="parallelCockpit" value="1"> 有</label><label><input type="radio" name="parallelCockpit" value="0"> 无</label></div></div></div>
+                            <div class="form-row"><label>网联协议</label><div class="control"><select id="f_protocol"><option value="">请选择</option><option>新网联</option><option>旧网联</option><option>无</option></select></div></div>
+                            <div class="form-row"><label>推拉流类型</label><div class="control"><select id="f_stream_type"><option value="">请选择</option><option>WebRTC</option><option>ZLMediaKit</option><option>其他</option></select></div></div>
+                            <div class="form-row"><label id="intercomBoundLabel">绑定对讲机</label><div class="control"><div class="radio-group" role="radiogroup" aria-labelledby="intercomBoundLabel"><label><input type="radio" name="intercomBound" value="有"> 有</label><label><input type="radio" name="intercomBound" value="无"> 无</label></div></div></div>
+                        </div>
+                    </div>
+
                     <!-- 平行驾驶配置 -->
                     <div class="form-section">
                         <div class="section-title">平行驾驶配置</div>
@@ -325,6 +333,12 @@
                         </div>
                     </div>
 
+                    <!-- 车辆标签：与车辆档案及标签管理保持相同的分组与子标签 -->
+                    <div class="form-section">
+                        <div class="section-title">车辆标签</div>
+                        <div id="vehicleTagEditor"></div>
+                        <div class="hint">支持选择多个子标签；项目私有标签仅可关联该项目车辆。</div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -434,6 +448,8 @@ function doSave() {
     if (!projectEl.value) { setFieldError(projectEl, '请选择归属项目'); Common.showToast('请选择归属项目', 'error'); projectEl.focus(); return; }
     const modelEl = document.getElementById('f_model_name');
     if (!modelEl.value) { setFieldError(modelEl, '请选择车型名称'); Common.showToast('请选择车型名称', 'error'); modelEl.focus(); return; }
+    const versionEl = document.getElementById('f_model_ver');
+    if (!versionEl.value) { setFieldError(versionEl, '请选择车型版本'); Common.showToast('请选择车型版本', 'error'); versionEl.focus(); return; }
     if (!validateHardwareSimBindings()) { Common.showToast('请检查硬件与SIM卡关联信息', 'error'); return; }
     Common.showToast('保存成功', 'success');
     setTimeout(() => window.location.href = './vehicle-register-list.html', 800);
@@ -479,6 +495,86 @@ function removeRow(el) {
     if (tbody.rows.length > 1) el.closest('tr').remove();
     else Common.showToast('至少保留一行', 'error');
 }
+
+// ===== 车型名称 → 版本 → 关联参数 =====
+// 车型参数快照来自车型管理列表的已有示例，版本选项仅展示当前车型记录。
+const registerModels = [
+    {"model_name":"麒麟清扫车","model_alias":"扫路车","vehicle_category":"作业机动车","id":101,"version":"V1.0","load_class":"重卡","power_type":"纯电动","emission_std":"纯电动","max_weight":8500,"curb_weight":3200,"manufacturer":"麒麟智能汽车","vehicle_model":"C_UN_V0.6","chassis_mfr":"东风底盘","chassis_model":"DF-C850","main_eng_mfr":"宁德时代","main_eng_model":"CATL-200","peak_power":120},
+    {"model_name":"麒麟清扫车","model_alias":"扫路车","vehicle_category":"作业机动车","id":102,"version":"V2.0","load_class":"重卡","power_type":"纯电动","emission_std":"纯电动","max_weight":9000,"curb_weight":3500,"manufacturer":"麒麟智能汽车","vehicle_model":"C_UN_V0.9","chassis_mfr":"东风底盘","chassis_model":"DF-C900","main_eng_mfr":"宁德时代","main_eng_model":"CATL-250","peak_power":150},
+    {"model_name":"爱瑞特纯电动高压冲洗车","model_alias":"小型清洗机","vehicle_category":"作业机动车","id":201,"version":"V1.0","load_class":"微卡","power_type":"纯电动","emission_std":"纯电动","max_weight":2800,"curb_weight":1500,"manufacturer":"爱瑞特环保科技","vehicle_model":"ART-HP100","chassis_mfr":"江淮底盘","chassis_model":"JH-C28","main_eng_mfr":"比亚迪","main_eng_model":"BYD-80","peak_power":80},
+    {"model_name":"泰坦智能驾驶洒水车","model_alias":"运输车","vehicle_category":"作业机动车","id":301,"version":"V1.0","load_class":"重卡","power_type":"纯电动","emission_std":"纯电动","max_weight":12000,"curb_weight":4500,"manufacturer":"泰坦智能科技","vehicle_model":"TT-SP001","chassis_mfr":"重汽底盘","chassis_model":"ZQ-C12","main_eng_mfr":"宁德时代","main_eng_model":"CATL-300","peak_power":200},
+    {"model_name":"泰坦智能驾驶洒水车","model_alias":"运输车","vehicle_category":"作业机动车","id":302,"version":"V1.1","load_class":"重卡","power_type":"混动","emission_std":"国六","max_weight":12000,"curb_weight":4800,"manufacturer":"泰坦智能科技","vehicle_model":"TT-SP002","chassis_mfr":"重汽底盘","chassis_model":"ZQ-C12H","main_eng_mfr":"潍柴动力","main_eng_model":"WC-H200","peak_power":180},
+    {"model_name":"中联清洗车","model_alias":"小型清洗机","vehicle_category":"作业机动车","id":401,"version":"V1.0","load_class":"重卡","power_type":"柴油","emission_std":"国五","max_weight":8000,"curb_weight":3500,"manufacturer":"中联重科","vehicle_model":"ZL-C800","chassis_mfr":"福田底盘","chassis_model":"FT-C80","main_eng_mfr":"康明斯","main_eng_model":"CUM-D180","peak_power":0},
+    {"model_name":"中联清洗车","model_alias":"小型清洗机","vehicle_category":"作业机动车","id":402,"version":"V2.0","load_class":"重卡","power_type":"柴油","emission_std":"国六","max_weight":9500,"curb_weight":4000,"manufacturer":"中联重科","vehicle_model":"ZL-C900","chassis_mfr":"福田底盘","chassis_model":"FT-C95","main_eng_mfr":"康明斯","main_eng_model":"CUM-D200","peak_power":0},
+    {"model_name":"三力洒水车","model_alias":"运输车","vehicle_category":"作业机动车","id":501,"version":"V1.0","load_class":"轻卡","power_type":"柴油","emission_std":"国五","max_weight":5000,"curb_weight":2200,"manufacturer":"三力专用汽车","vehicle_model":"SL-S500","chassis_mfr":"东风底盘","chassis_model":"DF-C50","main_eng_mfr":"玉柴","main_eng_model":"YC-D130","peak_power":0},
+    {"model_name":"麒麟无人化扫地车","model_alias":"扫路车","vehicle_category":"作业机动车","id":601,"version":"V1.0","load_class":"轻卡","power_type":"纯电动","emission_std":"纯电动","max_weight":3500,"curb_weight":1800,"manufacturer":"麒麟智能汽车","vehicle_model":"C_UN_R1.0","chassis_mfr":"麒麟自研底盘","chassis_model":"QL-C35","main_eng_mfr":"宁德时代","main_eng_model":"CATL-100","peak_power":60},
+    {"model_name":"麒麟无人化扫地车","model_alias":"扫路车","vehicle_category":"作业机动车","id":602,"version":"V1.5","load_class":"轻卡","power_type":"纯电动","emission_std":"纯电动","max_weight":3800,"curb_weight":1900,"manufacturer":"麒麟智能汽车","vehicle_model":"C_UN_R1.5","chassis_mfr":"麒麟自研底盘","chassis_model":"QL-C38","main_eng_mfr":"宁德时代","main_eng_model":"CATL-120","peak_power":75},
+    {"model_name":"长城多用途货车","model_alias":"皮卡","vehicle_category":"乘用车","id":701,"version":"V1.0","load_class":"微卡","power_type":"汽油","emission_std":"国六","max_weight":2800,"curb_weight":1600,"manufacturer":"长城汽车","vehicle_model":"CC-PV100","chassis_mfr":"长城底盘","chassis_model":"CC-P28","main_eng_mfr":"长城动力","main_eng_model":"GW-G150","peak_power":0},
+    {"model_name":"独角兽","model_alias":"扫路车","vehicle_category":"作业机动车","id":801,"version":"V1.0","load_class":"轻卡","power_type":"纯电动","emission_std":"纯电动","max_weight":6000,"curb_weight":2800,"manufacturer":"独角兽智能","vehicle_model":"UC-SW01","chassis_mfr":"独角兽底盘","chassis_model":"UC-C60","main_eng_mfr":"比亚迪","main_eng_model":"BYD-150","peak_power":110},
+    {"model_name":"泰坦智能驾驶洒水车","model_alias":"运输车","vehicle_category":"作业机动车","id":901,"version":"V3.0","load_class":"重卡","power_type":"纯电动","emission_std":"纯电动","max_weight":15000,"curb_weight":5500,"manufacturer":"泰坦智能科技","vehicle_model":"TT-SP300","chassis_mfr":"重汽底盘","chassis_model":"ZQ-C15","main_eng_mfr":"宁德时代","main_eng_model":"CATL-400","peak_power":250},
+    {"model_name":"中联清洗车","model_alias":"小型清洗机","vehicle_category":"作业机动车","id":1001,"version":"V1.0","load_class":"轻卡","power_type":"纯电动","emission_std":"纯电动","max_weight":4500,"curb_weight":2000,"manufacturer":"中联重科","vehicle_model":"ZL-CP100","chassis_mfr":"福田底盘","chassis_model":"FT-C45","main_eng_mfr":"宁德时代","main_eng_model":"CATL-120","peak_power":90},
+];
+
+const modelFieldMap = {
+    f_category: 'vehicle_category', f_alias: 'model_alias', f_mclass: 'load_class',
+    f_power: 'power_type', f_emission: 'emission_std', f_total_w: 'max_weight',
+    f_curb_w: 'curb_weight', f_mfr: 'manufacturer', f_mno: 'vehicle_model',
+    f_chassis_mfr: 'chassis_mfr', f_chassis_no: 'chassis_model',
+    f_eng_mfr: 'main_eng_mfr', f_eng_no: 'main_eng_model', f_eng_power: 'peak_power'
+};
+function getSelectedModelVersions() {
+    return registerModels.filter(model => model.model_name === document.getElementById('f_model_name').value);
+}
+function syncModelVersionOptions() {
+    const versions = getSelectedModelVersions();
+    const select = document.getElementById('f_model_ver');
+    select.replaceChildren(new Option(versions.length ? '请选择' : '请先选择车型名称', ''));
+    versions.forEach(model => {
+        const duplicateVersion = versions.filter(item => item.version === model.version).length > 1;
+        const label = duplicateVersion ? `${model.version}（${model.vehicle_model}）` : model.version;
+        select.add(new Option(label, String(model.id)));
+    });
+    select.disabled = versions.length === 0;
+    syncModelFields();
+}
+function syncModelFields() {
+    const selected = getSelectedModelVersions().find(model => String(model.id) === document.getElementById('f_model_ver').value);
+    Object.entries(modelFieldMap).forEach(([id, field]) => {
+        document.getElementById(id).value = selected ? (selected[field] ?? '') : '';
+    });
+}
+document.getElementById('f_model_name').addEventListener('change', syncModelVersionOptions);
+document.getElementById('f_model_ver').addEventListener('change', syncModelFields);
+
+// ===== 车辆标签：沿用详情页分组与标签 ID，私有标签按归属项目关联 =====
+const registerLabelGroups = [
+    {name:'运营场景', labels:[{id:'l1',name:'早班车',color:'green'},{id:'l2',name:'夜班车',color:'blue'},{id:'l3',name:'保障车',color:'orange'}]},
+    {name:'重点保障', labels:[{id:'l4',name:'VIP保障',color:'red'}]},
+    {name:'车辆等级', labels:[{id:'l7',name:'A级车',color:'green'},{id:'l8',name:'B级车',color:'yellow'}]},
+    {name:'租赁批次', labels:[{id:'l9',name:'常规租赁',color:'default'}]},
+    {name:'鸠江项目专属', project:'鸠江项目', labels:[{id:'l10',name:'测试车组',color:'purple'},{id:'l11',name:'临时调度',color:'blue'}]},
+    {name:'嘉定研发专项', project:'嘉定研发', labels:[{id:'l12',name:'重点测试',color:'green'}]}
+];
+function renderRegisterTagEditor() {
+    document.getElementById('vehicleTagEditor').innerHTML = registerLabelGroups.map(group => `
+        <fieldset class="vehicle-tag-group" ${group.project ? `data-project="${group.project}"` : ''}>
+            <legend>${group.name}${group.project ? '（私有）' : ''}</legend>
+            <div class="vehicle-tag-options">${group.labels.map(label => `
+                <label class="vehicle-tag-option"><input type="checkbox" name="vehicleLabels" value="${label.id}"><span class="tag tag-${label.color}">${label.name}</span></label>
+            `).join('')}</div>
+        </fieldset>
+    `).join('');
+    syncRegisterTagProject();
+}
+function syncRegisterTagProject() {
+    const project = document.getElementById('f_project').value;
+    document.querySelectorAll('#vehicleTagEditor [data-project]').forEach(group => {
+        group.disabled = group.dataset.project !== project;
+        if (group.disabled) group.querySelectorAll('input').forEach(input => { input.checked = false; });
+    });
+}
+document.getElementById('f_project').addEventListener('change', syncRegisterTagProject);
+renderRegisterTagEditor();
 </script>
 </body>
 </html>

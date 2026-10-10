@@ -138,9 +138,10 @@
     border-radius: var(--radius); background: #fff; color: var(--text-primary); font-size: 13px; outline: none;
 }
 
-/* 打标时间/所属子标签列、标签列展示 */
+/* 打标时间/打标人/所属子标签列、标签列展示 */
 .cell-tags { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
 .num-time { font-family: var(--font-number); }
+.tag-operator { white-space: nowrap; }
 /* 操作列多个文字按钮之间的间距（与车辆资产管理列表页保持一致） */
 #tagVehicleTable td .btn-link + .btn-link { margin-left: 8px; }
 
@@ -463,16 +464,16 @@ let labelGroups = [
       labels:[ { id:'l12', name:'重点测试', color:'green', sort:0, remark:'' } ]},
 ];
 
-// ===== 模拟数据：车辆-标签关联（多对多） vin -> [{labelId, time}] =====
+// ===== 模拟数据：车辆-标签关联（多对多） vin -> [{labelId, time, operator}] =====
 let vehicleLabels = {
-    'LSVAU2A39EN000001': [{labelId:'l1',time:'2026-03-01 09:00:00'},{labelId:'l7',time:'2026-03-02 10:30:00'},{labelId:'l10',time:'2026-03-05 14:00:00'}],
-    'LSVAU2A39EN000002': [{labelId:'l2',time:'2026-03-03 11:00:00'},{labelId:'l9',time:'2026-03-04 09:20:00'}],
-    'LSVAU2A39EN000003': [{labelId:'l3',time:'2026-03-06 16:00:00'},{labelId:'l8',time:'2026-03-07 08:45:00'}],
-    'LSVAU2A39EN000005': [{labelId:'l4',time:'2026-03-08 13:30:00'}],
-    'LSVAU2A39EN000006': [{labelId:'l12',time:'2026-03-09 10:00:00'}],
-    'LSVAU2A39EN000007': [{labelId:'l1',time:'2026-03-10 15:20:00'}],
-    'LSVAU2A39EN000009': [{labelId:'l10',time:'2026-03-11 09:10:00'},{labelId:'l11',time:'2026-03-12 11:40:00'}],
-    'LSVAU2A39EN000011': [{labelId:'l3',time:'2026-03-13 14:50:00'}],
+    'LSVAU2A39EN000001': [{labelId:'l1',time:'2026-03-01 09:00:00',operator:'张伟'},{labelId:'l7',time:'2026-03-02 10:30:00',operator:'李娜'},{labelId:'l10',time:'2026-03-05 14:00:00',operator:'王强'}],
+    'LSVAU2A39EN000002': [{labelId:'l2',time:'2026-03-03 11:00:00',operator:'张伟'},{labelId:'l9',time:'2026-03-04 09:20:00',operator:'周敏'}],
+    'LSVAU2A39EN000003': [{labelId:'l3',time:'2026-03-06 16:00:00',operator:'李娜'},{labelId:'l8',time:'2026-03-07 08:45:00',operator:'王强'}],
+    'LSVAU2A39EN000005': [{labelId:'l4',time:'2026-03-08 13:30:00',operator:'赵磊'}],
+    'LSVAU2A39EN000006': [{labelId:'l12',time:'2026-03-09 10:00:00',operator:'陈晨'}],
+    'LSVAU2A39EN000007': [{labelId:'l1',time:'2026-03-10 15:20:00',operator:'张伟'}],
+    'LSVAU2A39EN000009': [{labelId:'l10',time:'2026-03-11 09:10:00',operator:'周敏'},{labelId:'l11',time:'2026-03-12 11:40:00',operator:'赵磊'}],
+    'LSVAU2A39EN000011': [{labelId:'l3',time:'2026-03-13 14:50:00',operator:'李娜'}],
 };
 
 // ===== 状态标签映射（对应 common.css 的 .tag-* 公共类） =====
@@ -506,6 +507,7 @@ function getGroup(gid){ return labelGroups.find(g=>g.id===gid); }
 function getLabel(lid){ for(const g of labelGroups){ const l=g.labels.find(x=>x.id===lid); if(l) return {group:g,label:l}; } return null; }
 function getVehicleByVin(vin){ return vehicles.find(v=>v.vin===vin); }
 function getLabelTime(vin,lid){ const rels=vehicleLabels[vin]||[]; const r=rels.find(x=>x.labelId===lid); return r?r.time:'—'; }
+function getLabelOperator(vin,lid){ const rels=vehicleLabels[vin]||[]; const r=rels.find(x=>x.labelId===lid); return r?r.operator||'—':'—'; }
 function sortBySortNo(a,b){ return a.sort-b.sort; }
 // 子标签下车辆：默认按打标时间由近到远倒序（PRD《标签管理》3.5.5）
 function getVinsByLabel(lid){
@@ -712,15 +714,15 @@ function renderVehiclePanel(list){
 
     // 表头全选状态：仅当当前页车辆全部勾选时回显（表头全选仅作用于当前页）
     const allPageChecked=pageData.length>0 && pageData.every(v=>selectedVehicleVins.has(v.vin));
-    // 列宽/对齐依据 PRD《标签管理》3.5.5：文本列左对齐、编码列（车架号/打标时间）居中、操作与复选框列居中
-    html+='<div class="table-wrapper fixed-table" id="tagVehicleTable" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1190px"><table><thead><tr>';
+    // 沿用现有列样式，打标人按 WEB 规范居中；增加列宽以保持横向滚动时不挤压
+    html+='<div class="table-wrapper fixed-table" id="tagVehicleTable" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="'+(isLabelView?'1310px':'1190px')+'"><table><thead><tr>';
     if(isLabelView) html+='<th class="col-center" style="width:50px"><input type="checkbox" '+(allPageChecked?'checked':'')+' onchange="vehicleCheckAll(this)" aria-label="选择当前页全部车辆"></th>';
     html+='<th class="col-center" style="width:200px">车架号</th>'
         +'<th class="col-left" style="width:180px">车型名称（中）</th>'
         +'<th class="col-left" style="width:120px">车牌号</th>'
         +'<th class="col-left" style="width:160px">车辆状态</th>'
         +'<th class="col-left" style="width:160px">归属项目</th>'
-        +(isLabelView?'<th class="col-center" style="width:180px">打标时间</th>':'<th class="col-left" style="width:180px">所属子标签</th>')
+        +(isLabelView?'<th class="col-center" style="width:180px">打标时间</th><th class="col-center" style="width:120px">打标人</th>':'<th class="col-left" style="width:180px">所属子标签</th>')
         +'<th class="col-center" style="width:140px">操作</th></tr></thead><tbody>';
     pageData.forEach(v=>{
         const tagCls=statusTagClass[v.vehicle_status]||'tag-default';
@@ -735,6 +737,7 @@ function renderVehiclePanel(list){
         html+=`<td class="col-left">${v.project||'—'}</td>`;
         if(isLabelView){
             html+=`<td class="col-center num-time">${getLabelTime(v.vin,currentSelect.id)}</td>`;
+            html+=`<td class="col-center tag-operator">${getLabelOperator(v.vin,currentSelect.id)}</td>`;
         }else{
             // 标签组聚合：显示该车在该组下的子标签
             const g=getGroup(currentSelect.id);
@@ -1028,7 +1031,7 @@ function saveImport(){
         if(!vehicleLabels[vin]) vehicleLabels[vin]=[];
         // 已有相同关联则跳过，不重复建立（PRD 4.2）
         if(!vehicleLabels[vin].some(r=>r.labelId===importTargetLabelId)){
-            vehicleLabels[vin].push({labelId:importTargetLabelId,time:t});
+            vehicleLabels[vin].push({labelId:importTargetLabelId,time:t,operator:Common.getCurrentUser().name});
         }
     });
     closeImportModal();

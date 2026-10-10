@@ -140,7 +140,7 @@ const Common = {
    *   - activeMenuId: 当前激活菜单项ID
    *   - headerId: 头部容器ID（null则不渲染头部）
    *   - breadcrumbs: 面包屑数组 [{label, href?}]
-   *   - headerOptions: 头部附加选项 {showProject}
+   *   - headerOptions: 头部附加选项 {showProject, userName?}
    */
   initLayout(opts) {
     this._basePath = opts.basePath || '';
@@ -225,12 +225,55 @@ const Common = {
     if (!options || options.showProject !== false) {
       html += '<div class="project-select"><select><option>全部项目</option></select></div>';
     }
-    html += '<button class="header-icon-button" type="button" aria-label="通知" title="通知">○</button>';
-    html += '<div class="user-info"><span class="user-avatar">管</span><span class="user-name">管理员</span></div>';
+    html += '<div class="user-menu"><button class="user-info" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="headerUserMenu" onclick="Common.toggleUserMenu(this)"><span class="user-avatar" aria-hidden="true"></span><span class="user-name"></span><svg class="user-chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="user-dropdown" id="headerUserMenu" role="menu" hidden><button class="user-logout" type="button" role="menuitem" onclick="Common.requestLogout()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3H3v10h3M6 8h7m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>退出登录</button></div></div>';
     html += '</div>';
 
     container.innerHTML = html;
     container.className = 'global-header';
+    const name = this.normalizeUserName(options && options.userName) || this.getCurrentUser().name;
+    container.querySelector('.user-name').textContent = name;
+    container.querySelector('.user-avatar').textContent = Array.from(name)[0];
+    container.querySelector('.user-info').title = name;
+    container.querySelector('.user-info').setAttribute('aria-label', name + '，用户菜单');
+  },
+
+  // ===== 用户名称：由页面配置或共享用户信息提供，静态预览默认管理员 =====
+  userStorageKey: 'vehicle-system-current-user',
+  normalizeUserName(name) {
+    return typeof name === 'string' ? name.trim() : '';
+  },
+  getCurrentUser() {
+    try {
+      const user = JSON.parse(window.localStorage.getItem(this.userStorageKey));
+      const name = this.normalizeUserName(user && user.name);
+      if (name) return { name };
+    } catch (e) {
+      // 沿用静态原型的管理员默认预览。
+    }
+    return { name: '管理员' };
+  },
+  setCurrentUser(name) {
+    name = this.normalizeUserName(name);
+    if (!name) throw new Error('请输入用户名称');
+    window.localStorage.setItem(this.userStorageKey, JSON.stringify({ name }));
+    if (document.getElementById('header')) this.renderHeader('header', this._headerOptions);
+  },
+  toggleUserMenu(button) {
+    const menu = button.parentElement.querySelector('.user-dropdown');
+    const open = button.getAttribute('aria-expanded') !== 'true';
+    menu.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+  },
+  closeUserMenu(restoreFocus = false) {
+    const button = document.querySelector('.user-info[aria-expanded="true"]');
+    if (!button) return;
+    button.setAttribute('aria-expanded', 'false');
+    button.parentElement.querySelector('.user-dropdown').hidden = true;
+    if (restoreFocus) button.focus();
+  },
+  requestLogout() {
+    this.closeUserMenu(true);
+    this.showToast('退出登录功能暂未开放', 'info');
   },
 
   selectTopModule(moduleId) {
@@ -289,14 +332,28 @@ const Common = {
     this._eventsBound = true;
 
     document.addEventListener('click', e => {
+      if (!e.target.closest('.user-menu')) this.closeUserMenu();
       const overlay = e.target.closest && e.target.closest('.modal-overlay');
       if (overlay && e.target === overlay) this.closeModal(overlay);
     });
 
     document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' && e.target.matches('.user-info')) {
+        e.preventDefault();
+        if (e.target.getAttribute('aria-expanded') !== 'true') this.toggleUserMenu(e.target);
+        e.target.parentElement.querySelector('.user-logout').focus();
+      }
       if (e.key !== 'Escape') return;
+      this.closeUserMenu(true);
       const opened = document.querySelectorAll('.modal-overlay.active');
       if (opened.length) this.closeModal(opened[opened.length - 1]);
+    });
+    document.addEventListener('focusin', e => {
+      if (!e.target.closest('.user-menu')) this.closeUserMenu();
+    });
+    window.addEventListener('storage', e => {
+      if (e.key !== this.userStorageKey) return;
+      this.renderHeader('header', this._headerOptions);
     });
   },
   openModal(id) {
