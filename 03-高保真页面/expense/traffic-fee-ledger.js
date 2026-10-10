@@ -105,6 +105,9 @@
     bind();
     initPagination();
     render();
+    const params = new URLSearchParams(location.search);
+    const record = allData.find(r => r.vin === params.get('vin') && r.month === params.get('month'));
+    if (record) detail(record.id);
   }
 
   function fillProjects() {
@@ -261,5 +264,6 @@
     toggle: (id, checked) => { checked ? selectedIds.add(id) : selectedIds.delete(id); render(); },
     detail, exportData
   };
-  document.addEventListener('DOMContentLoaded', init);
+  window.TrafficExpenseSource = { read: buildRecords };
+  if (!document.body.hasAttribute('data-vehicle-ledger')) document.addEventListener('DOMContentLoaded', init);
 }());

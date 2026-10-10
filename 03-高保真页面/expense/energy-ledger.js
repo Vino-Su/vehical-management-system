@@ -53,6 +53,17 @@
     }
   };
 
+  // 单车台账读取原费用记录，车辆按 VIN 关联。
+  window.EnergyExpenseSource = {
+    read(kind) {
+      if (!ledgers[kind]) return [];
+      try {
+        const saved = JSON.parse(localStorage.getItem('vehicle-expense-' + kind));
+        if (Array.isArray(saved)) return saved;
+      } catch (e) { /* 存储不可用时读取原有示例数据。 */ }
+      return ledgers[kind].data.map((row, i) => toRecord(row, i + 1, kind));
+    }
+  };
   const config = ledgers[type];
   if (!config) return;
   const projects = ['嘉定研发', '椒北街道', '镜湖区项目', '鸠江项目', '陵水项目'];
@@ -60,15 +71,15 @@
   const byType = new Map(config.fields.map(field => [field[0], field[2]]));
   let editingId = null, deletingId = null, currentPage = 1, pageSize = 10, manuallyAdjusted = false, pager = null;
   let selectedIds = new Set();
-  let allData = config.data.map((row, index) => toRecord(row, index + 1));
+  let allData = window.EnergyExpenseSource.read(type);
   let filteredData = [...allData];
 
-  function toRecord(row, id) {
+  function toRecord(row, id, recordType = type) {
     const base = { id, plate:row[0], vin:row[1], project:row[2], reporter:row[3], time:row[4] };
-    if (type === 'fuel') Object.assign(base, { quantity:row[5], unitPrice:row[6], amount:row[7], paymentMethod:row[8], oilCard:row[9], cardBalance:row[10], mileage:row[11] });
-    if (type === 'water') Object.assign(base, { quantity:row[5], amount:row[6], paymentMethod:row[7], mileage:row[8] });
-    if (type === 'charge') Object.assign(base, { endTime:row[5], quantity:row[6], electricFee:row[7], serviceFee:row[8], amount:row[9], paymentMethod:row[10], mileage:row[11] });
-    base.remark = ''; base.mileagePhoto = '已上传 1 张'; base.voucherPhoto = '已上传 1 张'; if (type === 'charge') base.chargePhoto = '已上传 1 张';
+    if (recordType === 'fuel') Object.assign(base, { quantity:row[5], unitPrice:row[6], amount:row[7], paymentMethod:row[8], oilCard:row[9], cardBalance:row[10], mileage:row[11] });
+    if (recordType === 'water') Object.assign(base, { quantity:row[5], amount:row[6], paymentMethod:row[7], mileage:row[8] });
+    if (recordType === 'charge') Object.assign(base, { endTime:row[5], quantity:row[6], electricFee:row[7], serviceFee:row[8], amount:row[9], paymentMethod:row[10], mileage:row[11] });
+    base.remark = ''; base.mileagePhoto = '已上传 1 张'; base.voucherPhoto = '已上传 1 张'; if (recordType === 'charge') base.chargePhoto = '已上传 1 张';
     return base;
   }
 
@@ -80,6 +91,8 @@
     document.getElementById('importTitle').textContent = `导入${config.singular}`;
     Common.initLayout({ basePath:'../', sidebarId:'sidebar', activeMenuId:config.activeMenuId, headerId:'header', headerOptions:{ showProject:false } });
     bind(); initPagination(); render();
+    const recordId = Number(new URLSearchParams(location.search).get('record'));
+    if (recordId) detail(recordId);
   }
 
   function bind() {
@@ -189,12 +202,16 @@
     if (type === 'charge') values.duration = duration(values.time, values.endTime);
     const isEditing = Boolean(editingId);
     if (isEditing) Object.assign(allData.find(item => item.id === editingId), values); else { values.id = Math.max(0, ...allData.map(item => item.id)) + 1; allData.unshift(values); }
-    filteredData = [...allData]; Common.closeModal('formModal'); resetToFirstPage(); Common.showToast(`${isEditing ? '保存' : '新增'}成功`, 'success');
+    persist(); filteredData = [...allData]; Common.closeModal('formModal'); resetToFirstPage(); Common.showToast(`${isEditing ? '保存' : '新增'}成功`, 'success');
   }
   function detail(id) { const record = allData.find(item => item.id === id); if (!record) return; document.getElementById('detailTitle').textContent = `${config.singular}详情`; document.getElementById('detailBody').innerHTML = `<div class="ledger-detail-grid">${config.fields.map(([key,label]) => `<div class="ledger-detail-row"><div class="ledger-detail-label">${label}</div><div class="ledger-detail-value ${['amount','quantity','unitPrice','electricFee','serviceFee','cardBalance','mileage'].includes(key) ? 'num' : ''}">${detailValue(record,key)}</div></div>`).join('')}${config.attachments.map(([key,label]) => `<div class="ledger-detail-row"><div class="ledger-detail-label">${label}</div><div class="ledger-detail-value"><button class="btn-link" type="button" onclick="EnergyLedger.preview(${id})">${record[key] || '未上传'}</button></div></div>`).join('')}</div>`; Common.openModal('detailModal'); }
   function detailValue(record,key) { if (['amount','unitPrice','electricFee','serviceFee','cardBalance'].includes(key)) return currency(record[key]); if (key === 'quantity') return `${number(record[key])} ${config.unit}`; if (key === 'mileage') return `${number(record[key])} km`; return text(record[key]); }
   function change(id) { const record = allData.find(item => item.id === id); document.getElementById('changeBody').innerHTML = `<tr><td>费用金额（元）</td><td>${currency(Number(record.amount || 0) - 6.8)}</td><td>${currency(record.amount)}</td><td>2026-09-14 10:30</td><td>费用管理员</td></tr><tr><td>${config.unitLabel}（${config.unit}）</td><td>${number(Number(record.quantity || 0) - 1.2)}</td><td>${number(record.quantity)}</td><td>2026-09-14 10:30</td><td>费用管理员</td></tr>`; Common.openModal('changeModal'); }
-  function remove(id) { deletingId = id; Common.confirm({ title:'确认删除', content:`确定删除该${config.singular}吗？删除后数据不可恢复。`, danger:true, onOk: () => { allData = allData.filter(item => item.id !== deletingId); filteredData = filteredData.filter(item => item.id !== deletingId); selectedIds.delete(deletingId); render(); Common.showToast('删除成功', 'success'); } }); }
+  function remove(id) { deletingId = id; Common.confirm({ title:'确认删除', content:`确定删除该${config.singular}吗？删除后数据不可恢复。`, danger:true, onOk: () => { allData = allData.filter(item => item.id !== deletingId); filteredData = filteredData.filter(item => item.id !== deletingId); selectedIds.delete(deletingId); persist(); render(); Common.showToast('删除成功', 'success'); } }); }
+  function persist() {
+    try { localStorage.setItem('vehicle-expense-' + type, JSON.stringify(allData)); }
+    catch (e) { Common.showToast('浏览器存储不可用，修改仅保留在当前页面', 'warning'); }
+  }
   function exportData() { if (selectedIds.size) Common.showToast(`已导出选中 ${selectedIds.size} 条记录`, 'success'); else Common.confirm({ title:'确认导出', content:`将导出当前筛选条件下的 ${filteredData.length} 条记录。`, onOk: () => Common.showToast('导出任务已创建', 'success') }); }
   function submitImport() { const file = document.getElementById('importFile'); if (!file.files.length) { Common.showToast('请选择导入文件', 'warning'); return; } Common.closeModal('importModal'); Common.showToast('导入成功，已完成数据校验', 'success'); }
   function preview(id) { const record = allData.find(item => item.id === id); document.getElementById('previewBody').innerHTML = `<div class="ledger-receipt"><div class="ledger-receipt-title">${icon[type]}费用凭证</div><div class="ledger-receipt-line"><span>车辆</span><strong>${record.plate}</strong></div><div class="ledger-receipt-line"><span>发生时间</span><strong>${record.time}</strong></div><div class="ledger-receipt-line"><span>${config.unitLabel}</span><strong>${number(record.quantity)} ${config.unit}</strong></div><div class="ledger-receipt-line"><span>支付方式</span><strong>${record.paymentMethod}</strong></div><div class="ledger-receipt-line"><span>金额</span><strong>${currency(record.amount)}</strong></div></div>`; Common.openModal('previewModal'); }

@@ -71,7 +71,7 @@
   }
   function renderSummary() {
     const total=vehicles.reduce((sum,v)=>sum+v.total,0);
-    get('summary').innerHTML=`<div class="ledger-summary-item"><span class="ledger-summary-label">车辆</span><span class="ledger-summary-value num">${vehicles.length}</span><span class="ledger-summary-label">辆</span></div><div class="ledger-summary-item primary"><span class="ledger-summary-label">费用合计</span><span class="ledger-summary-value num">¥${money(total)}</span></div>`;
+    get('summary').innerHTML=`<div class="ledger-summary-item"><span class="ledger-summary-label">当前筛选</span><span class="ledger-summary-value num">${filteredSources.length}</span><span class="ledger-summary-label">条</span></div><div class="ledger-summary-item"><span class="ledger-summary-label">车辆</span><span class="ledger-summary-value num">${vehicles.length}</span><span class="ledger-summary-label">辆</span></div><div class="ledger-summary-item primary"><span class="ledger-summary-label">费用合计</span><span class="ledger-summary-value num">¥${money(total)}</span></div>`;
   }
 
   function openDetails(key,kind) {
@@ -82,7 +82,7 @@
   }
   function renderDetails() {
     const start=(detailPager.getCurrentPage()-1)*detailPager.getPageSize();
-    get('detailBody').innerHTML=detailRecords.slice(start,start+detailPager.getPageSize()).map(r=>`<tr><td class="col-center">${esc(r.period)}</td><td>${categories[r.kind]}</td><td class="col-right num">${money(r.cents)}</td><td class="col-center"><a class="source-link" href="${esc(r.href)}">查看详情</a></td></tr>`).join('');
+    get('detailBody').innerHTML=detailRecords.slice(start,start+detailPager.getPageSize()).map(r=>`<tr><td>${esc(r.period)}</td><td>${categories[r.kind]}</td><td class="num">${money(r.cents)}</td><td><a class="source-link" href="${esc(r.href)}">查看详情</a></td></tr>`).join('');
   }
   function exportData() {
     if (!vehicles.length) { Common.showToast('暂无可导出的台账数据','warning'); return; }

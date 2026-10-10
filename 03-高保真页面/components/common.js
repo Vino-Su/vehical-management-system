@@ -101,6 +101,9 @@ const Common = {
         { label: '充电费用分析', id: 'charge-analysis', disabled: true },
         { label: '单车成本分析', id: 'vehicle-cost-analysis', disabled: true },
       ]},
+      { label: '单车费用管理', symbol: '车', items: [
+        { label: '单车费用台账', id: 'vehicle-expense-ledger', href: 'expense/vehicle-expense-ledger.html' },
+      ]},
     ]},
     { id: 'exit', label: '退出管理', symbol: '退', groups: [
       { label: '退出管理', symbol: '退', items: [
