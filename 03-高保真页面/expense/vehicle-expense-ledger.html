@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单车费用台账 - 车辆管理系统</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../components/common.css">
+<link rel="stylesheet" href="../components/fixed-table.css">
+<link rel="stylesheet" href="./energy-ledger.css">
+<style>
+.ledger-check{width:16px;height:16px;accent-color:var(--primary);vertical-align:middle}.ledger-table th:first-child,.ledger-table td:first-child{width:44px}.ledger-table .num{font-variant-numeric:tabular-nums}.ledger-table .amount{color:var(--primary-active);font-weight:600}.ledger-table .source-link{border:0;padding:0;color:var(--primary);background:transparent;cursor:pointer}.ledger-table .source-link:hover{color:var(--primary-hover)}.detail-table th,.detail-table td{height:40px!important;padding:0 12px!important;white-space:nowrap}
+</style>
+</head>
+<body data-vehicle-ledger="true">
+<div class="layout"><aside class="sidebar" id="sidebar"></aside><main class="main-area"><header id="header"></header><section class="content"><div class="page-container">
+<div class="search-bar" data-visible-count="4"><div class="search-row">
+<div class="ledger-search-item"><label>费用发生日期</label><div class="ledger-date-range"><input id="startDate" type="date" aria-label="开始日期"><span>至</span><input id="endDate" type="date" aria-label="结束日期"></div></div>
+<div class="ledger-search-item"><label>车牌号</label><input id="plateFilter" placeholder="支持模糊搜索"></div>
+<div class="ledger-search-item"><label>VIN码</label><input id="vinFilter" placeholder="支持模糊搜索"></div>
+<div class="ledger-search-item"><label>归属项目</label><select id="projectFilter"><option value="">全部项目</option></select></div>
+<div class="ledger-search-item"><button class="btn btn-primary" id="searchBtn" type="button">查询</button><button class="btn" id="resetBtn" type="button">重置</button></div>
+</div></div>
+<div class="action-bar"><button class="btn" id="exportBtn" type="button">导出</button></div>
+<div class="table-wrapper ledger-table fixed-table" data-fixed-first="2" data-fixed-last="2" data-fixed-min-width="1380px" style="--ledger-table-min-width:1380px"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+<div class="ledger-summary" id="summary"></div><div id="paginationEl"></div>
+</div></section></main></div>
+<div class="modal-overlay" id="detailModal"><div class="modal-box modal-box--lg"><div class="modal-header"><h3 id="detailTitle">费用明细</h3><button class="modal-close" onclick="Common.closeModal('detailModal')">×</button></div><div class="modal-body"><div class="table-wrapper"><table class="detail-table"><thead><tr><th>费用发生日期</th><th>费用类型</th><th>费用金额（元）</th><th>操作</th></tr></thead><tbody id="detailBody"></tbody></table></div><div id="detailPagination"></div></div><div class="modal-footer modal-footer--right"><button class="btn" onclick="Common.closeModal('detailModal')">关闭</button></div></div></div>
+<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/filter-component.js"></script><script src="../components/fixed-table.js"></script><script src="./energy-ledger.js"></script><script src="./traffic-fee-ledger.js"></script><script src="./vehicle-expense-ledger.js"></script>
+</body></html>
