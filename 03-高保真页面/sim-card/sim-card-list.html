@@ -52,8 +52,9 @@
   </tr></thead><tbody id="table-body"></tbody></table></div>
   <div class="pagination-row"><span>共 <b id="total-count">0</b> 条</span><select class="page-size" id="page-size" onchange="changePageSize()"><option>10</option><option>20</option><option>50</option></select><span id="page-info">第 1 / 1 页</span><div id="pagination"></div></div>
 </section></main></div></div>
-<div class="modal-overlay" id="export-modal"><div class="modal-box confirm-box"><div class="modal-header"><h3>导出确认</h3><span class="modal-close" onclick="closeExport()">×</span></div><div class="confirm-body"><span class="confirm-icon">!</span><span class="confirm-text" id="export-message"></span></div><div class="modal-footer"><button class="btn" onclick="closeExport()">取消</button><button class="btn btn-primary" onclick="confirmExport()">确认导出</button></div></div></div>
-<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/filter-component.js"></script><script src="../components/fixed-table.js"></script>
+
+<script src="../components/common.js"></script>
+<script src="../components/export-component.js"></script><script src="../components/pagination-component.js"></script><script src="../components/filter-component.js"></script><script src="../components/fixed-table.js"></script>
 <script>
 Common.initLayout({basePath:'../',sidebarId:'sidebar',activeMenuId:'sim-ledger',headerId:'header',headerOptions:{showProject:false}});
 const data=[
@@ -78,6 +79,9 @@ function search(){filtered=data.filter(x=>filterText('f-imsi','imsi',x)&&filterT
 function resetFilters(){document.querySelectorAll('.search-item input,.search-item select').forEach(x=>x.value='');filtered=[...data];page=1;selected.clear();render()}
 function toggleFilters(){expanded=!expanded;document.querySelectorAll('.search-item:not(.visible)').forEach(x=>x.classList.toggle('visible',expanded));document.getElementById('toggle').textContent=expanded?'收起 ▴':'展开 ▾'}
 function checkAll(el){filtered.slice((page-1)*size,page*size).forEach(x=>el.checked?selected.add(x.id):selected.delete(x.id));render()}function toggleOne(id,on){on?selected.add(id):selected.delete(id);render()}function changePageSize(){size=+document.getElementById('page-size').value;page=1;render()}
-function exportData(){document.getElementById('export-message').textContent=selected.size?`确认导出已选中的 ${selected.size} 条 SIM 卡台账数据？`:`确认导出当前查询条件下的全部 ${filtered.length} 条 SIM 卡台账数据？`;Common.openModal('export-modal')}function closeExport(){Common.closeModal('export-modal')}function confirmExport(){closeExport();Common.showToast('已生成导出文件（原型演示）','success')}
+function exportData(){
+  ListExport.run({rows:filtered,selectedIds:selected,currentPage:page,pageSize:size,
+    onExport:()=>Common.showToast('已生成导出文件（原型演示）','success')});
+}
 render();
 </script></body></html>

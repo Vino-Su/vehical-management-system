@@ -536,16 +536,7 @@ function exportRows(rows) {
     Common.showToast(`已导出 ${rows.length} 条运行数据`, 'success');
 }
 function doExport() {
-    if (!filteredTelemetry.length) { Common.showToast('当前查询条件下暂无可导出数据', 'warning'); return; }
-    if (selectedRows.size) {
-        exportRows(filteredTelemetry.filter(item => selectedRows.has(item.id)));
-        return;
-    }
-    Common.confirm({
-        title: '导出全部查询结果',
-        content: `当前未勾选数据，将导出查询条件下全部 ${filteredTelemetry.length} 条运行数据，是否继续？`,
-        onOk: function() { exportRows(filteredTelemetry); }
-    });
+    ListExport.run({ rows: filteredTelemetry, selectedIds: selectedRows, currentPage, pageSize, onExport: exportRows });
 }
 
 ['filterVin', 'filterPlate', 'filterModel'].forEach(id => document.getElementById(id).addEventListener('keydown', event => { if (event.key === 'Enter') queryVehicles(); }));

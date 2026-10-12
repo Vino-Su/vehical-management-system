@@ -232,6 +232,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/export-component.js"></script>
 <script>
 // 获取URL参数
 const urlParams = new URLSearchParams(window.location.search);
@@ -496,16 +497,12 @@ function goNewVersion() {
 // ===== 变更日志导出：选中则导出选中记录，未选中则确认后全量导出（PRD 3.2.5） =====
 function exportChangelog() {
     const fileName = '车型变更日志_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.xlsx';
-    if (selectedLogIds.size > 0) {
-        Common.showToast('导出成功：已导出选中的 ' + selectedLogIds.size + ' 条变更记录（' + fileName + '）', 'success');
-        return;
-    }
-    Common.confirm({
-        title: '提示',
-        content: '是否导出全部变更日志数据？',
-        okText: '是',
-        cancelText: '否',
-        onOk: () => Common.showToast('导出成功：已导出全部变更记录（' + fileName + '）', 'success')
+    const rows = [...mockChangelog].sort((a, b) => b.time.localeCompare(a.time)).map((row, id) => ({ ...row, id }));
+    ListExport.run({
+        rows, pageRows: rows, selectedIds: selectedLogIds,
+        onExport: (data, scope) => Common.showToast(scope.selected
+            ? '导出成功：已导出选中的 ' + data.length + ' 条变更记录（' + fileName + '）'
+            : '导出成功：已导出全部变更记录（' + fileName + '）', 'success')
     });
 }
 

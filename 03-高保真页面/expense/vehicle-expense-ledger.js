@@ -61,7 +61,7 @@
     const page=vehicles.slice(start,start+pager.getPageSize());
     get('tableBody').innerHTML = page.map(v => `<tr><td><input class="ledger-check row-check" type="checkbox" data-key="${esc(v.key)}" ${selected.has(v.key)?'checked':''} aria-label="选择${esc(v.plate)}"></td><td>${esc(v.plate)}</td><td>${esc(v.vin)}</td><td>${esc(v.project)}</td>${Object.keys(categories).map(kind=>`<td class="num">${v.records.some(r=>r.kind===kind)?`<button class="source-link" data-key="${esc(v.key)}" data-kind="${kind}">${money(v[kind])}</button>`:'0.00'}</td>`).join('')}<td class="num amount">${money(v.total)}</td><td><button class="source-link" data-key="${esc(v.key)}" data-kind="">费用明细</button></td></tr>`).join('') || '<tr><td colspan="10" class="ledger-empty"><strong>暂无符合条件的台账</strong>请调整查询条件后重试</td></tr>';
     get('tableBody').querySelectorAll('.row-check').forEach(c=>c.addEventListener('change', e => { e.target.checked ? selected.add(e.target.dataset.key) : selected.delete(e.target.dataset.key); syncCheckAll(); }));
-    get('tableBody').querySelectorAll('[data-key]').forEach(btn=>btn.addEventListener('click',()=>openDetails(btn.dataset.key,btn.dataset.kind)));
+    get('tableBody').querySelectorAll('button[data-key]').forEach(btn=>btn.addEventListener('click',()=>openDetails(btn.dataset.key,btn.dataset.kind)));
     syncCheckAll(); renderSummary();
   }
 
@@ -85,12 +85,8 @@
     get('detailBody').innerHTML=detailRecords.slice(start,start+detailPager.getPageSize()).map(r=>`<tr><td>${esc(r.period)}</td><td>${categories[r.kind]}</td><td class="num">${money(r.cents)}</td><td><a class="source-link" href="${esc(r.href)}">查看详情</a></td></tr>`).join('');
   }
   function exportData() {
-    if (!vehicles.length) { Common.showToast('暂无可导出的台账数据','warning'); return; }
-    if (!selected.size) {
-      Common.confirm({ title:'确认导出', content:`当前未选择车辆，将导出当前查询条件下的全部 ${vehicles.length} 条记录，是否继续？`, okText:'确认导出', onOk:()=>doExport(vehicles) });
-      return;
-    }
-    doExport(vehicles.filter(v=>selected.has(v.key)));
+    ListExport.run({rows:vehicles,selectedIds:selected,currentPage:pager.getCurrentPage(),pageSize:pager.getPageSize(),
+      getId:row=>row.key,onExport:doExport});
   }
   function doExport(chosen) {
     const cell=v=>'"'+String(v).replaceAll('"','""')+'"';

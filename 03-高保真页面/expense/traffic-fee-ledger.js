@@ -252,12 +252,10 @@
   }
 
   function exportData() {
-    if (!filteredData.length) { Common.showToast('暂无可导出的流量费用明细', 'warning'); return; }
-    if (selectedIds.size) { Common.showToast(`已导出选中的 ${selectedIds.size} 条流量费用明细`, 'success'); return; }
-    Common.confirm({
-      title: '确认导出', content: `当前未选择记录，将导出当前查询条件下的全部 ${filteredData.length} 条记录，是否继续？`, okText: '确认导出',
-      onOk: () => Common.showToast('导出任务已创建，请稍后在导出记录中下载', 'success')
-    });
+    ListExport.run({rows:filteredData,selectedIds,currentPage,pageSize,
+      onExport:(rows,scope)=>Common.showToast(scope.selected
+        ? `已导出选中的 ${rows.length} 条流量费用明细`
+        : '导出任务已创建，请稍后在导出记录中下载','success')});
   }
 
   window.TrafficFeeLedger = {

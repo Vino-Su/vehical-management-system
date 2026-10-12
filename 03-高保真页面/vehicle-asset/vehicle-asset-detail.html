@@ -1690,6 +1690,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/export-component.js"></script>
 <script src="../components/pagination-component.js"></script>
 <script src="../components/filter-component.js"></script>
 <script src="../components/vendor/qrcode.js"></script>
@@ -2896,11 +2897,25 @@ const transferData = [
   { id:'DB20241001006', status:'已完成', apply_time:'2024-10-01 10:30:00', confirm_time:'2024-10-03 16:45:00', applicant:'赵伟', from:'鸠江江北项目', to:'鸠江项目' },
 ];
 let transferPage = 1, transferPageSize = 10, transferSelected = new Set();
+const transferFilterState = {};
+const transferFilterIds = ['t_apply_start','t_apply_end','t_confirm_start','t_confirm_end','t_applicant','t_from_project','t_to_project'];
+function getFilteredTransferData() {
+  const f = transferFilterState;
+  return transferData.filter(d => (!f.t_apply_start || d.apply_time.slice(0,10) >= f.t_apply_start)
+    && (!f.t_apply_end || d.apply_time.slice(0,10) <= f.t_apply_end)
+    && (!f.t_confirm_start || d.confirm_time !== '—' && d.confirm_time.slice(0,10) >= f.t_confirm_start)
+    && (!f.t_confirm_end || d.confirm_time !== '—' && d.confirm_time.slice(0,10) <= f.t_confirm_end)
+    && (!f.t_applicant || d.applicant.includes(f.t_applicant))
+    && (!f.t_from_project || d.from === f.t_from_project)
+    && (!f.t_to_project || d.to === f.t_to_project));
+}
+
 
 function renderTransferTable() {
   const tbody = document.getElementById('transferTableBody');
   const start = (transferPage - 1) * transferPageSize;
-  const pageData = transferData.slice(start, start + transferPageSize);
+  const filteredData = getFilteredTransferData();
+  const pageData = filteredData.slice(start, start + transferPageSize);
   tbody.innerHTML = pageData.map(d => {
     const ck = transferSelected.has(d.id) ? 'checked' : '';
     const tag = statusTagMap2[d.status] || 'tag-default';
@@ -2920,7 +2935,7 @@ function renderTransferTable() {
   const checkAll = document.getElementById('transferCheckAll');
   if (checkAll) checkAll.checked = pageData.length > 0 && pageData.every(d => transferSelected.has(d.id));
   Common.renderPagination({
-    total: transferData.length, currentPage: transferPage, pageSize: transferPageSize,
+    total: filteredData.length, currentPage: transferPage, pageSize: transferPageSize,
     containerId: 'transferPagination', infoId: 'transferTotalCount', pageInfoId: 'transferPageInfo',
     onPageChange: p => { transferPage = p; renderTransferTable(); }
   });
@@ -2932,7 +2947,7 @@ function changeTransferPageSize() {
 // 表头全选：仅选中/取消当前页所有行（不跨页）
 function toggleTransferCheckAll(el) {
   const start = (transferPage - 1) * transferPageSize;
-  transferData.slice(start, start + transferPageSize).forEach(d => {
+  getFilteredTransferData().slice(start, start + transferPageSize).forEach(d => {
     if (el.checked) transferSelected.add(d.id); else transferSelected.delete(d.id);
   });
   renderTransferTable();
@@ -2940,25 +2955,19 @@ function toggleTransferCheckAll(el) {
 function toggleTransferCheck(id, el) {
   if (el.checked) transferSelected.add(id); else transferSelected.delete(id);
 }
-function searchTransfer() { transferPage = 1; renderTransferTable(); Common.showToast('查询完成','success'); }
+function searchTransfer() {
+  transferFilterIds.forEach(id => { transferFilterState[id] = document.getElementById(id).value.trim(); });
+  transferPage = 1; renderTransferTable(); Common.showToast('查询完成','success');
+}
 function resetTransferSearch() {
-  ['t_apply_start','t_apply_end','t_confirm_start','t_confirm_end','t_applicant'].forEach(id => document.getElementById(id).value = '');
-  ['t_from_project','t_to_project'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  transferFilterIds.forEach(id => { document.getElementById(id).value = ''; transferFilterState[id] = ''; });
   transferPage = 1; renderTransferTable();
 }
 // 导出：已勾选则导出选中数据，否则二次确认是否导出全部
 function exportTransfer() {
-  if (transferSelected.size > 0) {
-    Common.showToast('已导出选中的 ' + transferSelected.size + ' 条数据', 'success');
-    return;
-  }
-  Common.confirm({
-    title: '导出确认',
-    content: '是否导出所有数据？',
-    okText: '确定',
-    cancelText: '取消',
-    onOk: () => Common.showToast('已导出所有数据（共 ' + transferData.length + ' 条）', 'success')
-  });
+  ListExport.run({rows:getFilteredTransferData(),selectedIds:transferSelected,currentPage:transferPage,pageSize:transferPageSize,
+    onExport:(rows,scope)=>Common.showToast(scope.selected ? '已导出选中的 ' + rows.length + ' 条数据'
+      : '已导出所有数据（共 ' + rows.length + ' 条）','success')});
 }
 
 // ===== BOM清单 =====
@@ -3431,19 +3440,9 @@ function toggleLogCheck(id, el) {
 }
 // 导出：已勾选则导出选中数据，否则二次确认是否导出全部
 function exportChangelog() {
-  const filteredData = getFilteredLogData();
-  const selectedData = filteredData.filter(d => logSelected.has(d.id));
-  if (selectedData.length > 0) {
-    Common.showToast('已导出选中的 ' + selectedData.length + ' 条数据', 'success');
-    return;
-  }
-  Common.confirm({
-    title: '导出确认',
-    content: '是否导出当前筛选条件下的所有数据？',
-    okText: '确定',
-    cancelText: '取消',
-    onOk: () => Common.showToast('已导出所有数据（共 ' + filteredData.length + ' 条）', 'success')
-  });
+  ListExport.run({rows:getFilteredLogData(),selectedIds:logSelected,currentPage:logPage,pageSize:logPageSize,
+    onExport:(rows,scope)=>Common.showToast(scope.selected ? '已导出选中的 ' + rows.length + ' 条数据'
+      : '已导出所有数据（共 ' + rows.length + ' 条）','success')});
 }
 
 // ===== 初始化 =====

@@ -316,22 +316,7 @@
       }
 
       function exportRecords() {
-        if (selectedIds.size) {
-          var selectedRecords = anomalyRecords.filter(function (record) { return selectedIds.has(record.id); });
-          runExport(selectedRecords);
-          return;
-        }
-        if (!filteredRecords.length) {
-          Common.showToast('当前查询条件下暂无可导出的数据', 'warning');
-          return;
-        }
-        Common.confirm({
-          title: '导出确认',
-          content: '当前未勾选记录，将导出查询条件下的全部 <strong>' + filteredRecords.length + '</strong> 条数据。是否继续？',
-          okText: '确认导出',
-          cancelText: '取消',
-          onOk: function () { runExport(filteredRecords); }
-        });
+        ListExport.run({ rows: filteredRecords, selectedIds, currentPage, pageSize, onExport: runExport });
       }
 
       document.getElementById('searchButton').addEventListener('click', applyFilters);

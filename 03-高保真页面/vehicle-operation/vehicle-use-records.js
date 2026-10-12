@@ -155,11 +155,15 @@
   }
 
   function openExport() {
-    exportRows = selectedIds.size ? filtered.filter(function (record) { return selectedIds.has(record.id); }) : filtered.slice();
-    if (!exportRows.length) { Common.showToast('当前查询条件下暂无可导出的数据', 'warning'); return; }
-    document.getElementById('exportDescription').textContent = (selectedIds.size ? '将导出已选 ' : '将导出当前查询条件下全部 ') + exportRows.length + ' 条用车记录为 CSV 文件。';
-    document.getElementById('exportFileName').value = '用车记录-' + new Date().toLocaleDateString('sv-SE') + '.csv';
-    Common.openModal('exportModal');
+    ListExport.run({
+      rows: filtered, selectedIds, currentPage, pageSize,
+      onExport: function (rows, scope) {
+        exportRows = rows;
+        document.getElementById('exportDescription').textContent = (scope.selected ? '将导出当前页已选 ' : '将导出当前查询条件下全部 ') + rows.length + ' 条用车记录为 CSV 文件。';
+        document.getElementById('exportFileName').value = '用车记录-' + new Date().toLocaleDateString('sv-SE') + '.csv';
+        Common.openModal('exportModal');
+      }
+    });
   }
   function confirmExport() {
     var name = document.getElementById('exportFileName').value.trim().replace(/[\\/:*?"<>|]/g, '_');

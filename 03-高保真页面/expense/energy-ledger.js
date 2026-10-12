@@ -212,7 +212,10 @@
     try { localStorage.setItem('vehicle-expense-' + type, JSON.stringify(allData)); }
     catch (e) { Common.showToast('浏览器存储不可用，修改仅保留在当前页面', 'warning'); }
   }
-  function exportData() { if (selectedIds.size) Common.showToast(`已导出选中 ${selectedIds.size} 条记录`, 'success'); else Common.confirm({ title:'确认导出', content:`将导出当前筛选条件下的 ${filteredData.length} 条记录。`, onOk: () => Common.showToast('导出任务已创建', 'success') }); }
+  function exportData() {
+    ListExport.run({rows:filteredData,selectedIds,currentPage,pageSize,
+      onExport:(rows,scope)=>Common.showToast(scope.selected ? `已导出选中 ${rows.length} 条记录` : '导出任务已创建','success')});
+  }
   function submitImport() { const file = document.getElementById('importFile'); if (!file.files.length) { Common.showToast('请选择导入文件', 'warning'); return; } Common.closeModal('importModal'); Common.showToast('导入成功，已完成数据校验', 'success'); }
   function preview(id) { const record = allData.find(item => item.id === id); document.getElementById('previewBody').innerHTML = `<div class="ledger-receipt"><div class="ledger-receipt-title">${icon[type]}费用凭证</div><div class="ledger-receipt-line"><span>车辆</span><strong>${record.plate}</strong></div><div class="ledger-receipt-line"><span>发生时间</span><strong>${record.time}</strong></div><div class="ledger-receipt-line"><span>${config.unitLabel}</span><strong>${number(record.quantity)} ${config.unit}</strong></div><div class="ledger-receipt-line"><span>支付方式</span><strong>${record.paymentMethod}</strong></div><div class="ledger-receipt-line"><span>金额</span><strong>${currency(record.amount)}</strong></div></div>`; Common.openModal('previewModal'); }
   function duration(start, end) { if (!start || !end) return '—'; const minutes = Math.round((new Date(localDateTime(end)) - new Date(localDateTime(start))) / 60000); return Number.isFinite(minutes) ? minutes : '—'; }

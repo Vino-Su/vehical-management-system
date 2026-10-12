@@ -155,6 +155,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/export-component.js"></script>
 <script src="../components/pagination-component.js"></script>
 <script src="../components/filter-component.js"></script>
 <script src="../components/fixed-table.js"></script>
@@ -382,20 +383,15 @@ function toggleCheck(id, el) {
 
 // ===== 导出 =====
 function doExport() {
-    if (selectedIds.size > 0) {
-        Common.showToast('已导出选中的 ' + selectedIds.size + ' 条数据', 'success');
-        selectedIds.clear(); renderTable();
-    } else {
-        document.getElementById('exportModal').classList.add('active');
-    }
+    ListExport.run({
+        rows: getSortedData(), selectedIds, currentPage, pageSize,
+        onExport: (rows, scope) => Common.showToast(scope.selected
+            ? '已导出选中的 ' + rows.length + ' 条数据'
+            : '已导出所有数据（共 ' + rows.length + ' 条）', 'success')
+    });
 }
-function closeExportModal() {
-    document.getElementById('exportModal').classList.remove('active');
-}
-function confirmExport() {
-    closeExportModal();
-    Common.showToast('已导出所有数据（共 ' + filteredData.length + ' 条）', 'success');
-}
+
+
 </script>
 
 <!-- 批量导入弹窗（遮罩点击与 ESC 关闭由 Common.bindGlobalEvents 统一处理） -->
@@ -426,19 +422,7 @@ function confirmExport() {
 </div>
 
 <!-- 导出确认弹窗（取消居左、提交居右，由 .modal-footer 默认两端分布实现） -->
-<div class="modal-overlay" id="exportModal">
-    <div class="modal-box confirm-box">
-        <div class="modal-header"><h3>提示</h3><button class="modal-close" type="button" onclick="closeExportModal()">×</button></div>
-        <div class="confirm-body">
-            <span class="confirm-icon">⚠</span>
-            <span class="confirm-text">是否导出所有数据？</span>
-        </div>
-        <div class="modal-footer">
-            <button class="btn" type="button" onclick="closeExportModal()">否</button>
-            <button class="btn btn-primary" type="button" onclick="confirmExport()">是</button>
-        </div>
-    </div>
-</div>
+
 
 </body>
 </html>

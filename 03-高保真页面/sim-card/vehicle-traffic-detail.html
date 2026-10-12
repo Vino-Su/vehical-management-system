@@ -116,6 +116,7 @@
   </div>
 </div>
 <script src="../components/common.js"></script>
+<script src="../components/export-component.js"></script>
 <script src="../components/pagination-component.js"></script>
 <script src="../components/fixed-table.js"></script>
 <script>
@@ -188,7 +189,12 @@ function queryTraffic(){const rows=buildTrafficRows();if(rows===null){Common.sho
 function changePageSize(){pageSize=Number(document.getElementById('page-size').value);page=1;renderTable()}
 function toggleRow(rowId,checked){checked?selectedRows.add(rowId):selectedRows.delete(rowId);renderTable()}
 function toggleCurrentPage(checked){trafficRows.slice((page-1)*pageSize,page*pageSize).forEach(row=>checked?selectedRows.add(row.rowId):selectedRows.delete(row.rowId));renderTable()}
-function exportTraffic(){if(!activeVehicle||!trafficRows.length){Common.showToast('暂无可导出的流量明细','warning');return}if(selectedRows.size){Common.showToast(`已导出选中的 ${selectedRows.size} 条车辆流量明细（原型演示）`,'success');return}Common.confirm({title:'导出确认',content:`当前未选择明细，将导出车辆 ${activeVehicle.vin} 在当前时间范围内的全部 ${trafficRows.length} 条汇总数据，是否继续？`,okText:'确认导出',onOk:()=>Common.showToast('已生成车辆流量明细导出文件（原型演示）','success')})}
+function exportTraffic(){
+  ListExport.run({rows:trafficRows,selectedIds:selectedRows,currentPage:page,pageSize,getId:row=>row.rowId,
+    onExport:(rows,scope)=>Common.showToast(scope.selected
+      ? `已导出选中的 ${rows.length} 条车辆流量明细（原型演示）`
+      : '已生成车辆流量明细导出文件（原型演示）','success')});
+}
 document.getElementById('filter-vin').addEventListener('keydown',event=>{if(event.key==='Enter')searchVehicles()});document.getElementById('filter-plate').addEventListener('keydown',event=>{if(event.key==='Enter')searchVehicles()});ensureActiveVehicle();setDefaultDates();renderGroups();renderDetail();
 </script>
 </body>

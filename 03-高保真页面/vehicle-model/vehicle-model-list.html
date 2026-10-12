@@ -236,22 +236,7 @@
 </div>
 
 <!-- 导出确认弹窗（公共弹窗结构，默认隐藏，由 Common.openModal 添加 .active 显示；点击遮罩/ESC 可关闭） -->
-<div class="modal-overlay" id="exportModal">
-    <div class="modal-box confirm-box">
-        <div class="modal-header">
-            <h3>提示</h3>
-            <button class="modal-close" type="button" onclick="closeExportModal()">&times;</button>
-        </div>
-        <div class="confirm-body">
-            <span class="confirm-icon">⚠</span>
-            <span class="confirm-text" id="exportTip">是否导出所有数据？</span>
-        </div>
-        <div class="modal-footer">
-            <button class="btn" onclick="closeExportModal()">否</button>
-            <button class="btn btn-primary" onclick="confirmExport()">是</button>
-        </div>
-    </div>
-</div>
+
 
 <!--
   删除确认：取消原 deleteModal 自实现，改用 Common.confirm 统一表达（含引用校验提示与删除二次确认）。
@@ -259,6 +244,7 @@
 -->
 
 <script src="../components/common.js"></script>
+<script src="../components/export-component.js"></script>
 <script src="../components/pagination-component.js"></script>
 <script src="../components/filter-component.js"></script>
 <script>
@@ -632,21 +618,19 @@ function changePageSize() {
 
 // ===== 导出：选中则导出选中数据，未选中则弹窗确认全量导出 =====
 function doExport() {
-    if (selectedVersionIds.size > 0) {
-        Common.showToast('导出成功：已导出选中的 ' + selectedVersionIds.size + ' 条数据', 'success');
-    } else {
-        Common.openModal('exportModal');
-    }
+    const models = sortModelsDesc(filteredModels);
+    ListExport.run({
+        rows: models.flatMap(model => model.versions), selectedIds: selectedVersionIds,
+        pageRows: models.slice((currentPage - 1) * pageSize, currentPage * pageSize).flatMap(model => model.versions),
+        onExport: (rows, scope) => Common.showToast(scope.selected
+            ? '导出成功：已导出选中的 ' + rows.length + ' 条数据'
+            : '导出成功：已导出当前筛选条件下的所有数据（共 ' + models.length + ' 条）', 'success')
+    });
 }
 
-function closeExportModal() {
-    Common.closeModal('exportModal');
-}
 
-function confirmExport() {
-    closeExportModal();
-    Common.showToast('导出成功：已导出当前筛选条件下的所有数据（共 ' + filteredModels.length + ' 条）', 'success');
-}
+
+
 
 // ===== 删除：先校验引用关系，再二次确认（统一使用 Common.confirm，取消页面内 deleteModal 自实现） =====
 function openDeleteModal(vid) {

@@ -334,21 +334,9 @@ function downloadRecords(records, scopeText) {
 }
 
 function exportFaults() {
-    if (selectedIds.size) {
-        const selected = faultRecords.filter(function (item) { return selectedIds.has(item.id); });
-        downloadRecords(selected, '选中数据');
-        return;
-    }
-    if (!filteredRecords.length) {
-        Common.showToast('当前查询结果为空，暂无可导出数据', 'warning');
-        return;
-    }
-    Common.confirm({
-        title: '导出确认',
-        content: '当前未勾选记录，将导出查询条件下的全部 <strong>' + filteredRecords.length + '</strong> 条故障数据，是否继续？',
-        okText: '确认导出',
-        cancelText: '取消',
-        onOk: function () { downloadRecords(filteredRecords, '当前查询结果'); }
+    ListExport.run({
+        rows: filteredRecords, selectedIds, currentPage, pageSize,
+        onExport: (rows, scope) => downloadRecords(rows, scope.selected ? '选中数据' : '当前查询结果')
     });
 }
 
