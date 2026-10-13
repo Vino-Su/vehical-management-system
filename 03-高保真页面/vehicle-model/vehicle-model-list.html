@@ -6,16 +6,14 @@
     <title>车型管理 - 列表页</title>
     <!--
       页面用途：车型管理列表页，以「可折叠行」展示车型（外层行）与其版本（内层行）
-                核心功能：查询/重置（默认 4 个条件，可展开全部 11 个）、新建车型、车型/版本编辑删除、选中导出/全量导出、分页
+                核心功能：查询/重置（默认 4 个条件，可展开全部 11 个）、新建车型、车型/版本编辑删除、分页
       操作列：车型级操作（车型详情/编辑车型/新建版本/删除车型）位于外层车型行最右侧「操作」列；
               版本级操作（版本详情/编辑版本/新建版本/删除版本）保留在内层版本表最右侧「操作」列，两级操作互不混用；
               两级操作文案统一采用「带层级后缀」口径（对齐 PRD 3.1.4），内外操作列同宽 280px
       查询区收起/展开：复用公共组件 components/filter-component.js（legacy 自动绑定，data-visible-count="4"）
-      交互逻辑：点击车型行展开/收起版本行；版本行复选用于导出，PRD 明确「不支持跨页导出」，
-                故翻页、切换每页条数、重新查询/重置时清空选中集；删除前校验「该车型版本的关联车辆数」
+      交互逻辑：点击车型行展开/收起版本行；删除前校验「该车型版本的关联车辆数」
                 （版本删除唯一校验项，>0 阻断并提示台数 + 「查看车辆」跳转车辆资产列表带参筛选）；
                 车型删除唯一校验项为「是否仍存在版本」，不做车辆引用校验（引用锚定在版本维度）；
-                导出确认弹窗使用公共 .modal-overlay + Common.openModal/closeModal 控制显隐（默认隐藏，靠 .active 显示）；
                 删除确认（含引用校验提示）统一改用 Common.confirm，公共层负责遮罩 + ESC + 危险按钮高亮
     -->
     <link rel="stylesheet" href="../components/common.css">
@@ -60,7 +58,7 @@
         /* 「展开更多/收起」按钮样式由 filter-component.js 自动注入（.filter-more-toggle），此处不再自定义 */
 
         /* ========== 操作栏：布局复用 common.css .action-bar（gap 8px / margin-bottom 16px / flex-wrap） ========== */
-        /* 操作按钮统一左对齐（新建车型 / 导出），不使用 .push-right 右推 */
+        /* 操作按钮统一左对齐（新建车型），不使用 .push-right 右推 */
         /* 表头对齐：common.css 中 .table-wrapper thead th 的 text-align:left 优先级更高，此处补齐 col-center/col-right */
         .table-wrapper thead th.col-center { text-align: center; }
         .table-wrapper thead th.col-right { text-align: right; }
@@ -201,10 +199,9 @@
                 <!-- 操作栏 -->
                 <div class="action-bar">
                     <button class="btn btn-primary" onclick="window.location.href='./vehicle-model-add.html'">新建车型</button>
-                    <button class="btn" onclick="doExport()">导出</button>
                 </div>
 
-                <!-- 数据列表：外层车型行 + 内层版本行（对齐规则：文本左对齐 / 编码、时间居中 / 操作、复选框居中） -->
+                <!-- 数据列表：外层车型行 + 内层版本行（对齐规则：文本左对齐 / 编码、时间居中 / 操作居中） -->
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -245,16 +242,12 @@
     </div>
 </div>
 
-<!-- 导出确认弹窗（公共弹窗结构，默认隐藏，由 Common.openModal 添加 .active 显示；点击遮罩/ESC 可关闭） -->
-
-
 <!--
   删除确认：取消原 deleteModal 自实现，改用 Common.confirm 统一表达（含引用校验提示与删除二次确认）。
   公共层 Common.confirm 默认注入遮罩 + ESC 关闭 + 危险按钮高亮，行为与自实现一致，无需在页面内重复定义。
 -->
 
 <script src="../components/common.js"></script>
-<script src="../components/export-component.js"></script>
 <script src="../components/pagination-component.js"></script>
 <script src="../components/filter-component.js"></script>
 <script src="../components/vehicle-model-store.js"></script>
@@ -422,7 +415,6 @@ ModelStore.all().forEach(model => {
 
 let currentPage = 1, pageSize = 10;
 let filteredModels = ModelStore.all();
-let selectedVersionIds = new Set();
 
 // 引用校验数据源：统一走 ModelStore.referencedVehicleCount(modelName, version)（PRD 3.6.2 / 4.3）
 // 口径：实时引用，引用锚定在「车型版本」维度；车型删除只校验版本数量，不做车辆引用校验
@@ -435,11 +427,6 @@ function referencedVehiclesUrl(modelName, version) {
 }
 function gotoReferencedVehicles(modelName, version) {
     location.href = referencedVehiclesUrl(modelName, version);
-}
-
-// 清空版本行选中集：PRD 3.7.2「不支持跨页导出」，翻页/切换条数/重新查询时清空
-function clearSelection() {
-    selectedVersionIds.clear();
 }
 
 // 车型行按创建时间由近到远倒序（PRD 3.1.4，统一在渲染时排序）
@@ -499,7 +486,6 @@ function renderTable() {
                     <table class="version-table">
                         <thead>
                             <tr>
-                                <th class="col-center" style="width:50px"><input type="checkbox" onchange="toggleVersionCheckAll(${model.id},this)"></th>
                                 <th class="col-center" style="width:140px">车型版本</th>
                                 <th class="col-center" style="width:160px">车辆型号</th>
                                 <th class="col-center" style="width:160px">整车厂商</th>
@@ -512,9 +498,7 @@ function renderTable() {
                         </thead>
                         <tbody>
                             ${(model.versions || []).map(v => {
-                                const ck = selectedVersionIds.has(v.id) ? 'checked' : '';
                                 return `<tr>
-                                    <td class="col-center"><input type="checkbox" data-vid="${v.id}" ${ck} onchange="toggleVersionCheck(${v.id},this)"></td>
                                     <td class="col-center">${v.version}</td>
                                     <td class="col-center ellipsis" title="${v.vehicle_model}">${v.vehicle_model}</td>
                                     <td class="col-center ellipsis cell-mfr" title="${v.manufacturer}">${v.manufacturer}</td>
@@ -550,7 +534,6 @@ function renderTable() {
         pageInfoId: 'pageInfo',
         onPageChange: (p) => {
             currentPage = p;
-            clearSelection();  // 翻页清空选中：PRD 不支持跨页导出
             renderTable();
         }
     });
@@ -568,23 +551,6 @@ function toggleModelExpand(modelId) {
         wrap.classList.add('show');
         row.classList.add('expanded');
     }
-}
-
-function toggleVersionCheck(vid, cb) {
-    if (cb.checked) selectedVersionIds.add(vid);
-    else selectedVersionIds.delete(vid);
-}
-
-function toggleVersionCheckAll(modelId, cb) {
-    const wrap = document.getElementById('versions-' + modelId);
-    if (!wrap) return;
-    const checks = wrap.querySelectorAll('input[type="checkbox"][data-vid]');
-    checks.forEach(c => {
-        c.checked = cb.checked;
-        const vid = parseInt(c.dataset.vid);
-        if (cb.checked) selectedVersionIds.add(vid);
-        else selectedVersionIds.delete(vid);
-    });
 }
 
 /* 查询条件的「展开更多/收起」由 components/filter-component.js 统一接管（legacy 自动绑定模式），
@@ -625,7 +591,6 @@ function doSearch() {
         return true;
     });
     currentPage = 1;
-    clearSelection();  // 重新查询清空选中：PRD 不支持跨页导出
     renderTable();
 }
 
@@ -644,32 +609,14 @@ function doReset() {
     document.getElementById('s_create_end').value = '';
     filteredModels = ModelStore.all();
     currentPage = 1;
-    clearSelection();
     renderTable();
 }
 
 function changePageSize() {
     pageSize = parseInt(document.getElementById('pageSizeSelect').value);
     currentPage = 1;
-    clearSelection();  // 切换每页条数清空选中：PRD 不支持跨页导出
     renderTable();
 }
-
-// ===== 导出：选中则导出选中数据，未选中则弹窗确认全量导出 =====
-function doExport() {
-    const models = sortModelsDesc(filteredModels);
-    ListExport.run({
-        rows: models.flatMap(model => model.versions || []), selectedIds: selectedVersionIds,
-        pageRows: models.slice((currentPage - 1) * pageSize, currentPage * pageSize).flatMap(model => model.versions || []),
-        onExport: (rows, scope) => Common.showToast(scope.selected
-            ? '导出成功：已导出选中的 ' + rows.length + ' 条数据'
-            : '导出成功：已导出当前筛选条件下的所有数据（共 ' + models.length + ' 条）', 'success')
-    });
-}
-
-
-
-
 
 // ===== 删除：先校验引用关系，再二次确认（统一使用 Common.confirm，取消页面内 deleteModal 自实现） =====
 function openDeleteModal(vid) {
