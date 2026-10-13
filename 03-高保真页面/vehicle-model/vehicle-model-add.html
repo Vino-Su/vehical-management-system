@@ -31,6 +31,25 @@
         .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-primary); cursor: pointer; }
         /* 单选按钮需还原为控件自身尺寸，避免被 .form-row .control 内 32px 控件规则拉伸 */
         .radio-group input[type="radio"] { accent-color: var(--primary); height: auto; width: auto; padding: 0; }
+        .optional-version-tip { color: var(--text-secondary); font-size: 13px; margin: -8px 0 16px 132px; }
+        /* ===== 「添加首个版本」开关：AntD 虚线按钮口径（规范一.1「1:1 对齐 Ant Design」）
+           32px 高 / padding 0 16px / 1px 虚线边框 / 白底 / 默认文字色，hover 边框与文字变主色
+           必须显式重置原生按钮外观（common.css Reset 只清了 margin/padding 与字体，未重置 background/border/appearance） ===== */
+        .version-toggle {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            height: 32px; padding: 0 16px; margin: 0 0 24px 132px;
+            font-size: 14px; line-height: 22px; white-space: nowrap;
+            color: var(--text-primary);
+            background: var(--bg-container);
+            border: 1px dashed var(--border-input);
+            border-radius: var(--radius);
+            cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+            transition: all .2s;
+        }
+        .version-toggle:hover { color: var(--primary); border-color: var(--primary); }
+        .version-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        #versionBlock[hidden] { display: none; }
 
         /* ===== 底部固定操作栏复用 form.css .footer-bar，页面内不再重复定义 ===== */
     </style>
@@ -113,6 +132,10 @@
                         </div>
                     </div>
 
+                    <div class="optional-version-tip">版本信息为可选项。暂未拿到完整参数时，可先保存车型，稍后从列表补充版本。</div>
+                    <button type="button" class="version-toggle" id="versionToggle" onclick="toggleVersionBlock()">＋ 添加首个版本（可选）</button>
+
+                    <div id="versionBlock" hidden>
                     <!-- 版本信息 -->
                     <div class="form-section">
                         <div class="section-title">版本信息</div>
@@ -224,6 +247,7 @@
                             </div>
                         </div>
                     </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -237,6 +261,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/vehicle-model-store.js"></script>
 <script>
 Common.initLayout({
     basePath: '../',
@@ -285,6 +310,21 @@ function clearAllFieldErrors() {
     document.querySelectorAll('#addForm .form-row.has-error').forEach(clearFieldError);
 }
 
+function toggleVersionBlock() {
+    const block = document.getElementById('versionBlock');
+    const toggle = document.getElementById('versionToggle');
+    const expanded = block.hidden;
+    block.hidden = !expanded;
+    toggle.textContent = expanded ? '− 移除首个版本信息' : '＋ 添加首个版本（可选）';
+    if (!expanded) {
+        ['f_version','f_vehicle_model','f_power_type','f_emission_std','f_chassis_mfr','f_manufacturer'].forEach(id => {
+            const el = document.getElementById(id);
+            el.value = '';
+            clearFieldError(el.closest('.form-row'));
+        });
+    }
+}
+
 function showFieldError(el, msg) {
     const row = el.closest('.form-row');
     if (!row) return;
@@ -304,12 +344,10 @@ document.querySelectorAll('#addForm .form-row .control').forEach(ctrl => {
 
 function doSave() {
     clearAllFieldErrors();
-    // 必填校验
-    const reqIds = [
-        'f_model_name','f_model_alias','f_vehicle_category',
-        'f_version','f_vehicle_model','f_power_type','f_emission_std',
-        'f_chassis_mfr','f_manufacturer','f_header_code'
-    ];
+    const reqIds = ['f_model_name','f_model_alias','f_vehicle_category','f_header_code'];
+    if (!document.getElementById('versionBlock').hidden) {
+        reqIds.push('f_version','f_vehicle_model','f_power_type','f_emission_std','f_chassis_mfr','f_manufacturer');
+    }
     for (const id of reqIds) {
         const el = document.getElementById(id);
         if (!el.value.trim()) {
@@ -320,11 +358,80 @@ function doSave() {
             return;
         }
     }
-    Common.showToast('保存成功', 'success');
+    const models = ModelStore.all();
+    const modelName = document.getElementById('f_model_name').value.trim();
+    const modelNameEn = document.getElementById('f_model_name_en').value.trim();
+    const modelCode = document.getElementById('f_model_code').value.trim();
+    if (models.some(model => model.model_name === modelName)) {
+        showFieldError(document.getElementById('f_model_name'), '车型名称（中）已存在，请更换');
+        Common.showToast('车型名称（中）已存在', 'error');
+        return;
+    }
+    if (modelNameEn && models.some(model => model.model_name_en === modelNameEn)) {
+        showFieldError(document.getElementById('f_model_name_en'), '车型名称（英）已存在，请更换');
+        Common.showToast('车型名称（英）已存在', 'error');
+        return;
+    }
+    if (modelCode && models.some(model => model.model_code === modelCode)) {
+        showFieldError(document.getElementById('f_model_code'), '车型编码已存在，请更换');
+        Common.showToast('车型编码已存在', 'error');
+        return;
+    }
+    const modelId = ModelStore.nextId();
+    const model = {
+        id: modelId,
+        model_name: modelName,
+        model_name_en: modelNameEn,
+        model_alias: document.getElementById('f_model_alias').value,
+        model_code: modelCode,
+        model_source: document.querySelector('input[name="model_source"]:checked').value,
+        header_code: document.getElementById('f_header_code').value,
+        vehicle_category: document.getElementById('f_vehicle_category').value,
+        creator: '当前用户',
+        create_time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        versions: []
+    };
+    if (!document.getElementById('versionBlock').hidden) {
+        const versionId = modelId + 1;
+        const version = {
+            id: versionId,
+            version: document.getElementById('f_version').value.trim(),
+            vehicle_model: document.getElementById('f_vehicle_model').value.trim(),
+            old_model_code: document.getElementById('f_old_model_code').value.trim(),
+            power_type: document.getElementById('f_power_type').value,
+            emission_std: document.getElementById('f_emission_std').value,
+            chassis_mfr: document.getElementById('f_chassis_mfr').value.trim(),
+            chassis_model: document.getElementById('f_chassis_model').value.trim(),
+            manufacturer: document.getElementById('f_manufacturer').value.trim(),
+            max_weight: document.getElementById('f_max_weight').value,
+            curb_weight: document.getElementById('f_curb_weight').value,
+            load_class: document.getElementById('f_load_class').value,
+            main_eng_mfr: document.getElementById('f_main_eng_mfr').value.trim(),
+            main_eng_model: document.getElementById('f_main_eng_model').value.trim(),
+            peak_power: document.getElementById('f_peak_power').value,
+            battery_spec: document.getElementById('f_battery_spec').value.trim(),
+            max_sweep_width: document.getElementById('f_max_sweep').value,
+            max_wash_width: document.getElementById('f_max_wash').value,
+            remark: document.getElementById('f_remark').value.trim(),
+            creator: '当前用户',
+            create_time: model.create_time,
+            updater: '当前用户',
+            update_time: model.create_time
+        };
+        if (models.some(item => (item.versions || []).some(itemVersion => itemVersion.version === version.version && item.id === model.id))) {
+            showFieldError(document.getElementById('f_version'), '该车型下版本号已存在，请更换');
+            return;
+        }
+        model.versions.push(version);
+    }
+    ModelStore.createModel(model);
+    Common.showToast(model.versions.length ? '车型及首个版本创建成功' : '车型创建成功，可稍后补充版本', 'success');
     setTimeout(() => {
         window.location.href = './vehicle-model-list.html';
     }, 800);
 }
+
+ModelStore.init([]);
 </script>
 </body>
 </html>

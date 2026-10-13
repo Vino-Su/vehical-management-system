@@ -6,7 +6,11 @@
     <title>车型管理 - 列表页</title>
     <!--
       页面用途：车型管理列表页，以「可折叠行」展示车型（外层行）与其版本（内层行）
-      核心功能：查询/重置（默认 4 个条件，可展开全部 11 个）、新建、选中导出/全量导出、分页、版本行详情/编辑/新建版本/删除
+                核心功能：查询/重置（默认 4 个条件，可展开全部 11 个）、新建车型、车型/版本编辑删除、选中导出/全量导出、分页
+      操作列：车型级操作（车型详情/编辑车型/新建版本/删除车型）位于外层车型行最右侧「操作」列；
+              版本级操作（版本详情/编辑版本/新建版本/删除版本）保留在内层版本表最右侧「操作」列，两级操作互不混用；
+              两级操作文案统一采用「带层级后缀」口径（对齐 PRD 3.1.4），内外操作列同宽 280px
+      查询区收起/展开：复用公共组件 components/filter-component.js（legacy 自动绑定，data-visible-count="4"）
       交互逻辑：点击车型行展开/收起版本行；版本行复选用于导出，PRD 明确「不支持跨页导出」，
                 故翻页、切换每页条数、重新查询/重置时清空选中集；删除前校验「该版本是否已被车辆引用」；
                 导出确认弹窗使用公共 .modal-overlay + Common.openModal/closeModal 控制显隐（默认隐藏，靠 .active 显示）；
@@ -28,12 +32,13 @@
             align-items: flex-end;
             gap: 16px;
         }
+        /* 展开更多/收起由 components/filter-component.js 接管：默认 flex 显示，
+           超出 data-visible-count 的条件由组件内联 display:none 收起 */
         .search-item {
-            display: none;
+            display: flex;
             align-items: center;
             gap: 8px;
         }
-        .search-item.visible { display: flex; }
         .search-item label {
             font-size: 14px; color: var(--text-secondary); white-space: nowrap;
         }
@@ -50,20 +55,14 @@
         .search-actions {
             display: flex; align-items: center; gap: 8px; margin-left: auto;
         }
-        .toggle-expand {
-            color: var(--primary); font-size: 14px; cursor: pointer;
-            user-select: none; display: flex; align-items: center; gap: 4px;
-        }
-        .toggle-expand:hover { color: var(--primary-hover); }
-        .toggle-expand .arrow { transition: transform .3s; font-size: 12px; }
-        .toggle-expand.expanded .arrow { transform: rotate(180deg); }
+        /* 「展开更多/收起」按钮样式由 filter-component.js 自动注入（.filter-more-toggle），此处不再自定义 */
 
         /* ========== 操作栏：布局复用 common.css .action-bar（gap 8px / margin-bottom 16px / flex-wrap） ========== */
-        /* 右对齐按钮：common.css 中 .action-bar .btn + .btn 的 margin-left:0 优先级更高，此处补齐 .push-right */
-        .action-bar .btn.push-right { margin-left: auto; }
+        /* 操作按钮统一左对齐（新建车型 / 导出），不使用 .push-right 右推 */
         /* 表头对齐：common.css 中 .table-wrapper thead th 的 text-align:left 优先级更高，此处补齐 col-center/col-right */
         .table-wrapper thead th.col-center { text-align: center; }
         .table-wrapper thead th.col-right { text-align: right; }
+        .table-wrapper > table { table-layout: fixed; min-width: 1490px; }
 
         /* ========== 可折叠行表格 ========== */
         .model-row { cursor: pointer; }
@@ -80,23 +79,30 @@
         /* 版本行容器 */
         .version-wrap { display: none; background: #fafbfc; }
         .version-wrap.show { display: table-row; }
-        .version-wrap > td { padding: 0; border-bottom: none; }
-        .version-inner { padding: 12px 24px 16px 60px; }
+        /* 提高选择器权重（.table-wrapper tbody td 会以 (0,1,2) 覆盖 .version-wrap > td 的 (0,1,1)）：
+           版本行整行单元格需去掉内边距，由 .version-inner 统一控制间距 */
+        .table-wrapper tbody .version-wrap > td { padding: 0; border-bottom: none; }
+        /* 版本子表与外层车型表同宽：去掉左右缩进，使内外表格左右边缘齐平 */
+        .version-inner { padding: 12px 0 16px; }
+        .empty-version-state { padding: 18px 20px; border: 1px dashed var(--border-color); background: #fff; color: var(--text-secondary); font-size: 14px; }
+        .empty-version-state .action-link { margin-left: 12px; }
+        .version-scroll { overflow-x: auto; }
         .version-table {
-            width: 100%; border-collapse: collapse;
+            /* min-width 与外层车型表一致（1490px），保证内外表格同宽、无内层横向滚动条 */
+            width: 100%; min-width: 1490px; table-layout: fixed; border-collapse: collapse;
             border: 1px solid var(--border-color); border-radius: var(--radius);
         }
         /* 内层版本表沿用规范行高 48px / 内边距 16px / 字号 14px（规范二.3） */
         .version-table thead th {
             background: #fafafa; color: var(--text-primary); font-weight: 600;
             font-size: 14px; height: var(--table-row-height); padding: 0 var(--table-cell-padding);
-            border-bottom: 1px solid var(--border-color); white-space: nowrap;
+            border-bottom: 1px solid var(--border-color); white-space: nowrap; text-align: center;
         }
         .version-table tbody td {
             color: var(--text-primary); font-size: 14px;
             height: var(--table-row-height); padding: 0 var(--table-cell-padding);
             border-bottom: 1px solid var(--border-color);
-            background: var(--bg-container);
+            background: var(--bg-container); white-space: nowrap; text-align: center;
         }
         .version-table tbody tr:last-child td { border-bottom: none; }
         .version-table tbody tr:hover td { background: var(--bg-hover); }
@@ -121,61 +127,62 @@
         <div class="content">
             <div class="page-container">
                 <!-- 查询筛选区 -->
-                <div class="search-bar">
+                <!-- 查询筛选区：默认展示 4 个条件，其余收起；展开/收起由 components/filter-component.js 自动接管 -->
+                <div class="search-bar" data-visible-count="4">
                     <div class="search-row" id="searchRow">
-                        <div class="search-item visible" data-idx="0">
+                        <div class="search-item" data-idx="0">
                             <label>车型名称（中）</label>
                             <input type="text" id="s_model_name" placeholder="请输入车型名称">
                         </div>
-                        <div class="search-item visible" data-idx="1">
+                        <div class="search-item" data-idx="1">
                             <label>车型名称（英）</label>
                             <input type="text" id="s_model_name_en" placeholder="请输入英文名称">
                         </div>
-                        <div class="search-item visible" data-idx="2">
+                        <div class="search-item" data-idx="2">
                             <label>车型版本</label>
                             <input type="text" id="s_model_version" placeholder="请输入版本号">
                         </div>
-                        <div class="search-item visible" data-idx="3">
+                        <div class="search-item" data-idx="3">
                             <label>车型别名</label>
                             <select id="s_model_alias">
                                 <option value="">请选择</option>
                                 <option>扫路车</option><option>运输车</option><option>小型清洗机</option><option>小型扫路机</option><option>皮卡</option>
                             </select>
                         </div>
-                        <div class="search-item" data-idx="4">
+                        <div class="search-item" data-idx="4" style="display:none">
                             <label>车型编码</label>
                             <input type="text" id="s_model_code" placeholder="请输入车型编码">
                         </div>
-                        <div class="search-item" data-idx="5">
+                        <div class="search-item" data-idx="5" style="display:none">
                             <label>车型来源</label>
                             <select id="s_model_source">
                                 <option value="">请选择</option>
                                 <option>自研</option><option>非自研</option>
                             </select>
                         </div>
-                        <div class="search-item" data-idx="6">
+                        <div class="search-item" data-idx="6" style="display:none">
                             <label>动力类别</label>
                             <select id="s_power_type">
                                 <option value="">请选择</option>
                                 <option>纯电动</option><option>柴油</option><option>汽油</option><option>混动</option><option>天然气</option>
                             </select>
                         </div>
-                        <div class="search-item" data-idx="7">
+                        <div class="search-item" data-idx="7" style="display:none">
                             <label>排放标准</label>
                             <select id="s_emission_std">
                                 <option value="">请选择</option>
                                 <option>国三</option><option>国四</option><option>国五</option><option>国六</option><option>纯电动</option><option>非道路移动机械</option>
                             </select>
                         </div>
-                        <div class="search-item" data-idx="8">
+                        <div class="search-item" data-idx="8" style="display:none">
                             <label>整车厂商</label>
                             <input type="text" id="s_manufacturer" placeholder="请输入整车厂商">
                         </div>
-                        <div class="search-item" data-idx="9">
+                        <div class="search-item" data-idx="9" style="display:none">
                             <label>创建人</label>
                             <input type="text" id="s_creator" placeholder="请输入创建人">
                         </div>
-                        <div class="search-item" data-idx="10">
+                        <div class="search-item" data-idx="10" style="display:none">
                             <label>创建时间</label>
                             <input type="date" id="s_create_start">
                             <span style="margin:0 4px;color:var(--text-disabled)">~</span>
@@ -184,15 +191,15 @@
                         <div class="search-actions">
                             <button class="btn btn-primary" onclick="doSearch()">查询</button>
                             <button class="btn" onclick="doReset()">重置</button>
-                            <span class="toggle-expand" id="toggleExpand" onclick="toggleExpand()">展开 <span class="arrow">▼</span></span>
+                            <!-- 「展开更多/收起」按钮由 filter-component.js 自动注入，无需手写 -->
                         </div>
                     </div>
                 </div>
 
                 <!-- 操作栏 -->
                 <div class="action-bar">
-                    <button class="btn btn-primary" onclick="window.location.href='./vehicle-model-add.html'">新建</button>
-                    <button class="btn push-right" onclick="doExport()">导出</button>
+                    <button class="btn btn-primary" onclick="window.location.href='./vehicle-model-add.html'">新建车型</button>
+                    <button class="btn" onclick="doExport()">导出</button>
                 </div>
 
                 <!-- 数据列表：外层车型行 + 内层版本行（对齐规则：文本左对齐 / 编码、时间居中 / 操作、复选框居中） -->
@@ -208,6 +215,7 @@
                                 <th class="col-left" style="width:120px">车型来源</th>
                                 <th class="col-left" style="width:120px">创建人</th>
                                 <th class="col-center" style="width:180px">创建时间</th>
+                                <th class="col-center" style="width:280px">操作</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
@@ -247,6 +255,7 @@
 <script src="../components/export-component.js"></script>
 <script src="../components/pagination-component.js"></script>
 <script src="../components/filter-component.js"></script>
+<script src="../components/vehicle-model-store.js"></script>
 <script>
 Common.initLayout({
     basePath: '../',
@@ -394,8 +403,23 @@ const mockModels = [
     },
 ];
 
+// 首期解耦：车型允许没有版本，版本是可选子数据；原型数据写入共享存储，支持跨页验证创建/编辑/删除。
+ModelStore.init(mockModels);
+// 版本审计字段：示例数据未单独提供更新信息时，沿用创建信息，确保列表始终有完整审计列。
+mockModels.forEach(model => model.versions.forEach(version => {
+    version.updater = version.updater || version.creator;
+    version.update_time = version.update_time || version.create_time;
+}));
+ModelStore.all().forEach(model => {
+    (model.versions || []).forEach(version => {
+        version.updater = version.updater || version.creator;
+        version.update_time = version.update_time || version.create_time;
+    });
+    ModelStore.updateModel(model);
+});
+
 let currentPage = 1, pageSize = 10;
-let filteredModels = [...mockModels];
+let filteredModels = ModelStore.all();
 let selectedVersionIds = new Set();
 
 // 已被车辆建档引用的版本（模拟数据）：PRD 4.2 删除前需校验引用关系
@@ -413,8 +437,8 @@ function sortModelsDesc(list) {
 
 // 依据版本 ID 反查车型与版本（用于删除确认文案）
 function findVersion(vid) {
-    for (const m of mockModels) {
-        const v = m.versions.find(x => x.id === vid);
+    for (const m of ModelStore.all()) {
+        const v = (m.versions || []).find(x => x.id === vid);
         if (v) return { model: m, version: v };
     }
     return null;
@@ -441,7 +465,14 @@ function renderTable() {
             <td class="col-left">${model.model_source}</td>
             <td class="col-left">${model.creator}</td>
             <td class="col-center">${model.create_time}</td>
+            <td class="col-center" onclick="event.stopPropagation()">
+                <a class="action-link" href="./vehicle-model-model-detail.html?modelId=${model.id}&mode=view">车型详情</a>
+                <a class="action-link" href="./vehicle-model-model-detail.html?modelId=${model.id}&mode=edit">编辑车型</a>
+                <a class="action-link" href="./vehicle-model-new-version.html?modelId=${model.id}">新建版本</a>
+                <a class="action-link danger" onclick="event.stopPropagation(); openModelDelete(${model.id})">删除车型</a>
+            </td>
         `;
+        modelRow.querySelector('td:first-child').innerHTML = `<span class="expand-icon">▶</span>`;
         tbody.appendChild(modelRow);
 
         // 版本行容器
@@ -449,40 +480,47 @@ function renderTable() {
         versionWrap.className = 'version-wrap';
         versionWrap.id = 'versions-' + model.id;
         versionWrap.innerHTML = `
-            <td colspan="8">
+            <td colspan="9">
                 <div class="version-inner">
+                    ${model.versions && model.versions.length ? '' : '<div class="empty-version-state">暂无版本。车型可以先建立，添加版本后才可用于车辆建档。<a class="action-link" href="./vehicle-model-new-version.html?modelId=' + model.id + '">立即新建版本</a></div>'}
+                    <div class="version-scroll">
                     <table class="version-table">
                         <thead>
                             <tr>
                                 <th class="col-center" style="width:50px"><input type="checkbox" onchange="toggleVersionCheckAll(${model.id},this)"></th>
                                 <th class="col-center" style="width:140px">车型版本</th>
-                                <th class="col-left" style="width:160px">车辆型号</th>
-                                <th class="col-left" style="width:120px">动力类别</th>
-                                <th class="col-left" style="width:140px">排放标准</th>
-                                <th class="col-left" style="width:160px">整车厂商</th>
-                                <th class="col-center" style="width:200px">操作</th>
+                                <th class="col-center" style="width:160px">车辆型号</th>
+                                <th class="col-center" style="width:160px">整车厂商</th>
+                                <th class="col-center" style="width:100px">创建人</th>
+                                <th class="col-center" style="width:180px">创建时间</th>
+                                <th class="col-center" style="width:100px">更新人</th>
+                                <th class="col-center" style="width:180px">更新时间</th>
+                                <th class="col-center" style="width:280px">操作</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${model.versions.map(v => {
+                            ${(model.versions || []).map(v => {
                                 const ck = selectedVersionIds.has(v.id) ? 'checked' : '';
                                 return `<tr>
                                     <td class="col-center"><input type="checkbox" data-vid="${v.id}" ${ck} onchange="toggleVersionCheck(${v.id},this)"></td>
                                     <td class="col-center">${v.version}</td>
-                                    <td class="col-left">${v.vehicle_model}</td>
-                                    <td class="col-left">${v.power_type}</td>
-                                    <td class="col-left">${v.emission_std}</td>
-                                    <td class="col-left ellipsis cell-mfr" title="${v.manufacturer}">${v.manufacturer}</td>
+                                    <td class="col-center ellipsis" title="${v.vehicle_model}">${v.vehicle_model}</td>
+                                    <td class="col-center ellipsis cell-mfr" title="${v.manufacturer}">${v.manufacturer}</td>
+                                    <td class="col-center">${v.creator || '—'}</td>
+                                    <td class="col-center">${v.create_time || '—'}</td>
+                                    <td class="col-center">${v.updater || '—'}</td>
+                                    <td class="col-center">${v.update_time || '—'}</td>
                                     <td class="col-center">
-                                        <a class="action-link" href="./vehicle-model-detail.html?id=${v.id}&modelId=${model.id}&mode=view">详情</a>
-                                        <a class="action-link" href="./vehicle-model-detail.html?id=${v.id}&modelId=${model.id}&mode=edit">编辑</a>
+                                        <a class="action-link" href="./vehicle-model-detail.html?id=${v.id}&modelId=${model.id}&mode=view">版本详情</a>
+                                        <a class="action-link" href="./vehicle-model-detail.html?id=${v.id}&modelId=${model.id}&mode=edit">编辑版本</a>
                                         <a class="action-link" href="./vehicle-model-new-version.html?modelId=${model.id}&baseVersionId=${v.id}">新建版本</a>
-                                        <a class="action-link danger" onclick="openDeleteModal(${v.id})">删除</a>
+                                        <a class="action-link danger" onclick="openDeleteModal(${v.id})">删除版本</a>
                                     </td>
                                 </tr>`;
                             }).join('')}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </td>
         `;
@@ -537,19 +575,8 @@ function toggleVersionCheckAll(modelId, cb) {
     });
 }
 
-function toggleExpand() {
-    const items = document.querySelectorAll('.search-item:not(.visible)');
-    const el = document.getElementById('toggleExpand');
-    const expanded = el.classList.contains('expanded');
-    items.forEach(it => it.classList.toggle('visible', !expanded));
-    if (expanded) {
-        el.classList.remove('expanded');
-        el.innerHTML = '展开 <span class="arrow">▼</span>';
-    } else {
-        el.classList.add('expanded');
-        el.innerHTML = '收起 <span class="arrow">▲</span>';
-    }
-}
+/* 查询条件的「展开更多/收起」由 components/filter-component.js 统一接管（legacy 自动绑定模式），
+   页面不再自建 toggleExpand()，避免与通用组件两份实现并存 */
 
 function doSearch() {
     const name = document.getElementById('s_model_name').value.trim();
@@ -565,7 +592,7 @@ function doSearch() {
     const d1 = document.getElementById('s_create_start').value;
     const d2 = document.getElementById('s_create_end').value;
 
-    filteredModels = mockModels.filter(m => {
+    filteredModels = ModelStore.all().filter(m => {
         if (name && !m.model_name.includes(name)) return false;
         if (nameEn && !m.model_name_en.includes(nameEn)) return false;
         if (alias && m.model_alias !== alias) return false;
@@ -603,7 +630,7 @@ function doReset() {
     document.getElementById('s_creator').value = '';
     document.getElementById('s_create_start').value = '';
     document.getElementById('s_create_end').value = '';
-    filteredModels = [...mockModels];
+    filteredModels = ModelStore.all();
     currentPage = 1;
     clearSelection();
     renderTable();
@@ -620,8 +647,8 @@ function changePageSize() {
 function doExport() {
     const models = sortModelsDesc(filteredModels);
     ListExport.run({
-        rows: models.flatMap(model => model.versions), selectedIds: selectedVersionIds,
-        pageRows: models.slice((currentPage - 1) * pageSize, currentPage * pageSize).flatMap(model => model.versions),
+        rows: models.flatMap(model => model.versions || []), selectedIds: selectedVersionIds,
+        pageRows: models.slice((currentPage - 1) * pageSize, currentPage * pageSize).flatMap(model => model.versions || []),
         onExport: (rows, scope) => Common.showToast(scope.selected
             ? '导出成功：已导出选中的 ' + rows.length + ' 条数据'
             : '导出成功：已导出当前筛选条件下的所有数据（共 ' + models.length + ' 条）', 'success')
@@ -656,7 +683,32 @@ function openDeleteModal(vid) {
         okText: '确定',
         cancelText: '取消',
         danger: true,
-        onOk: () => Common.showToast('删除成功', 'success')
+        onOk: () => {
+            ModelStore.deleteVersion(found.model.id, vid);
+            filteredModels = ModelStore.all();
+            renderTable();
+            Common.showToast('版本删除成功，车型仍保留', 'success');
+        }
+    });
+}
+
+function openModelDelete(modelId) {
+    const model = ModelStore.getModel(modelId);
+    if (!model) return;
+    if ((model.versions || []).length) {
+        Common.confirm({ title: '无法删除车型', content: '该车型仍有版本，请先删除或处理所属版本。删除最后一个版本后，车型仍可保留。', okText: '我知道了', cancelText: '关闭', onOk: () => {} });
+        return;
+    }
+    Common.confirm({
+        title: '删除车型确认',
+        content: '确定删除车型「' + model.model_name + '」吗？删除后不可恢复。',
+        okText: '确定', cancelText: '取消', danger: true,
+        onOk: () => {
+            ModelStore.deleteModel(modelId);
+            filteredModels = ModelStore.all();
+            renderTable();
+            Common.showToast('车型删除成功', 'success');
+        }
     });
 }
 

@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>新建车型版本</title>
     <!--
-      页面用途：以现有车型为基础新建版本（沿用车型信息，仅录入新版本数据）
+      页面用途：以现有车型为基础新建版本，入口语义分两类（PRD 3.5.2）
+                · 版本级入口（传 baseVersionId：列表版本行 / 版本详情页）→ 以该版本为模板复制版本参数与其他信息
+                · 车型级入口（不传 baseVersionId：列表车型行 / 无版本空状态 / 车型详情页）→ 仅继承车型信息，版本信息与参数留空
       核心功能：车型信息只读继承、版本信息与主要参数信息录入、备注填写、底部固定操作栏（取消 / 确定）
-      交互逻辑：进入页面自动填充继承字段；标签左置外置（公共 .form-row，标签 120px + 间距 12px）；
+      交互逻辑：进入页面按入口语义填充字段（不传 baseVersionId 时不做任何版本级兜底，禁止隐式沿用首个版本）；
+                标签左置外置（公共 .form-row，标签 120px + 间距 12px）；
                 提交时校验必填与版本号唯一性，失败在对应控件下方显示 .field-error 红字并高亮 .form-row.has-error
     -->
     <link rel="stylesheet" href="../components/common.css">
@@ -99,7 +102,7 @@
                         </div>
                     </div>
 
-                    <!-- 主要参数信息（继承但可修改） -->
+                    <!-- 主要参数信息（版本级入口复制模板参数，可修改；车型级入口留空待填） -->
                     <div class="form-section">
                         <div class="section-title">主要参数信息</div>
                         <div class="form-grid">
@@ -154,7 +157,7 @@
                         </div>
                     </div>
 
-                    <!-- 其他信息（继承但可修改） -->
+                    <!-- 其他信息（版本级入口复制模板备注，可修改；车型级入口留空待填） -->
                     <div class="form-section">
                         <div class="section-title">其他信息</div>
                         <div class="form-grid form-grid--full">
@@ -177,10 +180,13 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/vehicle-model-store.js"></script>
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 const modelId = parseInt(urlParams.get('modelId')) || 1;
-const baseVersionId = parseInt(urlParams.get('baseVersionId')) || 101;
+// 模板版本仅由显式传参决定：无 baseVersionId 即为车型级入口（参数留空），不做默认值兜底
+const rawBaseVersionId = urlParams.get('baseVersionId');
+const baseVersionId = rawBaseVersionId ? parseInt(rawBaseVersionId) : null;
 
 Common.initLayout({
     basePath: '../',
@@ -214,21 +220,26 @@ const mockModels = [
     }
 ];
 
+ModelStore.init(mockModels);
+
 function findData() {
-    for (const m of mockModels) {
-        if (m.id === modelId) {
-            const v = m.versions.find(x => x.id === baseVersionId) || m.versions[0];
-            return { model: m, version: v };
-        }
-    }
-    return { model: mockModels[0], version: mockModels[0].versions[0] };
+    const all = ModelStore.all().length ? ModelStore.all() : mockModels;
+    // 车型不存在时兜底首个车型，避免页面空白
+    const m = all.find(item => item.id === modelId) || all[0];
+    // 仅当显式传入 baseVersionId 且命中该车型下的版本时才作为模板；
+    // 车型级入口（未传 baseVersionId）不使用任何版本做模板，参数一律留空
+    const v = baseVersionId ? ((m.versions || []).find(x => x.id === baseVersionId) || null) : null;
+    return { model: m, version: v };
 }
 
 const { model, version } = findData();
 
 // 自动填充表单
+// src = 模板版本：版本级入口为传入 baseVersionId 对应的版本；车型级入口为空对象 → 版本信息与参数整体留空
 function fillForm() {
-    // 车型信息（只读）
+    const src = version || {};
+
+    // 车型信息（只读，两种入口均继承）
     document.getElementById('v_model_source').value = model.model_source;
     document.getElementById('v_model_name').value = model.model_name;
     document.getElementById('v_model_name_en').value = model.model_name_en || '';
@@ -237,29 +248,29 @@ function fillForm() {
     document.getElementById('v_model_code').value = model.model_code || '';
     document.getElementById('v_header_code').value = model.header_code;
 
-    // 版本信息（需重新填写，但填充原值供参考）
-    document.getElementById('v_vehicle_model').value = '';
+    // 版本信息（无论哪种入口，版本号与车辆型号均需重新填写）
     document.getElementById('v_version').value = '';
+    document.getElementById('v_vehicle_model').value = '';
     document.getElementById('v_old_model_code').value = '';
-    document.getElementById('v_power_type').value = version.power_type;
-    document.getElementById('v_emission_std').value = version.emission_std;
+    document.getElementById('v_power_type').value = src.power_type || '';
+    document.getElementById('v_emission_std').value = src.emission_std || '';
 
-    // 主要参数（继承但可修改）
-    document.getElementById('v_chassis_mfr').value = version.chassis_mfr;
-    document.getElementById('v_chassis_model').value = version.chassis_model || '';
-    document.getElementById('v_manufacturer').value = version.manufacturer;
-    document.getElementById('v_max_weight').value = version.max_weight || '';
-    document.getElementById('v_curb_weight').value = version.curb_weight || '';
-    document.getElementById('v_load_class').value = version.load_class || '';
-    document.getElementById('v_main_eng_mfr').value = version.main_eng_mfr || '';
-    document.getElementById('v_main_eng_model').value = version.main_eng_model || '';
-    document.getElementById('v_peak_power').value = version.peak_power || '';
-    document.getElementById('v_battery_spec').value = version.battery_spec || '';
-    document.getElementById('v_max_sweep').value = version.max_sweep_width || '';
-    document.getElementById('v_max_wash').value = version.max_wash_width || '';
+    // 主要参数（版本级入口复制模板参数，可修改；车型级入口留空）
+    document.getElementById('v_chassis_mfr').value = src.chassis_mfr || '';
+    document.getElementById('v_chassis_model').value = src.chassis_model || '';
+    document.getElementById('v_manufacturer').value = src.manufacturer || '';
+    document.getElementById('v_max_weight').value = src.max_weight || '';
+    document.getElementById('v_curb_weight').value = src.curb_weight || '';
+    document.getElementById('v_load_class').value = src.load_class || '';
+    document.getElementById('v_main_eng_mfr').value = src.main_eng_mfr || '';
+    document.getElementById('v_main_eng_model').value = src.main_eng_model || '';
+    document.getElementById('v_peak_power').value = src.peak_power || '';
+    document.getElementById('v_battery_spec').value = src.battery_spec || '';
+    document.getElementById('v_max_sweep').value = src.max_sweep_width || '';
+    document.getElementById('v_max_wash').value = src.max_wash_width || '';
 
-    // 其他信息
-    document.getElementById('v_remark').value = version.remark || '';
+    // 其他信息（同上）
+    document.getElementById('v_remark').value = src.remark || '';
 }
 
 function calcLoadClass() {
@@ -325,7 +336,7 @@ function doSave() {
 
     // 版本号唯一性校验（模拟）：同一车型下版本号不可重复（PRD 4.2）
     const newVer = document.getElementById('v_version').value.trim();
-    const existing = model.versions.find(v => v.version === newVer);
+    const existing = (model.versions || []).find(v => v.version === newVer);
     if (existing) {
         const verEl = document.getElementById('v_version');
         showFieldError(verEl, '该车型下已存在版本 ' + newVer + '，请更换版本号');
@@ -334,6 +345,30 @@ function doSave() {
         return;
     }
 
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    ModelStore.addVersion(model.id, {
+        id: ModelStore.nextId(),
+        version: newVer,
+        vehicle_model: document.getElementById('v_vehicle_model').value.trim(),
+        old_model_code: document.getElementById('v_old_model_code').value.trim(),
+        power_type: document.getElementById('v_power_type').value,
+        emission_std: document.getElementById('v_emission_std').value,
+        chassis_mfr: document.getElementById('v_chassis_mfr').value.trim(),
+        chassis_model: document.getElementById('v_chassis_model').value.trim(),
+        manufacturer: document.getElementById('v_manufacturer').value.trim(),
+        max_weight: document.getElementById('v_max_weight').value,
+        curb_weight: document.getElementById('v_curb_weight').value,
+        load_class: document.getElementById('v_load_class').value,
+        main_eng_mfr: document.getElementById('v_main_eng_mfr').value.trim(),
+        main_eng_model: document.getElementById('v_main_eng_model').value.trim(),
+        peak_power: document.getElementById('v_peak_power').value,
+        battery_spec: document.getElementById('v_battery_spec').value.trim(),
+        max_sweep_width: document.getElementById('v_max_sweep').value,
+        max_wash_width: document.getElementById('v_max_wash').value,
+        remark: document.getElementById('v_remark').value.trim(),
+        creator: '当前用户', create_time: now,
+        updater: '当前用户', update_time: now
+    });
     Common.showToast('保存成功：已创建新版本 ' + newVer, 'success');
     setTimeout(() => {
         window.location.href = './vehicle-model-list.html';

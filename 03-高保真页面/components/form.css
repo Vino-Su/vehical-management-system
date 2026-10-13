@@ -38,6 +38,9 @@
 .form-row--wide > .form-label { flex-basis: 160px; width: 160px; }
 
 /* 表单控件（规范二.3：高 32px、内边距 0 12px、圆角 6px） */
+/* input:not([type]) 兜底：未显式声明 type 的输入框同样是文本框，需命中本组基础样式
+   （修复：缺 type 时会退回浏览器原生 2px inset 立体边框与 0 圆角，与 AntD 规范不符） */
+.form-row .control input:not([type]),
 .form-row .control input[type="text"],
 .form-row .control input[type="number"],
 .form-row .control input[type="date"],

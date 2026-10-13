@@ -352,6 +352,7 @@
 </div>
 
 <script src="../components/common.js"></script>
+<script src="../components/vehicle-model-store.js"></script>
 <script src="../components/fixed-table.js"></script>
 <script>
 Common.initLayout({
@@ -522,6 +523,18 @@ const modelFieldMap = {
     f_chassis_mfr: 'chassis_mfr', f_chassis_no: 'chassis_model',
     f_eng_mfr: 'main_eng_mfr', f_eng_no: 'main_eng_model', f_eng_power: 'peak_power'
 };
+// 车型管理允许存在无版本车型；车辆建档只加载至少有一个版本的车型。
+const storedModelVersions = ModelStore.all().flatMap(model => (model.versions || []).map(version => ({
+    ...version, model_name: model.model_name, model_alias: model.model_alias,
+    vehicle_category: model.vehicle_category
+})));
+if (storedModelVersions.length) {
+    registerModels.splice(0, registerModels.length, ...storedModelVersions);
+    const modelSelect = document.getElementById('f_model_name');
+    const names = [...new Set(storedModelVersions.map(item => item.model_name))].sort();
+    modelSelect.replaceChildren(new Option('请选择', ''));
+    names.forEach(name => modelSelect.add(new Option(name, name)));
+}
 function getSelectedModelVersions() {
     return registerModels.filter(model => model.model_name === document.getElementById('f_model_name').value);
 }
