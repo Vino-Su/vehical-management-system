@@ -384,7 +384,8 @@ const Common = {
 
   /**
    * 规范化确认弹窗（替代原生 confirm）
-   * @param {Object} opts { title, content, okText, cancelText, danger, onOk }
+   * @param {Object} opts { title, content, okText, cancelText, danger, onOk, onCancel }
+   *   onCancel：可选，点击"取消"按钮时触发（右上角 × 仅关闭、不触发）
    */
   confirm(opts) {
     const o = Object.assign({ title: '提示', content: '', okText: '确定', cancelText: '取消', danger: false }, opts);
@@ -398,7 +399,7 @@ const Common = {
     wrap.innerHTML =
       '<div class="modal-box" style="width:420px">' +
         '<div class="modal-header"><h3>' + o.title + '</h3>' +
-          '<button class="modal-close" type="button" data-act="cancel">×</button></div>' +
+          '<button class="modal-close" type="button" data-act="close">×</button></div>' +
         '<div class="modal-body" style="display:flex;gap:12px;align-items:flex-start">' +
           '<span style="font-size:22px;color:var(--warning);line-height:1.2">⚠</span>' +
           '<div style="font-size:14px;line-height:22px;color:var(--text-primary)">' + o.content + '</div>' +
@@ -414,7 +415,8 @@ const Common = {
     wrap.addEventListener('click', e => {
       const act = e.target.getAttribute && e.target.getAttribute('data-act');
       if (act === 'ok') { close(); if (o.onOk) o.onOk(); }
-      else if (act === 'cancel') { close(); }
+      else if (act === 'cancel') { close(); if (o.onCancel) o.onCancel(); }
+      else if (act === 'close') { close(); }
     });
   },
 

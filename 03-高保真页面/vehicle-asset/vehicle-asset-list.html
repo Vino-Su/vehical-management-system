@@ -14,6 +14,9 @@
                 批量选择后的车辆分配弹窗、车辆状态变更弹窗、批量打标签弹窗、批量移出标签弹窗
       交互逻辑：列表默认按注册时间由近到远倒序；查询/重置回到第 1 页；删除走二次确认弹窗；
                 弹窗统一由 common.css 的 .modal-* 提供，支持点击遮罩与 ESC 关闭
+      跨模块入口：车型管理页「版本删除 → 查看车辆」带参进入（?modelName=…&modelVersion=…），
+                页面自动回填「车型名称（中）」「车型版本」并执行查询，筛出该车型版本关联的车辆；
+                「车型版本」下拉选项按本页实际数据去重生成，保证任意传入版本号均可选中生效
     -->
     <style>
         /* ========== 查询筛选区 ==========
@@ -432,17 +435,17 @@ Common.initLayout({
 // ===== 模拟数据（参考01-需求文档/示例数据参考.md） =====
 const mockData = [
     { id:1, vin:'LSVAU2A39EN000001', gbt_vin:'GB0000000001', model_name:'麒麟清扫车', model_version:'V1.0', iot_code:'14156', model_code:'QL-QJ01', plate_no:'京ADG090', old_model_code:'', vehicle_model:'BQ5160TXSBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'鸠江项目', register_time:'2025-03-15 10:30:00', alias:'01号车' },
-    { id:2, vin:'LSVAU2A39EN000002', gbt_vin:'GB0000000002', model_name:'爱瑞特纯电动高压冲洗车', model_version:'V2.0', iot_code:'11527', model_code:'ART-GY01', plate_no:'京ADG091', old_model_code:'', vehicle_model:'BQ5080GQX', asset_source:'外购', vehicle_status:'在库-正常使用', project:'椒北街道', register_time:'2025-03-15 10:35:00', alias:'02号车' },
+    { id:2, vin:'LSVAU2A39EN000002', gbt_vin:'GB0000000002', model_name:'爱瑞特纯电动高压冲洗车', model_version:'V1.0', iot_code:'11527', model_code:'ART-GY01', plate_no:'京ADG091', old_model_code:'', vehicle_model:'BQ5080GQX', asset_source:'外购', vehicle_status:'在库-正常使用', project:'椒北街道', register_time:'2025-03-15 10:35:00', alias:'02号车' },
     { id:3, vin:'LSVAU2A39EN000003', gbt_vin:'GB0000000003', model_name:'中联清洗车', model_version:'V1.0', iot_code:'14158', model_code:'ZL-QX01', plate_no:'浙JAR6538', old_model_code:'', vehicle_model:'BQ5080GQXBEV', asset_source:'外购', vehicle_status:'在库-闲置留用', project:'镜湖区项目', register_time:'2025-04-20 14:00:00', alias:'03号车' },
     { id:4, vin:'LSVAU2A39EN000004', gbt_vin:'GB0000000004', model_name:'泰坦智能驾驶洒水车', model_version:'V1.0', iot_code:'11530', model_code:'TT-SS01', plate_no:'京ADH066', old_model_code:'', vehicle_model:'BQ5160GSSEBEV', asset_source:'自研', vehicle_status:'待分配', project:'', register_time:'2025-05-10 09:20:00', alias:'04号车' },
-    { id:5, vin:'LSVAU2A39EN000005', gbt_vin:'GB0000000005', model_name:'三力洒水车', model_version:'V2.0', iot_code:'14159', model_code:'SL-SS01', plate_no:'浙JDB1062', old_model_code:'', vehicle_model:'BQ5160GSSEBEV', asset_source:'外购', vehicle_status:'在库-维修', project:'鸠江江北项目', register_time:'2025-06-01 16:45:00', alias:'05号车' },
+    { id:5, vin:'LSVAU2A39EN000005', gbt_vin:'GB0000000005', model_name:'三力洒水车', model_version:'V1.0', iot_code:'14159', model_code:'SL-SS01', plate_no:'浙JDB1062', old_model_code:'', vehicle_model:'BQ5160GSSEBEV', asset_source:'外购', vehicle_status:'在库-维修', project:'鸠江江北项目', register_time:'2025-06-01 16:45:00', alias:'05号车' },
     { id:6, vin:'LSVAU2A39EN000006', gbt_vin:'GB0000000006', model_name:'独角兽', model_version:'V1.0', iot_code:'11532', model_code:'DJS-ZN01', plate_no:'沪AAB124', old_model_code:'', vehicle_model:'BQ5070TSLBEV', asset_source:'自研', vehicle_status:'在库-正常使用', project:'嘉定研发', register_time:'2025-06-01 16:50:00', alias:'06号车' },
-    { id:7, vin:'LSVAU2A39EN000007', gbt_vin:'GB0000000007', model_name:'麒麟无人化扫地车', model_version:'V2.0', iot_code:'14160', model_code:'QL-WR01', plate_no:'京ADJ055', old_model_code:'', vehicle_model:'BQ5070TSLBEV', asset_source:'自研', vehicle_status:'在库-正常使用', project:'鸠江开发区项目', register_time:'2025-07-12 08:30:00', alias:'07号车' },
+    { id:7, vin:'LSVAU2A39EN000007', gbt_vin:'GB0000000007', model_name:'麒麟无人化扫地车', model_version:'V1.0', iot_code:'14160', model_code:'QL-WR01', plate_no:'京ADJ055', old_model_code:'', vehicle_model:'BQ5070TSLBEV', asset_source:'自研', vehicle_status:'在库-正常使用', project:'鸠江开发区项目', register_time:'2025-07-12 08:30:00', alias:'07号车' },
     { id:8, vin:'LSVAU2A39EN000008', gbt_vin:'GB0000000008', model_name:'长城多用途货车', model_version:'V1.0', iot_code:'11535', model_code:'CC-HY01', plate_no:'京ADJ056', old_model_code:'', vehicle_model:'BQ5080ZLJBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'陵水项目', register_time:'2025-08-22 11:15:00', alias:'08号车' },
     { id:9, vin:'LSVAU2A39EN000009', gbt_vin:'GB0000000009', model_name:'麒麟清扫车', model_version:'V1.0', iot_code:'14161', model_code:'QL-QJ01', plate_no:'粤AEE077', old_model_code:'', vehicle_model:'BQ5160TXSBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'鸠江项目', register_time:'2025-09-05 15:00:00', alias:'09号车' },
-    { id:10, vin:'LSVAU2A39EN000010', gbt_vin:'GB0000000010', model_name:'爱瑞特纯电动高压冲洗车', model_version:'V2.0', iot_code:'11538', model_code:'ART-GY01', plate_no:'粤AEE078', old_model_code:'', vehicle_model:'BQ5080GQX', asset_source:'外购', vehicle_status:'在库-闲置留用', project:'椒北街道', register_time:'2025-10-18 09:00:00', alias:'10号车' },
+    { id:10, vin:'LSVAU2A39EN000010', gbt_vin:'GB0000000010', model_name:'爱瑞特纯电动高压冲洗车', model_version:'V1.0', iot_code:'11538', model_code:'ART-GY01', plate_no:'粤AEE078', old_model_code:'', vehicle_model:'BQ5080GQX', asset_source:'外购', vehicle_status:'在库-闲置留用', project:'椒北街道', register_time:'2025-10-18 09:00:00', alias:'10号车' },
     { id:11, vin:'LSVAU2A39EN000011', gbt_vin:'GB0000000011', model_name:'中联清洗车', model_version:'V1.0', iot_code:'14162', model_code:'ZL-QX01', plate_no:'京ADK033', old_model_code:'', vehicle_model:'BQ5080GQXBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'镜湖区项目', register_time:'2025-11-01 14:20:00', alias:'11号车' },
-    { id:12, vin:'LSVAU2A39EN000012', gbt_vin:'GB0000000012', model_name:'三力洒水车', model_version:'V2.0', iot_code:'11540', model_code:'SL-SS01', plate_no:'京ADG092', old_model_code:'', vehicle_model:'BQ5160GSSEBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'鸠江江北项目', register_time:'2025-12-10 10:00:00', alias:'12号车' },
+    { id:12, vin:'LSVAU2A39EN000012', gbt_vin:'GB0000000012', model_name:'三力洒水车', model_version:'V1.0', iot_code:'11540', model_code:'SL-SS01', plate_no:'京ADG092', old_model_code:'', vehicle_model:'BQ5160GSSEBEV', asset_source:'外购', vehicle_status:'在库-正常使用', project:'鸠江江北项目', register_time:'2025-12-10 10:00:00', alias:'12号车' },
 ];
 
 // ===== 标签数据（与标签管理模块保持一致） =====
@@ -921,9 +924,35 @@ function doBatchRemoveTag() {
     Common.showToast('移出标签成功', 'success');
 }
 
+// ===== 车型版本选项：按列表实际数据去重生成（车型管理 3.6.5 前置依赖）=====
+// 原为写死 V1.0/V2.0/V3.0，与本页数据不符会导致带参传入的版本号无法选中、筛选静默失效
+function renderVersionOptions() {
+    const select = document.getElementById('s_model_version');
+    const versions = Array.from(new Set(mockData.map(item => item.model_version).filter(Boolean)))
+        .sort((a, b) => a.localeCompare(b, 'zh-CN', { numeric: true }));
+    select.replaceChildren(new Option('请选择', ''));
+    versions.forEach(v => select.add(new Option(v, v)));
+}
+
+// ===== 跨模块入口：车型管理「版本删除 → 查看车辆」带参进入（车型管理 PRD 3.6.5）=====
+// 参数：modelName（车型名称，中）、modelVersion（车型版本）
+// 落地行为：自动回填两个查询条件并执行查询，筛出该车型版本关联的车辆
+function initFromQuery() {
+    const params = new URLSearchParams(location.search);
+    const modelName = params.get('modelName');
+    const modelVersion = params.get('modelVersion');
+    if (!modelName && !modelVersion) return false;
+    if (modelName) document.getElementById('s_model_name').value = modelName;
+    if (modelVersion) document.getElementById('s_model_version').value = modelVersion;
+    doSearch();
+    return true;
+}
+
 // ===== 初始化 =====
+renderVersionOptions();
 renderTable();
 renderTagFilterPanel();
+initFromQuery();
 // 点击筛选器外部关闭面板
 document.addEventListener('click', e => {
     const filter = document.querySelector('.tag-filter');

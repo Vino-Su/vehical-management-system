@@ -12,7 +12,9 @@
               两级操作文案统一采用「带层级后缀」口径（对齐 PRD 3.1.4），内外操作列同宽 280px
       查询区收起/展开：复用公共组件 components/filter-component.js（legacy 自动绑定，data-visible-count="4"）
       交互逻辑：点击车型行展开/收起版本行；版本行复选用于导出，PRD 明确「不支持跨页导出」，
-                故翻页、切换每页条数、重新查询/重置时清空选中集；删除前校验「该版本是否已被车辆引用」；
+                故翻页、切换每页条数、重新查询/重置时清空选中集；删除前校验「该车型版本的关联车辆数」
+                （版本删除唯一校验项，>0 阻断并提示台数 + 「查看车辆」跳转车辆资产列表带参筛选）；
+                车型删除唯一校验项为「是否仍存在版本」，不做车辆引用校验（引用锚定在版本维度）；
                 导出确认弹窗使用公共 .modal-overlay + Common.openModal/closeModal 控制显隐（默认隐藏，靠 .active 显示）；
                 删除确认（含引用校验提示）统一改用 Common.confirm，公共层负责遮罩 + ESC + 危险按钮高亮
     -->
@@ -422,8 +424,18 @@ let currentPage = 1, pageSize = 10;
 let filteredModels = ModelStore.all();
 let selectedVersionIds = new Set();
 
-// 已被车辆建档引用的版本（模拟数据）：PRD 4.2 删除前需校验引用关系
-const referencedVersionIds = new Set([101, 201, 301, 402, 601]);
+// 引用校验数据源：统一走 ModelStore.referencedVehicleCount(modelName, version)（PRD 3.6.2 / 4.3）
+// 口径：实时引用，引用锚定在「车型版本」维度；车型删除只校验版本数量，不做车辆引用校验
+
+// 版本删除阻断时跳转车辆资产列表并按车型名称 + 车型版本自动筛选（PRD 3.6.5）
+function referencedVehiclesUrl(modelName, version) {
+    return '../vehicle-asset/vehicle-asset-list.html'
+        + '?modelName=' + encodeURIComponent(modelName || '')
+        + '&modelVersion=' + encodeURIComponent(version || '');
+}
+function gotoReferencedVehicles(modelName, version) {
+    location.href = referencedVehiclesUrl(modelName, version);
+}
 
 // 清空版本行选中集：PRD 3.7.2「不支持跨页导出」，翻页/切换条数/重新查询时清空
 function clearSelection() {
@@ -661,19 +673,22 @@ function doExport() {
 
 // ===== 删除：先校验引用关系，再二次确认（统一使用 Common.confirm，取消页面内 deleteModal 自实现） =====
 function openDeleteModal(vid) {
-    // PRD 3.6.2 / 9.5：被车辆引用的版本不可删除 —— 用 Common.confirm 表达引用限制
-    if (referencedVersionIds.has(vid)) {
+    const found = findVersion(vid);
+    // PRD 3.6.2：版本删除校验「关联车辆数」——>0 一律不可物理删除（实时引用口径，不做连带删除）
+    const refCount = found ? ModelStore.referencedVehicleCount(found.model.model_name, found.version.version) : 0;
+    if (refCount > 0) {
+        // 阻断弹窗仅展示关联车辆数量（不展示车牌明细），并提供「查看车辆」跳转（PRD 3.6.2 / 3.6.5）
         Common.confirm({
             title: '无法删除',
-            content: '该车型版本已被车辆引用，不可删除',
+            content: '该车型版本已被 ' + refCount + ' 台车辆引用，不可删除。请先在车辆资产中解除相关车辆的车型引用后再删除。',
             okText: '我知道了',
-            cancelText: '关闭',
-            onOk: () => {}
+            cancelText: '查看车辆',
+            onOk: () => {},
+            onCancel: () => gotoReferencedVehicles(found.model.model_name, found.version.version)
         });
         return;
     }
     // 二次确认：危险按钮高亮（danger:true）
-    const found = findVersion(vid);
     const text = found
         ? '确定要删除车型「' + found.model.model_name + ' ' + found.version.version + '」吗？删除后不可恢复。'
         : '确定要删除该车型版本吗？删除后不可恢复。';
@@ -695,8 +710,17 @@ function openDeleteModal(vid) {
 function openModelDelete(modelId) {
     const model = ModelStore.getModel(modelId);
     if (!model) return;
-    if ((model.versions || []).length) {
-        Common.confirm({ title: '无法删除车型', content: '该车型仍有版本，请先删除或处理所属版本。删除最后一个版本后，车型仍可保留。', okText: '我知道了', cancelText: '关闭', onOk: () => {} });
+    // PRD 3.6.2：车型删除仅校验「是否仍存在版本」，不做车辆引用校验
+    // （引用锚定在版本维度，无版本即必然不存在车辆引用，故车型可删时不会破坏引用关系）
+    const versionCount = (model.versions || []).length;
+    if (versionCount) {
+        Common.confirm({
+            title: '无法删除车型',
+            content: '该车型仍有 ' + versionCount + ' 个版本，请先删除所属版本后再删除车型。若版本已被车辆引用，请先在车辆资产中解除相关车辆的引用。',
+            okText: '我知道了',
+            cancelText: '关闭',
+            onOk: () => {}
+        });
         return;
     }
     Common.confirm({

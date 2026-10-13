@@ -3,6 +3,22 @@
     // 变更日志独立存储：车型级(scope=model)与版本级(scope=version)分域记录，详情页按域读取
     const LOG_KEY = 'vehicle-model-change-log-v1';
 
+    // ===== 车辆引用关系（原型 mock，PRD 3.6.2 / 4.3）=====
+    // 口径：实时引用，且引用锚定在「车型版本」维度（车辆建档必选车型名称 + 车型版本，车型本身不会被直接引用）。
+    // 数据以「车辆资产列表」实际 mock 为唯一事实来源（03-高保真页面/vehicle-asset/vehicle-asset-list.html），
+    // 保证「删除阻断弹窗展示的台数」与「跳转后资产列表按车型名称 + 车型版本筛选出的行数」一致。
+    // 正式期由车辆模块提供接口替换本表；接口失败时按「不可删除」保守处理。
+    const VEHICLE_REFERENCES = [
+        { model_name: '麒麟清扫车', version: 'V1.0', count: 2 },
+        { model_name: '爱瑞特纯电动高压冲洗车', version: 'V1.0', count: 2 },
+        { model_name: '中联清洗车', version: 'V1.0', count: 2 },
+        { model_name: '三力洒水车', version: 'V1.0', count: 2 },
+        { model_name: '泰坦智能驾驶洒水车', version: 'V1.0', count: 1 },
+        { model_name: '麒麟无人化扫地车', version: 'V1.0', count: 1 },
+        { model_name: '长城多用途货车', version: 'V1.0', count: 1 },
+        { model_name: '独角兽', version: 'V1.0', count: 1 }
+    ];
+
     function clone(value) {
         return JSON.parse(JSON.stringify(value || []));
     }
@@ -94,6 +110,15 @@
         nextId() {
             const ids = read().flatMap(model => [Number(model.id), ...(model.versions || []).map(version => Number(version.id))]);
             return Math.max(0, ...ids) + 1;
+        },
+        // 版本引用校验（PRD 3.6.2）：查该车型版本被多少台车辆引用，无匹配返回 0
+        // 入参：车型名称（中）+ 车型版本号；引用锚定在版本维度，故车型删除不调用本方法
+        referencedVehicleCount(modelName, version) {
+            const name = String(modelName || '').trim();
+            const ver = String(version || '').trim();
+            if (!name || !ver) return 0;
+            const hit = VEHICLE_REFERENCES.find(item => item.model_name === name && item.version === ver);
+            return hit ? Number(hit.count) || 0 : 0;
         },
         // 日志查询：按待/已过滤条件取记录，默认操作时间倒序；同一批次按写入顺序存储、倒序展示
         logs(filter) {
