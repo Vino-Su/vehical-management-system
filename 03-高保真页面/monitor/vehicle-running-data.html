@@ -19,21 +19,12 @@
             display: grid; grid-template-columns: 304px minmax(0, 1fr); min-width: 0;
             height: 100%; min-height: 560px; padding: 0; overflow: hidden;
         }
-        .detail-title { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: 0; }
         .detail-filter input {
             width: 100%; height: 32px; min-width: 0; padding: 0 10px; border: 1px solid var(--border-input);
             border-radius: var(--radius); outline: none; color: var(--text-primary); background: #fff;
         }
         .detail-filter input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1); }
         .detail-panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-        .detail-head {
-            min-height: 54px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;
-            gap: 12px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap;
-        }
-        .selected-summary { display: flex; min-width: 0; align-items: center; gap: 12px; }
-        .summary-divider { width: 1px; height: 18px; background: var(--border-color); }
-        .summary-meta { color: var(--text-secondary); font: 12px/18px var(--font-number); white-space: nowrap; }
-        .summary-project { color: var(--text-secondary); font-size: 12px; white-space: nowrap; }
         .detail-filter {
             min-height: 65px; padding: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
             border-bottom: 1px solid var(--border-color);
@@ -62,7 +53,6 @@
         }
         @media (max-width: 1120px) {
             .running-shell { grid-template-columns: 260px minmax(0, 1fr); }
-            .summary-project, .summary-divider { display: none; }
         }
     </style>
 </head>
@@ -113,9 +103,6 @@
                 </aside>
 
                 <section class="detail-panel" aria-label="运行数据明细">
-                    <div class="detail-head">
-                        <div class="selected-summary" id="selectedSummary"></div>
-                    </div>
                     <div class="detail-filter">
                         <label for="timeStart">数据采集时间</label>
                         <input id="timeStart" type="datetime-local" step="1">
@@ -322,7 +309,6 @@ function changeGroupMode(mode) {
     document.getElementById('groupProject').classList.toggle('active', mode === 'project');
     document.getElementById('groupModel').classList.toggle('active', mode === 'model');
     vehicleList.setMode(mode);
-    renderSelectedSummary();
     renderTelemetry();
 }
 
@@ -335,21 +321,7 @@ function selectVehicle(id) {
 
 function renderVehicleGroups(resetCollapse) {
     if (resetCollapse) vehicleList.reset(); else vehicleList.render();
-    renderSelectedSummary();
     renderTelemetry();
-}
-
-function renderSelectedSummary() {
-    const vehicle = vehicles.find(item => item.id === selectedVehicleId);
-    const holder = document.getElementById('selectedSummary');
-    if (!vehicle) {
-        holder.innerHTML = '<span class="detail-title">运行数据明细</span><span class="summary-meta">请先选择车辆</span>';
-        return;
-    }
-    holder.innerHTML = `<span class="detail-title">${escapeHtml(vehicle.plate)}</span>
-        <span class="tag ${vehicle.online ? 'tag-green' : 'tag-default'}">${vehicle.online ? '终端在线' : '终端离线'}</span>
-        <span class="summary-divider"></span><span class="summary-meta">${vehicle.vin}</span>
-        <span class="summary-project">${escapeHtml(vehicle.project || '无分组')} · ${escapeHtml(vehicle.model)}</span>`;
 }
 
 function toComparable(value) { return value ? value.replace('T', ' ') : ''; }
@@ -384,7 +356,7 @@ function resetTelemetryFilter(renderGroups = true) {
     document.getElementById('timeStart').value = '';
     document.getElementById('timeEnd').value = '';
     resetTelemetryState();
-    if (renderGroups) renderVehicleGroups(); else { renderSelectedSummary(); renderTelemetry(); }
+    if (renderGroups) renderVehicleGroups(); else renderTelemetry();
 }
 
 function getCurrentPageData() {
@@ -458,7 +430,7 @@ const initialVehicleKey = initialQuery.get('vehicleId') || initialQuery.get('vin
 const initialVehicle = initialVehicleKey && vehicles.find(item => [item.vin, item.plate, item.iot, String(item.id)].includes(initialVehicleKey));
 if (initialVehicle) selectedVehicleId = initialVehicle.id;
 renderVehicleGroups();
-if (initialVehicle) { renderSelectedSummary(); renderTelemetry(); }
+if (initialVehicle) renderTelemetry();
 </script>
 </body>
 </html>

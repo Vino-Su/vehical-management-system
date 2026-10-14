@@ -12,13 +12,6 @@
 <style>
   .traffic-workbench { display:grid; grid-template-columns:304px minmax(0,1fr); min-height:calc(100vh - 144px); border:1px solid var(--border-color); border-radius:var(--radius); overflow:hidden; background:#fff; }
   .traffic-detail { min-width:0; padding:16px; }
-  .detail-summary { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; padding:0 0 16px; border-bottom:1px solid var(--border-color); }
-  .detail-main { min-width:0; }
-  .detail-vin { display:flex; align-items:center; gap:9px; font-family:var(--font-number); font-size:20px; font-weight:600; line-height:30px; }
-  .detail-vin::before { content:""; width:4px; height:20px; border-radius:2px; background:var(--primary); }
-  .detail-subtitle { margin-top:4px; color:var(--text-secondary); font-size:12px; line-height:18px; }
-  .detail-tags { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
-  .detail-tags .tag { line-height:22px; }
   .detail-controls { display:flex; align-items:flex-end; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
   .control-block { display:flex; align-items:center; gap:8px; }
   .control-label { color:var(--text-secondary); white-space:nowrap; }
@@ -74,12 +67,8 @@
             <div class="group-list" id="group-list"></div>
           </aside>
           <section class="traffic-detail" aria-label="车辆流量明细">
-            <div class="detail-summary">
-              <div class="detail-main"><div class="detail-vin" id="detail-vin">--</div><div class="detail-subtitle" id="detail-subtitle">请选择左侧车辆</div></div>
-              <div class="detail-tags" id="detail-tags"></div>
-            </div>
             <div class="detail-controls">
-              <div class="control-block"><span class="control-label">统计粒度</span><div class="segmented" id="traffic-mode"><button class="active" type="button" data-mode="day" onclick="changeTrafficMode('day')">日流量</button><button type="button" data-mode="month" onclick="changeTrafficMode('month')">月流量</button></div></div>
+              <div class="control-block"><span class="control-label">统计粒度</span><div class="segmented" id="traffic-mode"><button class="segment-btn active" type="button" data-mode="day" onclick="changeTrafficMode('day')">日流量</button><button class="segment-btn" type="button" data-mode="month" onclick="changeTrafficMode('month')">月流量</button></div></div>
               <div class="control-block"><label class="control-label" for="start-date">时间范围</label><div class="date-field"><input id="start-date" type="date"><span class="date-divider">至</span><input id="end-date" type="date"></div></div>
               <div class="detail-actions"><button class="btn btn-primary" type="button" onclick="queryTraffic()">查询</button><button class="btn" type="button" onclick="resetDateRange()">重置</button><button class="btn" type="button" onclick="exportTraffic()">导出</button></div>
             </div>
@@ -159,25 +148,26 @@ const vehicleList=MasterList.init({
 
 function renderGroups(resetCollapse){
   if(resetCollapse) vehicleList.reset(); else vehicleList.render();
-  if(!filteredVehicles.length) renderDetail();
+  if(!filteredVehicles.length) refreshTraffic();
 }
 function ensureActiveVehicle(){const ordered=filteredVehicles.slice().sort(vehicleSort);if(!activeVehicle||!ordered.some(vehicle=>vehicle.id===activeVehicle.id))activeVehicle=ordered[0]||null}
-function searchVehicles(){const vin=document.getElementById('filter-vin').value.trim().toLowerCase();const plate=document.getElementById('filter-plate').value.trim().toLowerCase();filteredVehicles=vehicles.filter(vehicle=>(!vin||vehicle.vin.toLowerCase().includes(vin))&&(!plate||vehicle.plate.toLowerCase().includes(plate)));ensureActiveVehicle();selectedRows.clear();page=1;renderGroups(true);renderDetail()}
+function searchVehicles(){const vin=document.getElementById('filter-vin').value.trim().toLowerCase();const plate=document.getElementById('filter-plate').value.trim().toLowerCase();filteredVehicles=vehicles.filter(vehicle=>(!vin||vehicle.vin.toLowerCase().includes(vin))&&(!plate||vehicle.plate.toLowerCase().includes(plate)));ensureActiveVehicle();selectedRows.clear();page=1;renderGroups(true);refreshTraffic()}
 function setAdvancedFilters(expanded){filtersExpanded=expanded;document.getElementById('masterFilter').classList.toggle('is-expanded',expanded);const toggle=document.getElementById('masterFilterToggle');toggle.setAttribute('aria-expanded',String(expanded));document.getElementById('masterFilterToggleText').textContent=expanded?'收起':'展开更多'}
 function toggleAdvancedFilters(){setAdvancedFilters(!filtersExpanded)}
-function resetVehicleFilters(){document.getElementById('filter-vin').value='';document.getElementById('filter-plate').value='';filteredVehicles=[...vehicles];setAdvancedFilters(false);ensureActiveVehicle();selectedRows.clear();page=1;renderGroups(true);renderDetail()}
+function resetVehicleFilters(){document.getElementById('filter-vin').value='';document.getElementById('filter-plate').value='';filteredVehicles=[...vehicles];setAdvancedFilters(false);ensureActiveVehicle();selectedRows.clear();page=1;renderGroups(true);refreshTraffic()}
 function changeGroup(mode){groupMode=mode;document.querySelectorAll('#group-mode button').forEach(button=>button.classList.toggle('active',button.dataset.mode===mode));vehicleList.setMode(mode)}
-function selectVehicle(id){activeVehicle=vehicles.find(vehicle=>vehicle.id===id)||null;selectedRows.clear();page=1;renderGroups();renderDetail()}
+function selectVehicle(id){activeVehicle=vehicles.find(vehicle=>vehicle.id===id)||null;selectedRows.clear();page=1;renderGroups();refreshTraffic()}
 function pad(value){return String(value).padStart(2,'0')}
 function formatDate(date){return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`}
 function formatMonth(date){return `${date.getFullYear()}-${pad(date.getMonth()+1)}`}
 function parseLocal(value,mode){const parts=value.split('-').map(Number);return mode==='month'?new Date(parts[0],parts[1]-1,1):new Date(parts[0],parts[1]-1,parts[2])}
 function setDefaultDates(){const end=new Date();const start=new Date(end);const startInput=document.getElementById('start-date');const endInput=document.getElementById('end-date');if(trafficMode==='day'){start.setDate(start.getDate()-29);startInput.type='date';endInput.type='date';startInput.value=formatDate(start);endInput.value=formatDate(end)}else{start.setDate(1);start.setMonth(start.getMonth()-11);startInput.type='month';endInput.type='month';startInput.value=formatMonth(start);endInput.value=formatMonth(end)}}
 function buildTrafficRows(){if(!activeVehicle)return[];const startValue=document.getElementById('start-date').value;const endValue=document.getElementById('end-date').value;if(!startValue||!endValue)return[];const start=parseLocal(startValue,trafficMode);const end=parseLocal(endValue,trafficMode);if(start>end)return null;const rows=[];const cursor=new Date(end);let index=0;while(cursor>=start&&index<730){let usage=0;activeVehicle.simIds.forEach((imsi,simIndex)=>{const seed=Number(imsi.slice(-4))%37;usage+=trafficMode==='day'?((seed*7+index*13+simIndex*3)%82+8)/100:((seed*19+index*37+simIndex*41)%2600+420)/100});const date=trafficMode==='day'?formatDate(cursor):formatMonth(cursor);rows.push({rowId:`${activeVehicle.id}-${trafficMode}-${date}`,vin:activeVehicle.vin,plate:activeVehicle.plate,project:activeVehicle.project,date,imsiList:activeVehicle.simIds.join('、'),usage:Number(usage.toFixed(2))});if(trafficMode==='day')cursor.setDate(cursor.getDate()-1);else cursor.setMonth(cursor.getMonth()-1);index++}return rows}
-function renderDetail(){const title=document.getElementById('detail-vin');const subtitle=document.getElementById('detail-subtitle');const tags=document.getElementById('detail-tags');if(!activeVehicle){title.textContent='--';subtitle.textContent='请选择左侧车辆';tags.innerHTML='';trafficRows=[];renderTable();return}title.textContent=activeVehicle.vin;subtitle.textContent=`${activeVehicle.plate||'未绑定车牌'} · ${activeVehicle.project||'无归属项目'} · ${activeVehicle.model||'未录入车型'}`;tags.innerHTML=`<span class="tag tag-blue">${activeVehicle.simCount} 张 SIM 卡</span>`;trafficRows=buildTrafficRows()||[];renderTable()}
+// 右栏顶部已不展示选中车辆标识，仅按当前选中车辆与时间范围刷新明细表格
+function refreshTraffic(){trafficRows=buildTrafficRows()||[];renderTable()}
 function renderTable(){const start=(page-1)*pageSize;const rows=trafficRows.slice(start,start+pageSize);const body=document.getElementById('traffic-body');body.innerHTML=rows.length?rows.map(row=>`<tr class="${selectedRows.has(row.rowId)?'selected':''}"><td class="col-center"><input type="checkbox" aria-label="选择 ${row.date} 流量明细" ${selectedRows.has(row.rowId)?'checked':''} onchange="toggleRow('${row.rowId}',this.checked)"></td><td class="col-center num">${row.vin}</td><td class="col-center">${row.plate||'--'}</td><td class="col-center">${row.project||'--'}</td><td class="col-center"><span class="imsi-list" title="${row.imsiList}">${row.imsiList}</span></td><td class="col-center num">${row.date}</td><td class="col-center usage">${row.usage.toFixed(2)}</td></tr>`).join(''):'<tr><td class="empty-row" colspan="7">当前时间范围内暂无流量明细</td></tr>';document.getElementById('check-all').checked=rows.length>0&&rows.every(row=>selectedRows.has(row.rowId));Common.renderPagination({total:trafficRows.length,currentPage:page,pageSize,containerId:'pagination',infoId:'total-count',pageInfoId:'page-info',onPageChange:next=>{page=next;renderTable()}})}
-function changeTrafficMode(mode){trafficMode=mode;document.querySelectorAll('#traffic-mode button').forEach(button=>button.classList.toggle('active',button.dataset.mode===mode));selectedRows.clear();page=1;setDefaultDates();renderDetail()}
-function resetDateRange(){selectedRows.clear();page=1;setDefaultDates();renderDetail()}
+function changeTrafficMode(mode){trafficMode=mode;document.querySelectorAll('#traffic-mode button').forEach(button=>button.classList.toggle('active',button.dataset.mode===mode));selectedRows.clear();page=1;setDefaultDates();refreshTraffic()}
+function resetDateRange(){selectedRows.clear();page=1;setDefaultDates();refreshTraffic()}
 function queryTraffic(){const rows=buildTrafficRows();if(rows===null){Common.showToast('开始时间不能晚于结束时间','error');return}trafficRows=rows;selectedRows.clear();page=1;renderTable()}
 function changePageSize(){pageSize=Number(document.getElementById('page-size').value);page=1;renderTable()}
 function toggleRow(rowId,checked){checked?selectedRows.add(rowId):selectedRows.delete(rowId);renderTable()}
@@ -188,7 +178,7 @@ function exportTraffic(){
       ? `已导出选中的 ${rows.length} 条车辆流量明细（原型演示）`
       : '已生成车辆流量明细导出文件（原型演示）','success')});
 }
-document.getElementById('filter-vin').addEventListener('keydown',event=>{if(event.key==='Enter')searchVehicles()});document.getElementById('filter-plate').addEventListener('keydown',event=>{if(event.key==='Enter')searchVehicles()});ensureActiveVehicle();setDefaultDates();renderGroups();renderDetail();
+document.getElementById('filter-vin').addEventListener('keydown',event=>{if(event.key==='Enter')searchVehicles()});document.getElementById('filter-plate').addEventListener('keydown',event=>{if(event.key==='Enter')searchVehicles()});ensureActiveVehicle();setDefaultDates();renderGroups();refreshTraffic();
 </script>
 </body>
 </html>

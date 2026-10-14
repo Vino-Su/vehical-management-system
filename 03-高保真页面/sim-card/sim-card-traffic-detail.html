@@ -12,13 +12,6 @@
 <style>
   .traffic-workbench { display:grid; grid-template-columns:304px minmax(0,1fr); min-height:calc(100vh - 144px); border:1px solid var(--border-color); border-radius:var(--radius); overflow:hidden; background:#fff; }
   .traffic-detail { min-width:0; padding:16px; }
-  .detail-summary { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; padding:0 0 16px; border-bottom:1px solid var(--border-color); }
-  .detail-main { min-width:0; }
-  .detail-imsi { display:flex; align-items:center; gap:9px; font-family:var(--font-number); font-size:20px; font-weight:600; line-height:30px; }
-  .detail-imsi::before { content:""; width:4px; height:20px; border-radius:2px; background:var(--primary); }
-  .detail-subtitle { margin-top:4px; color:var(--text-secondary); font-size:12px; line-height:18px; }
-  .detail-tags { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
-  .detail-tags .tag { line-height:22px; }
   .detail-controls { display:flex; align-items:flex-end; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
   .control-block { display:flex; align-items:center; gap:8px; }
   .control-label { color:var(--text-secondary); white-space:nowrap; }
@@ -75,12 +68,8 @@
             <div class="group-list" id="group-list"></div>
           </aside>
           <section class="traffic-detail" aria-label="SIM卡流量明细">
-            <div class="detail-summary">
-              <div class="detail-main"><div class="detail-imsi" id="detail-imsi">--</div><div class="detail-subtitle" id="detail-subtitle">请选择左侧 SIM 卡</div></div>
-              <div class="detail-tags" id="detail-tags"></div>
-            </div>
             <div class="detail-controls">
-              <div class="control-block"><span class="control-label">统计粒度</span><div class="segmented" id="traffic-mode"><button class="active" type="button" data-mode="day" onclick="changeTrafficMode('day')">日流量</button><button type="button" data-mode="month" onclick="changeTrafficMode('month')">月流量</button></div></div>
+              <div class="control-block"><span class="control-label">统计粒度</span><div class="segmented" id="traffic-mode"><button class="segment-btn active" type="button" data-mode="day" onclick="changeTrafficMode('day')">日流量</button><button class="segment-btn" type="button" data-mode="month" onclick="changeTrafficMode('month')">月流量</button></div></div>
               <div class="control-block"><label class="control-label" for="start-date">时间范围</label><div class="date-field"><input id="start-date" type="date"><span class="date-divider">至</span><input id="end-date" type="date"></div></div>
               <div class="detail-actions"><button class="btn btn-primary" type="button" onclick="queryTraffic()">查询</button><button class="btn" type="button" onclick="resetDateRange()">重置</button><button class="btn" type="button" onclick="exportTraffic()">导出</button></div>
             </div>
@@ -135,7 +124,6 @@ const selectedRows=new Set();
 
 function cardSort(a,b){return a.imsi.localeCompare(b.imsi)}
 function carrierDotClass(carrier){return carrier==='中国联通'?'is-danger':carrier==='中国电信'?'is-success':'is-info'}
-function statusTag(status){const map={'正使用':'tag-green','测试期':'tag-blue','沉默期':'tag-orange','停机':'tag-red','停机保号':'tag-purple','预销号':'tag-yellow','库存期':'tag-default'};return `<span class="tag ${map[status]||'tag-default'}">${status}</span>`}
 
 // 左侧 SIM 卡主从列表：统一由公共组件管理分组、折叠、分批加载与选中态
 const cardList=MasterList.init({
@@ -178,7 +166,7 @@ const cardList=MasterList.init({
 
 function renderGroups(resetCollapse){
   if(resetCollapse) cardList.reset(); else cardList.render();
-  if(!filteredCards.length) renderDetail();
+  if(!filteredCards.length) refreshTraffic();
 }
 
 function ensureActiveCard(){
@@ -193,14 +181,14 @@ function searchCards(){
   const project=document.getElementById('filter-project').value;
   const matchesSelect=(filterValue,cardValue)=>!filterValue||(filterValue==='__none__'?!cardValue:cardValue===filterValue);
   filteredCards=cards.filter(card=>(!imsi||card.imsi.includes(imsi))&&(!vin||card.vin.toLowerCase().includes(vin))&&matchesSelect(plan,card.plan)&&matchesSelect(project,card.project));
-  ensureActiveCard();selectedRows.clear();page=1;renderGroups(true);renderDetail();
+  ensureActiveCard();selectedRows.clear();page=1;renderGroups(true);refreshTraffic();
 }
 
 function setAdvancedFilters(expanded){filtersExpanded=expanded;document.getElementById('masterFilter').classList.toggle('is-expanded',expanded);const toggle=document.getElementById('masterFilterToggle');toggle.setAttribute('aria-expanded',String(expanded));document.getElementById('masterFilterToggleText').textContent=expanded?'收起':'展开更多'}
 function toggleAdvancedFilters(){setAdvancedFilters(!filtersExpanded)}
-function resetCardFilters(){document.getElementById('filter-imsi').value='';document.getElementById('filter-vin').value='';document.getElementById('filter-plan').value='';document.getElementById('filter-project').value='';filteredCards=[...cards];setAdvancedFilters(false);ensureActiveCard();selectedRows.clear();page=1;renderGroups(true);renderDetail()}
+function resetCardFilters(){document.getElementById('filter-imsi').value='';document.getElementById('filter-vin').value='';document.getElementById('filter-plan').value='';document.getElementById('filter-project').value='';filteredCards=[...cards];setAdvancedFilters(false);ensureActiveCard();selectedRows.clear();page=1;renderGroups(true);refreshTraffic()}
 function changeGroup(mode){groupMode=mode;document.querySelectorAll('#group-mode button').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));cardList.setMode(mode)}
-function selectCard(id){activeCard=cards.find(card=>card.id===id)||null;selectedRows.clear();page=1;renderGroups();renderDetail()}
+function selectCard(id){activeCard=cards.find(card=>card.id===id)||null;selectedRows.clear();page=1;renderGroups();refreshTraffic()}
 
 function pad(value){return String(value).padStart(2,'0')}
 function formatDate(date){return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`}
@@ -240,17 +228,8 @@ function buildTrafficRows(){
   return rows;
 }
 
-function renderDetail(){
-  const title=document.getElementById('detail-imsi');
-  const subtitle=document.getElementById('detail-subtitle');
-  const tags=document.getElementById('detail-tags');
-  if(!activeCard){title.textContent='--';subtitle.textContent='请选择左侧 SIM 卡';tags.innerHTML='';trafficRows=[];renderTable();return}
-  title.textContent=activeCard.imsi;
-  subtitle.textContent=`${activeCard.vin||'未绑定 VIN'} · ${activeCard.plate||'未绑定车牌'} · ${activeCard.device||'未绑定硬件'}`;
-  tags.innerHTML=`<span class="tag tag-blue">${activeCard.carrier}</span><span class="tag tag-purple">${activeCard.plan||'无套餐'}</span>${statusTag(activeCard.status)}`;
-  trafficRows=buildTrafficRows()||[];
-  renderTable();
-}
+// 右栏顶部已不展示选中对象标识，仅按当前选中 SIM 卡与时间范围刷新明细表格
+function refreshTraffic(){trafficRows=buildTrafficRows()||[];renderTable()}
 
 function renderTable(){
   const start=(page-1)*pageSize;
@@ -261,8 +240,8 @@ function renderTable(){
   Common.renderPagination({total:trafficRows.length,currentPage:page,pageSize,containerId:'pagination',infoId:'total-count',pageInfoId:'page-info',onPageChange:next=>{page=next;renderTable()}});
 }
 
-function changeTrafficMode(mode){trafficMode=mode;document.querySelectorAll('#traffic-mode button').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));selectedRows.clear();page=1;setDefaultDates();renderDetail()}
-function resetDateRange(){selectedRows.clear();page=1;setDefaultDates();renderDetail()}
+function changeTrafficMode(mode){trafficMode=mode;document.querySelectorAll('#traffic-mode button').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===mode));selectedRows.clear();page=1;setDefaultDates();refreshTraffic()}
+function resetDateRange(){selectedRows.clear();page=1;setDefaultDates();refreshTraffic()}
 function queryTraffic(){const rows=buildTrafficRows();if(rows===null){Common.showToast('开始时间不能晚于结束时间','error');return}trafficRows=rows;selectedRows.clear();page=1;renderTable()}
 function changePageSize(){pageSize=Number(document.getElementById('page-size').value);page=1;renderTable()}
 function toggleRow(rowId,checked){checked?selectedRows.add(rowId):selectedRows.delete(rowId);renderTable()}
@@ -276,7 +255,7 @@ function exportTraffic(){
 
 document.getElementById('filter-imsi').addEventListener('keydown',event=>{if(event.key==='Enter')searchCards()});
 document.getElementById('filter-vin').addEventListener('keydown',event=>{if(event.key==='Enter')searchCards()});
-ensureActiveCard();setDefaultDates();renderGroups();renderDetail();
+ensureActiveCard();setDefaultDates();renderGroups();refreshTraffic();
 </script>
 </body>
 </html>
