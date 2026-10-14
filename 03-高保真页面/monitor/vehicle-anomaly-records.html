@@ -16,11 +16,6 @@
     .filter-item .date-range input { width:154px; }
     .date-divider { color:var(--text-disabled); }
     .action-bar { min-height:32px; }
-    .selection-summary { display:none; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px; }
-    .selection-summary.visible { display:inline-flex; }
-    .selection-summary strong { color:var(--primary); font-family:var(--font-number); }
-    .selection-clear { border:0; background:transparent; color:var(--primary); cursor:pointer; line-height:22px; }
-    .selection-clear:hover { color:var(--primary-hover); }
     .anomaly-table { border-top:1px solid var(--border-color); }
     .anomaly-table table { min-width:1460px; table-layout:fixed; }
     .anomaly-table th,
@@ -111,11 +106,7 @@
           </div>
 
           <div class="action-bar">
-            <div class="selection-summary" id="selectionSummary">
-              <span>已选择 <strong id="selectedCount">0</strong> 条</span>
-              <button class="selection-clear" id="clearSelectionButton" type="button">清空选择</button>
-            </div>
-            <button class="btn push-right" id="exportButton" type="button">导出</button>
+            <button class="btn" id="exportButton" type="button">导出</button>
           </div>
 
           <div class="table-wrapper anomaly-table fixed-table" id="anomalyTableWrapper" data-fixed-first="1" data-fixed-start="0" data-fixed-min-width="1460px">
@@ -255,8 +246,6 @@
         var selectedOnPage = pageRows.filter(function (record) { return selectedIds.has(record.id); }).length;
         checkAll.checked = pageRows.length > 0 && selectedOnPage === pageRows.length;
         checkAll.indeterminate = selectedOnPage > 0 && selectedOnPage < pageRows.length;
-        document.getElementById('selectedCount').textContent = selectedIds.size;
-        document.getElementById('selectionSummary').classList.toggle('visible', selectedIds.size > 0);
       }
 
       function getTextValue(id) {
@@ -322,10 +311,6 @@
       document.getElementById('searchButton').addEventListener('click', applyFilters);
       document.getElementById('resetButton').addEventListener('click', resetFilters);
       document.getElementById('exportButton').addEventListener('click', exportRecords);
-      document.getElementById('clearSelectionButton').addEventListener('click', function () {
-        selectedIds.clear();
-        renderTable();
-      });
       checkAll.addEventListener('change', function () {
         currentPageRows().forEach(function (record) {
           if (checkAll.checked) selectedIds.add(record.id);

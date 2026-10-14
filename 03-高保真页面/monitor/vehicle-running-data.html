@@ -6,6 +6,7 @@
     <title>车辆运行数据 - 车辆管理系统</title>
     <link rel="stylesheet" href="../components/common.css">
     <link rel="stylesheet" href="../components/fixed-table.css">
+    <link rel="stylesheet" href="../components/master-list.css">
     <link rel="icon" href="data:,">
     <!--
       页面用途：查询车辆网联终端上报的运行数据。
@@ -18,82 +19,12 @@
             display: grid; grid-template-columns: 304px minmax(0, 1fr); min-width: 0;
             height: 100%; min-height: 560px; padding: 0; overflow: hidden;
         }
-        .vehicle-panel {
-            min-width: 0; display: flex; flex-direction: column; overflow: hidden;
-            border-right: 1px solid var(--border-color); background: #fff;
-        }
-        .panel-heading {
-            height: 54px; min-height: 54px; padding: 0 16px; display: flex; align-items: center;
-            justify-content: space-between; border-bottom: 1px solid var(--border-color);
-        }
-        .panel-heading h2, .detail-title { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: 0; }
-        .vehicle-total { font-size: 12px; color: var(--text-secondary); }
-        .vehicle-filter { padding: 16px; border-bottom: 1px solid var(--border-color); }
-        .compact-field { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .compact-field label { flex: 0 0 56px; color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
-        .compact-field input, .compact-field select, .detail-filter input {
+        .detail-title { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: 0; }
+        .detail-filter input {
             width: 100%; height: 32px; min-width: 0; padding: 0 10px; border: 1px solid var(--border-input);
             border-radius: var(--radius); outline: none; color: var(--text-primary); background: #fff;
         }
-        .compact-field input:focus, .compact-field select:focus, .detail-filter input:focus {
-            border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1);
-        }
-        .vehicle-filter-extra { display: none; }
-        .vehicle-filter.is-expanded .vehicle-filter-extra { display: block; }
-        .compact-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .compact-action-buttons { display: flex; align-items: center; gap: 8px; }
-        .vehicle-filter-toggle {
-            height: 32px; padding: 0; display: inline-flex; align-items: center; gap: 4px;
-            border: 0; background: transparent; color: var(--primary); font-size: 13px; cursor: pointer;
-        }
-        .vehicle-filter-toggle:hover { color: var(--primary-hover); }
-        .vehicle-filter-chevron { font-size: 11px; transition: transform .2s; }
-        .vehicle-filter.is-expanded .vehicle-filter-chevron { transform: rotate(180deg); }
-        .group-toolbar {
-            min-height: 50px; padding: 9px 16px; display: flex; align-items: center;
-            justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--border-color);
-        }
-        .segmented { display: inline-flex; padding: 2px; border-radius: var(--radius); background: var(--bg-layout); }
-        .segment-btn {
-            height: 28px; padding: 0 12px; border: 0; border-radius: 4px; background: transparent;
-            color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all .2s;
-        }
-        .segment-btn:hover { color: var(--primary); }
-        .segment-btn.active { color: var(--primary); background: #fff; box-shadow: var(--shadow-sm); font-weight: 500; }
-        .list-result { font-size: 12px; color: var(--text-disabled); white-space: nowrap; }
-        .group-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
-        .vehicle-group + .vehicle-group { margin-top: 4px; }
-        .group-header {
-            width: 100%; min-height: 36px; padding: 6px 8px; display: flex; align-items: center; gap: 7px;
-            border: 0; border-radius: var(--radius); background: transparent; color: var(--text-primary);
-            text-align: left; cursor: pointer;
-        }
-        .group-header:hover { background: #fafafa; }
-        .group-chevron { width: 16px; color: var(--text-secondary); font-size: 11px; transition: transform .2s; }
-        .vehicle-group.collapsed .group-chevron { transform: rotate(-90deg); }
-        .group-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-        .group-count { min-width: 24px; padding: 0 7px; border-radius: 10px; background: #f2f3f5; color: var(--text-secondary); font-size: 12px; text-align: center; }
-        .vehicle-group.collapsed .group-items { display: none; }
-        .vehicle-card {
-            width: 100%; min-height: 68px; margin: 3px 0; padding: 9px 10px 9px 31px; position: relative;
-            border: 1px solid transparent; border-radius: var(--radius); background: #fff; text-align: left;
-            cursor: pointer; transition: border-color .2s, background .2s;
-        }
-        .vehicle-card:hover { background: #fafafa; }
-        .vehicle-card.active { border-color: #91caff; background: var(--primary-bg); }
-        .vehicle-card.active::before {
-            content: ""; position: absolute; left: 20px; top: 14px; bottom: 14px; width: 3px;
-            border-radius: 2px; background: var(--primary);
-        }
-        .vehicle-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .vehicle-plate { overflow: hidden; color: var(--text-primary); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-        .online-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px #f6ffed; }
-        .online-dot.offline { background: #bfbfbf; box-shadow: 0 0 0 3px #f5f5f5; }
-        .vehicle-vin { margin-top: 3px; color: var(--text-secondary); font: 12px/18px var(--font-number); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .vehicle-model { margin-top: 2px; color: var(--text-disabled); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .empty-state { padding: 48px 16px; color: var(--text-disabled); text-align: center; }
-        .empty-state strong { display: block; margin-bottom: 4px; color: var(--text-secondary); font-weight: 500; }
-
+        .detail-filter input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(22,119,255,.1); }
         .detail-panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
         .detail-head {
             min-height: 54px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;
@@ -127,7 +58,6 @@
         input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
         @media (max-width: 1440px) {
             .running-shell { grid-template-columns: 280px minmax(0, 1fr); }
-            .vehicle-filter { padding: 12px; }
             .detail-filter { padding: 12px 16px; }
         }
         @media (max-width: 1120px) {
@@ -143,14 +73,14 @@
         <div id="header"></div>
         <main class="content running-content">
             <section class="page-container running-shell" aria-label="车辆运行数据">
-                <aside class="vehicle-panel" aria-label="车辆列表">
-                    <div class="panel-heading">
-                        <h2>车辆列表</h2>
-                        <span class="vehicle-total" id="vehicleTotal">共 0 辆</span>
+                <aside class="master-panel" aria-label="车辆列表">
+                    <div class="master-heading">
+                        <h2 class="panel-title">车辆列表</h2>
+                        <span class="panel-total" id="panelTotal">共 0 辆</span>
                     </div>
-                    <div class="vehicle-filter" id="vehicleFilter">
+                    <div class="master-filter" id="masterFilter">
                         <div class="compact-field"><label for="filterVin">VIN 码</label><input id="filterVin" type="text" placeholder="请输入 VIN 码"></div>
-                        <div class="vehicle-filter-extra" id="vehicleFilterExtra">
+                        <div class="master-filter-extra" id="masterFilterExtra">
                             <div class="compact-field"><label for="filterPlate">车牌号</label><input id="filterPlate" type="text" placeholder="请输入车牌号"></div>
                             <div class="compact-field"><label for="filterModel">车型名称</label><input id="filterModel" type="text" placeholder="请输入车型名称"></div>
                             <div class="compact-field"><label for="filterProject">项目</label>
@@ -163,8 +93,8 @@
                             </div>
                         </div>
                         <div class="compact-actions">
-                            <button class="vehicle-filter-toggle" id="vehicleFilterToggle" type="button" aria-expanded="false" aria-controls="vehicleFilterExtra" onclick="toggleVehicleFilter()">
-                                <span id="vehicleFilterToggleText">展开更多</span><span class="vehicle-filter-chevron" aria-hidden="true">⌄</span>
+                            <button class="master-filter-toggle" id="masterFilterToggle" type="button" aria-expanded="false" aria-controls="masterFilterExtra" onclick="toggleVehicleFilter()">
+                                <span id="masterFilterToggleText">展开更多</span><span class="master-filter-chevron" aria-hidden="true">⌄</span>
                             </button>
                             <div class="compact-action-buttons">
                                 <button class="btn" type="button" onclick="resetVehicleFilter()">重置</button>
@@ -244,6 +174,7 @@
 <script src="../components/filter-component.js"></script>
 <script src="../components/export-component.js"></script>
 <script src="../components/fixed-table.js"></script>
+<script src="../components/master-list.js"></script>
 <script src="../components/vehicle-monitor-data.js"></script>
 <script>
 Common.initLayout({
@@ -297,9 +228,6 @@ vehicles.forEach((vehicle, vehicleIndex) => {
 
 let filteredVehicles = [...vehicles];
 let groupMode = 'project';
-let collapsedGroups = new Set();
-let resetGroupExpansion = true;
-let firstGroupKey = null;
 let selectedVehicleId = null;
 let filteredTelemetry = [];
 let selectedRows = new Set();
@@ -315,13 +243,46 @@ function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 }
 
+// 左侧车辆主从列表：统一由公共组件管理分组、折叠、默认展开首组与选中态
+const vehicleList = MasterList.init({
+    container: '#vehicleGroups',
+    totalEl: '#panelTotal',
+    countEl: '#groupCount',
+    totalText: count => `共 ${count} 辆`,
+    items: () => filteredVehicles,
+    getId: vehicle => vehicle.id,
+    groupModes: [
+        { key: 'project', label: '按项目', of: vehicle => vehicle.project },
+        { key: 'model', label: '按车型', of: vehicle => vehicle.model }
+    ],
+    defaultMode: 'project',
+    sortItems: (a, b) => a.vin.localeCompare(b.vin),
+    isActive: vehicle => vehicle.id === selectedVehicleId,
+    activeGroupKey: () => {
+        const selected = filteredVehicles.find(vehicle => vehicle.id === selectedVehicleId);
+        if (!selected) return null;
+        return (groupMode === 'project' ? selected.project : selected.model) || '无分组';
+    },
+    renderCard: vehicle => ({
+        primary: vehicle.plate,
+        dot: vehicle.online ? 'is-success' : 'is-muted',
+        dotTitle: vehicle.online ? '终端在线' : '终端离线',
+        meta: [
+            { text: vehicle.vin, className: 'num' },
+            { text: `${vehicle.model} · ${vehicle.iot}`, muted: true }
+        ]
+    }),
+    empty: { title: '暂无匹配车辆', desc: '请调整筛选条件后重试' },
+    onSelect: vehicle => selectVehicle(vehicle.id)
+});
+
 function toggleVehicleFilter() {
-    const filter = document.getElementById('vehicleFilter');
-    const toggle = document.getElementById('vehicleFilterToggle');
+    const filter = document.getElementById('masterFilter');
+    const toggle = document.getElementById('masterFilterToggle');
     const expanded = !filter.classList.contains('is-expanded');
     filter.classList.toggle('is-expanded', expanded);
     toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-    document.getElementById('vehicleFilterToggleText').textContent = expanded ? '收起' : '展开更多';
+    document.getElementById('masterFilterToggleText').textContent = expanded ? '收起' : '展开更多';
 }
 
 function queryVehicles() {
@@ -335,18 +296,16 @@ function queryVehicles() {
         (!model || item.model.toLowerCase().includes(model)) &&
         (!project || item.project === project)
     );
-    resetGroupExpansion = true;
     ensureSelectedVehicle();
-    renderVehicleGroups();
+    renderVehicleGroups(true);
 }
 
 function resetVehicleFilter() {
     ['filterVin', 'filterPlate', 'filterModel'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('filterProject').value = '';
     filteredVehicles = [...vehicles];
-    resetGroupExpansion = true;
     ensureSelectedVehicle();
-    renderVehicleGroups();
+    renderVehicleGroups(true);
 }
 
 function ensureSelectedVehicle() {
@@ -360,15 +319,11 @@ function ensureSelectedVehicle() {
 
 function changeGroupMode(mode) {
     groupMode = mode;
-    resetGroupExpansion = true;
     document.getElementById('groupProject').classList.toggle('active', mode === 'project');
     document.getElementById('groupModel').classList.toggle('active', mode === 'model');
-    renderVehicleGroups();
-}
-
-function toggleGroup(key) {
-    collapsedGroups.has(key) ? collapsedGroups.delete(key) : collapsedGroups.add(key);
-    renderVehicleGroups();
+    vehicleList.setMode(mode);
+    renderSelectedSummary();
+    renderTelemetry();
 }
 
 function selectVehicle(id) {
@@ -378,51 +333,8 @@ function selectVehicle(id) {
     renderVehicleGroups();
 }
 
-function renderVehicleGroups() {
-    const holder = document.getElementById('vehicleGroups');
-    document.getElementById('vehicleTotal').textContent = `共 ${filteredVehicles.length} 辆`;
-    if (!filteredVehicles.length) {
-        document.getElementById('groupCount').textContent = '0 个分组';
-        holder.innerHTML = '<div class="empty-state"><strong>暂无匹配车辆</strong>请调整筛选条件后重试</div>';
-        renderSelectedSummary();
-        renderTelemetry();
-        return;
-    }
-    const grouped = filteredVehicles.reduce((result, vehicle) => {
-        const raw = groupMode === 'project' ? vehicle.project : vehicle.model;
-        const key = raw || '无分组';
-        (result[key] ||= []).push(vehicle);
-        return result;
-    }, {});
-    const selectedVehicle = filteredVehicles.find(vehicle => vehicle.id === selectedVehicleId);
-    const selectedGroupKey = selectedVehicle
-        ? ((groupMode === 'project' ? selectedVehicle.project : selectedVehicle.model) || '无分组')
-        : null;
-    if (resetGroupExpansion) firstGroupKey = selectedGroupKey;
-    const keys = Object.keys(grouped).sort((a, b) => {
-        if (a === firstGroupKey) return -1;
-        if (b === firstGroupKey) return 1;
-        if (a === '无分组') return 1;
-        if (b === '无分组') return -1;
-        return a.localeCompare(b, 'zh-CN');
-    });
-    if (resetGroupExpansion) {
-        collapsedGroups = new Set(keys.slice(1));
-        resetGroupExpansion = false;
-    }
-    document.getElementById('groupCount').textContent = `${keys.length} 个分组`;
-    holder.innerHTML = keys.map(key => {
-        const items = grouped[key].sort((a, b) => a.vin.localeCompare(b.vin));
-        return `<div class="vehicle-group ${collapsedGroups.has(key) ? 'collapsed' : ''}">
-            <button class="group-header" type="button" onclick="toggleGroup('${escapeHtml(key).replace(/'/g, '&#39;')}')" aria-expanded="${!collapsedGroups.has(key)}">
-                <span class="group-chevron">▼</span><span class="group-name" title="${escapeHtml(key)}">${escapeHtml(key)}</span><span class="group-count">${items.length}</span>
-            </button>
-            <div class="group-items">${items.map(vehicle => `<button class="vehicle-card ${vehicle.id === selectedVehicleId ? 'active' : ''}" type="button" onclick="selectVehicle(${vehicle.id})">
-                <span class="vehicle-card-top"><span class="vehicle-plate">${escapeHtml(vehicle.plate)}</span><span class="online-dot ${vehicle.online ? '' : 'offline'}" title="${vehicle.online ? '终端在线' : '终端离线'}"></span></span>
-                <span class="vehicle-vin">${vehicle.vin}</span><span class="vehicle-model">${escapeHtml(vehicle.model)} · ${vehicle.iot}</span>
-            </button>`).join('')}</div>
-        </div>`;
-    }).join('');
+function renderVehicleGroups(resetCollapse) {
+    if (resetCollapse) vehicleList.reset(); else vehicleList.render();
     renderSelectedSummary();
     renderTelemetry();
 }

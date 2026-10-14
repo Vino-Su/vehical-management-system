@@ -21,13 +21,7 @@
         .date-range { display: inline-flex; align-items: center; gap: 8px; }
         .date-range .ant-input { width: 158px; }
         .date-separator { color: var(--text-disabled); }
-        .table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-        .table-summary { display: flex; align-items: center; gap: 8px; min-height: 32px; color: var(--text-secondary); }
-        .selected-count { display: none; align-items: center; height: 28px; padding: 0 10px; border-radius: var(--radius-sm); background: var(--primary-bg); color: var(--primary); font-size: 13px; }
-        .selected-count.is-visible { display: inline-flex; }
-        .export-button-icon { width: 15px; height: 15px; display: inline-block; position: relative; }
-        .export-button-icon::before { content: ""; position: absolute; left: 6px; top: 0; width: 2px; height: 9px; background: currentColor; }
-        .export-button-icon::after { content: "↓"; position: absolute; left: 2px; top: -6px; font-size: 15px; line-height: 16px; }
+        .table-toolbar { display: flex; align-items: center; justify-content: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
         .fault-table th, .fault-table td { font-variant-numeric: tabular-nums; }
         .table-wrapper .fault-table th, .table-wrapper .fault-table td { text-align: center; }
         .fault-table .fault-code { color: #d4380d; font-family: var(--font-number); font-weight: 600; }
@@ -106,13 +100,7 @@
                 </div>
 
                 <div class="table-toolbar">
-                    <div class="table-summary">
-                        <span class="selected-count" id="selectedCount">已选择 0 条</span>
-                    </div>
-                    <button class="btn" type="button" onclick="exportFaults()" title="导出车辆故障信息">
-                        <span class="export-button-icon" aria-hidden="true"></span>
-                        导出
-                    </button>
+                    <button class="btn" type="button" onclick="exportFaults()" title="导出车辆故障信息">导出</button>
                 </div>
 
                 <div class="table-wrapper fixed-table" id="faultTableWrapper" data-fixed-first="1" data-fixed-min-width="1300px">
@@ -273,9 +261,6 @@ function updateSelectionState() {
     const checkAll = document.getElementById('checkAll');
     checkAll.checked = rows.length > 0 && selectedOnPage === rows.length;
     checkAll.indeterminate = selectedOnPage > 0 && selectedOnPage < rows.length;
-    const count = document.getElementById('selectedCount');
-    count.textContent = '已选择 ' + selectedIds.size + ' 条';
-    count.classList.toggle('is-visible', selectedIds.size > 0);
 }
 
 function searchFaults() {
