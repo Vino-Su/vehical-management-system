@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SIM卡详情 - 车辆管理系统</title>
-<link rel="stylesheet" href="../components/common.css"><link rel="stylesheet" href="../components/fixed-table.css">
+<link rel="stylesheet" href="../components/common.css"><link rel="stylesheet" href="../components/fixed-table.css"><link rel="stylesheet" href="../components/modal-form.css"><link rel="stylesheet" href="../components/search-select.css"><link rel="icon" href="data:,">
 <!-- 页面用途：展示单张 SIM 卡的基本信息、计费周期、终端信息、流量统计和绑定历史。交互逻辑：支持日/月、图表/列表切换和时间筛选。 -->
 <style>
   .detail-header { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; padding:0 0 18px; border-bottom:1px solid var(--border-color); }.detail-actions { display:flex; align-items:center; gap:8px; }
@@ -23,7 +23,7 @@
 </style>
 </head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside><div class="main-area"><div id="header"></div><main class="content"><section class="page-container">
-  <div class="detail-header"><div class="detail-id">SIM 卡详情 <span>IMSI：460041234567890</span></div><div class="detail-actions"><a class="btn" href="./sim-card-list.html">返回列表</a><a class="btn btn-primary" href="./sim-card-maintain.html?id=1">信息维护</a></div></div>
+  <div class="detail-header"><div class="detail-id">SIM 卡详情 <span>IMSI：460041234567890</span></div><div class="detail-actions"><a class="btn" href="./sim-card-list.html">返回列表</a><button class="btn btn-primary" type="button" onclick="openSimBinding(currentSim.imsi)">信息维护</button></div></div>
   <div class="overview-band"><div class="summary-grid"><div class="summary-item"><span class="summary-label">IMSI 号</span><span class="summary-value">460041234567890</span></div><div class="summary-item summary-item--usage"><span class="summary-label">当月流量 / 套餐额度</span><span class="summary-value">7.6G / 10G</span></div><div class="summary-item"><span class="summary-label">VIN 码</span><span class="summary-value">LSVAU2A39EN000001</span></div><div class="summary-item"><span class="summary-label">归属项目</span><span class="summary-value">鸠江项目</span></div><div class="summary-item summary-item--status"><span class="summary-label">卡状态</span><span class="summary-value"><span class="tag tag-green">正使用</span></span></div></div></div>
   <div class="section"><h2 class="section-title">基本信息</h2><div class="description-grid"><div class="description-item"><span class="description-label">IMSI</span><span class="description-value">460041234567890</span></div><div class="description-item"><span class="description-label">MSISDN</span><span class="description-value">13916881234</span></div><div class="description-item"><span class="description-label">ICCID</span><span class="description-value">898600F202601001</span></div><div class="description-item"><span class="description-label">运营商</span><span class="description-value">中国移动</span></div><div class="description-item"><span class="description-label">套餐</span><span class="description-value">10G/月</span></div><div class="description-item"><span class="description-label">卡状态</span><span class="description-value"><span class="tag tag-green">正使用</span></span></div><div class="description-item"><span class="description-label">流量池代码</span><span class="description-value">POOL-2026-001</span></div><div class="description-item"><span class="description-label">SIM 卡类型</span><span class="description-value">物联网卡</span></div></div></div>
   <div class="section"><h2 class="section-title">计费周期</h2><div class="description-grid"><div class="description-item"><span class="description-label">出库日期</span><span class="description-value">2026-01-03</span></div><div class="description-item"><span class="description-label">激活日期</span><span class="description-value">2026-01-05</span></div><div class="description-item"><span class="description-label">计费起始日期</span><span class="description-value">2026-09-01</span></div><div class="description-item"><span class="description-label">计费结束日期</span><span class="description-value">2026-09-30</span></div></div></div>
@@ -33,20 +33,86 @@
   <div class="usage-table" id="usage-table"><div class="table-wrapper"><table><thead id="usage-head"></thead><tbody id="usage-body"></tbody></table></div><div class="usage-pagination"><span>共 <b id="usage-total">0</b> 条</span><span id="usage-page-info"></span><div id="usage-pagination"></div></div></div></div>
   <div class="section"><div class="binding-head"><h2 class="section-title" style="margin:0">绑定记录</h2><span style="font-size:13px;color:var(--text-secondary)">保存信息维护后自动新增记录</span></div><div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="0" data-fixed-min-width="900"><table><thead><tr><th class="col-center">VIN码</th><th class="col-center">车牌号</th><th class="col-center">硬件识别码</th><th class="col-center">硬件类型</th><th class="col-center">修改时间</th><th class="col-center">修改人</th></tr></thead><tbody id="binding-body"></tbody></table></div><div class="binding-pagination"><span>共 <b id="binding-count">0</b> 条</span><span id="binding-info"></span><div id="binding-pagination"></div></div></div>
 </section></main></div></div>
-<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/fixed-table.js"></script><script>
+
+<!-- 信息维护弹窗：车辆仅用于定位终端，保存后关闭弹窗并由系统新增一条绑定记录 -->
+<div class="modal-overlay" id="simBindingModal"><div class="modal-box binding-modal" role="dialog" aria-modal="true" aria-labelledby="simBindingModalTitle"><div class="modal-header"><h3 id="simBindingModalTitle">信息维护</h3><button class="modal-close" type="button" onclick="Common.closeModal('simBindingModal')" aria-label="关闭">×</button></div><div class="modal-body"><div class="binding-preview"><strong id="simBindingImsi">—</strong><span id="simBindingCarrier">—</span></div><form id="simBindingForm" onsubmit="return saveSimBinding(event)"><div class="field-grid"><div class="field full"><label>车辆（定位终端）</label><div id="simBindingVehicle"></div></div><div class="field full"><label>硬件识别码</label><div id="simBindingDevice"></div></div><div class="field"><label>硬件类型</label><input id="simBindingType" value="—" readonly></div><div class="field"><label>归属项目</label><input id="simBindingProject" value="—" readonly></div><div class="form-tip">车辆仅用于定位终端，不改变设备与车辆的绑定关系；同一硬件同一时间只能绑定一张 SIM 卡，清空硬件识别码即解除绑定。保存后系统自动新增一条绑定记录。</div></div></form></div><div class="modal-footer"><button class="btn" type="button" onclick="Common.closeModal('simBindingModal')">取消</button><button class="btn btn-primary" type="submit" form="simBindingForm">保存绑定</button></div></div></div>
+
+<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/fixed-table.js"></script><script src="../components/search-select.js"></script><script src="../components/fleet-data.js"></script><script>
 Common.initLayout({basePath:'../',sidebarId:'sidebar',activeMenuId:'sim-ledger',headerId:'header',headerOptions:{showProject:false}});
-const simRecords=[
-  {id:1,imsi:'460041234567890',msisdn:'13916881234',iccid:'898600F202601001',carrier:'中国移动',plan:'10G/月',used:'7.6G / 10G',vin:'LSVAU2A39EN000001',plate:'京ADG090',project:'鸠江项目',type:'T-Box',device:'TBX-2026-001',status:'正使用',pool:'POOL-2026-001',bindings:[['LSVAU2A39EN000001','京ADG090','TBX-2026-001','T-Box','2026-09-11 10:24','张三'],['LSVAU2A39EN000001','京ADG090','TBX-2025-032','T-Box','2026-01-05 09:16','李四'],['LSVAU2A39EN000001','京ADG090','DTU-2025-014','DTU','2025-07-18 15:42','王强']]},
-  {id:2,imsi:'460011234567891',msisdn:'18602185678',iccid:'898601F202601002',carrier:'中国联通',plan:'100G/月',used:'112.4G / 100G',vin:'LSVAU2A39EN000002',plate:'京ADG091',project:'椒北街道',type:'视频盒子',device:'VBX-2026-018',status:'正使用',pool:'POOL-2026-002',bindings:[['LSVAU2A39EN000002','京ADG091','VBX-2026-018','视频盒子','2026-09-10 15:36','李明']]},
-  {id:8,imsi:'460011234567897',msisdn:'18602189876',iccid:'898601F202601008',carrier:'中国联通',plan:'10G/月',used:'0.0G / 10G',vin:'',plate:'',project:'',type:'',device:'',status:'库存期',pool:'POOL-2026-003',bindings:[]}
-];
+// SIM 卡数据统一取自 components/fleet-data.js：卡自身字段来自 sims，绑定字段（VIN码/车牌号/硬件类型/硬件识别码/归属项目）由 devices 派生
+const simRecords=sims.map(s=>Object.assign({},s,{used:`${s.usedGb}G / ${s.quotaGb}G`},simBinding(s.imsi)));
 const detailParams=new URLSearchParams(window.location.search);
 const currentSim=simRecords.find(record=>record.imsi===detailParams.get('imsi')||String(record.id)===detailParams.get('id'))||simRecords[0];
 function statusTag(status){const map={'正使用':'tag-green','库存期':'tag-default','测试期':'tag-blue','沉默期':'tag-orange','停机':'tag-red','停机保号':'tag-purple','预销号':'tag-yellow'};return `<span class="tag ${map[status]||'tag-default'}">${status}</span>`}
 function setValues(sectionIndex,values){document.querySelectorAll('.section')[sectionIndex].querySelectorAll('.description-value').forEach((element,index)=>{if(index===5)element.innerHTML=statusTag(values[index]||'未知');else element.textContent=values[index]||'—'})}
-function applySimContext(){const header=document.querySelector('.detail-id span');header.textContent=`IMSI：${currentSim.imsi}`;const summary=document.querySelectorAll('.summary-item .summary-value');[currentSim.imsi,currentSim.used,currentSim.vin||'未绑定车辆',currentSim.project||'—'].forEach((value,index)=>summary[index].textContent=value);summary[4].innerHTML=statusTag(currentSim.status);setValues(0,[currentSim.imsi,currentSim.msisdn,currentSim.iccid,currentSim.carrier,currentSim.plan,currentSim.status,currentSim.pool,'物联网卡']);setValues(2,[currentSim.vin,currentSim.plate,currentSim.type,currentSim.device,currentSim.project]);document.querySelector('.detail-actions .btn-primary').href=`./sim-card-maintain.html?imsi=${encodeURIComponent(currentSim.imsi)}`;}
+function applySimContext(){const header=document.querySelector('.detail-id span');header.textContent=`IMSI：${currentSim.imsi}`;const summary=document.querySelectorAll('.summary-item .summary-value');[currentSim.imsi,currentSim.used,currentSim.vin||'未绑定车辆',currentSim.project||'—'].forEach((value,index)=>summary[index].textContent=value);summary[4].innerHTML=statusTag(currentSim.status);setValues(0,[currentSim.imsi,currentSim.msisdn,currentSim.iccid,currentSim.carrier,currentSim.plan,currentSim.status,currentSim.pool,'物联网卡']);setValues(2,[currentSim.vin,currentSim.plate,currentSim.type,currentSim.device,currentSim.project]);}
 let unit='day', view='chart', usagePage=1;const usagePageSize=10;const usage={day:[['08-13',.14],['08-14',.18],['08-15',.11],['08-16',.24],['08-17',.22],['08-18',.19],['08-19',.26],['08-20',.16],['08-21',.18],['08-22',.28],['08-23',.35],['08-24',.23],['08-25',.31],['08-26',.29],['08-27',.25],['08-28',.33],['08-29',.27],['08-30',.21],['08-31',.37],['09-01',.40],['09-02',.43],['09-03',.32],['09-04',.36],['09-05',.41],['09-06',.38],['09-07',.34],['09-08',.30],['09-09',.35],['09-10',.29],['09-11',.33]],month:[['2025-10',5.8],['2025-11',6.3],['2025-12',7.1],['2026-01',6.6],['2026-02',5.4],['2026-03',7.3],['2026-04',8.2],['2026-05',6.8],['2026-06',7.7],['2026-07',8.4],['2026-08',7.9],['2026-09',7.6]]};
 function renderUsage(){const d=usage[unit],chartData=d.length>12?d.filter((x,i)=>i%4===0||i===d.length-1):d,max=unit==='month'?12:.6,w=920,h=190;const points=chartData.map((x,i)=>`${(i/(chartData.length-1)*w).toFixed(1)},${(h-x[1]/max*h).toFixed(1)}`).join(' ');const area=`0,${h} ${points} ${w},${h}`;document.getElementById('line-chart').innerHTML=`<path class="line-grid" d="M0 0H${w} M0 47.5H${w} M0 95H${w} M0 142.5H${w} M0 ${h}H${w}"/><polygon class="line-area" points="${area}"/><polyline class="line-path" points="${points}"/>`+chartData.map((x,i)=>{const px=i/(chartData.length-1)*w,py=h-x[1]/max*h;return `<circle class="line-dot" cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4"/>`}).join('');document.getElementById('chart-x').innerHTML=chartData.map(x=>`<span>${x[0]}</span>`).join('');document.getElementById('chart-y').innerHTML=(unit==='month'?['12G','9G','6G','3G','0G']:['0.6G','0.45G','0.3G','0.15G','0G']).map(x=>`<span>${x}</span>`).join('');document.getElementById('quota').style.display=unit==='month'?'block':'none';document.getElementById('note').textContent=unit==='day'?'展示近 30 天日流量。':'展示近 1 年月流量，虚线为月套餐额度 10G。';const date=x=>unit==='day'?`2026-${x[0]}`:x[0],tableData=d.slice((usagePage-1)*usagePageSize,usagePage*usagePageSize);document.getElementById('usage-head').innerHTML=unit==='day'?'<tr><th class="col-center">日期</th><th class="col-center">使用流量（GB）</th></tr>':'<tr><th class="col-center">统计月份</th><th class="col-center">使用流量（GB）</th><th class="col-center">套餐额度（GB）</th><th class="col-center">使用占比</th></tr>';document.getElementById('usage-body').innerHTML=unit==='day'?tableData.map(x=>`<tr><td class="col-center num">${date(x)}</td><td class="col-center num">${x[1].toFixed(2)}</td></tr>`).join(''):tableData.map(x=>`<tr><td class="col-center num">${date(x)}</td><td class="col-center num">${x[1].toFixed(2)}</td><td class="col-center num">10.00</td><td class="col-center num">${(x[1]/10*100).toFixed(1)}%</td></tr>`).join('');Common.renderPagination({total:d.length,currentPage:usagePage,pageSize:usagePageSize,containerId:'usage-pagination',infoId:'usage-total',pageInfoId:'usage-page-info',onPageChange:p=>{usagePage=p;renderUsage()}})}
 function switchView(v,el){view=v;document.querySelectorAll('#view-tabs button').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('chart').classList.toggle('show',v==='chart');document.getElementById('usage-table').classList.toggle('show',v==='table')}function switchUnit(v,el){unit=v;usagePage=1;document.querySelectorAll('#unit-segment button').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('start').value=v==='day'?'2026-08-13':'2025-09-01';renderUsage()}function refreshUsage(){usagePage=1;renderUsage();Common.showToast('已按时间范围更新用量统计','success')}function exportUsage(){Common.showToast('已生成用量统计导出文件（原型演示）','success')}
-let bindings=currentSim.bindings;let bp=1;function renderBindings(){const rows=bindings.slice((bp-1)*3,bp*3);document.getElementById('binding-body').innerHTML=rows.length?rows.map(r=>`<tr>${r.map(x=>`<td class="col-center">${x}</td>`).join('')}</tr>`).join(''):'<tr><td class="col-center" colspan="6" style="color:var(--text-secondary)">暂无绑定记录</td></tr>';Common.renderPagination({total:bindings.length,currentPage:bp,pageSize:3,containerId:'binding-pagination',infoId:'binding-count',pageInfoId:'binding-info',onPageChange:p=>{bp=p;renderBindings()}})}applySimContext();renderUsage();renderBindings();
+let bindings=currentSim.bindings;let bp=1;function renderBindings(){const rows=bindings.slice((bp-1)*3,bp*3);document.getElementById('binding-body').innerHTML=rows.length?rows.map(r=>`<tr>${r.map(x=>`<td class="col-center">${x}</td>`).join('')}</tr>`).join(''):'<tr><td class="col-center" colspan="6" style="color:var(--text-secondary)">暂无绑定记录</td></tr>';Common.renderPagination({total:bindings.length,currentPage:bp,pageSize:3,containerId:'binding-pagination',infoId:'binding-count',pageInfoId:'binding-info',onPageChange:p=>{bp=p;renderBindings()}})}// ===== 信息维护弹窗：车辆仅用于定位终端（不改变设备与车辆的绑定关系），保存后关闭弹窗并新增一条绑定记录 =====
+let activeSim=null;
+const simVehicleSelect=SearchSelect.init({
+  container:'#simBindingVehicle',
+  placeholder:'输入车牌 / VIN / 项目搜索（不填即不按车辆定位）',
+  allowClear:true,
+  items:()=>vehicles,
+  getValue:v=>v.vin,
+  getLabel:v=>`${v.plate} · ${v.vin}`,
+  matchText:v=>[v.plate,v.vin,v.project],
+  groupOf:v=>v.project,
+  sortItems:(a,b)=>String(a.plate).localeCompare(String(b.plate)),
+  renderOption:v=>({primary:v.plate,primaryClass:'num',meta:`${v.vin} · ${v.project}`}),
+  empty:{title:'无匹配车辆',desc:'请调整关键字后重试'},
+  onChange:()=>{simDeviceSelect.setItems();syncSimDeviceMeta()}
+});
+const simDeviceSelect=SearchSelect.init({
+  container:'#simBindingDevice',
+  placeholder:'输入硬件识别码 / 类型搜索',
+  allowClear:true,
+  items:()=>{const vin=simVehicleSelect.getValue();return devices.filter(d=>!vin||d.vehicleVin===vin)},
+  getValue:d=>d.identifier,
+  getLabel:d=>`${d.identifier} · ${d.type}`,
+  matchText:d=>[d.identifier,d.type,d.vehicleVin],
+  groupOf:d=>d.type,
+  sortItems:(a,b)=>a.identifier.localeCompare(b.identifier),
+  renderOption:d=>{
+    const holder=d.simImsi&&d.simImsi!==(activeSim?activeSim.imsi:'')?d.simImsi:'';
+    return {primary:d.identifier,primaryClass:'num',meta:d.type,disabled:!!holder,disabledReason:holder?`已被 ${holder} 占用`:''};
+  },
+  empty:{title:'无可绑定的终端',desc:'请调整车辆或关键字后重试'},
+  onChange:()=>syncSimDeviceMeta()
+});
+function syncSimDeviceMeta(){
+  const code=simDeviceSelect.getValue();
+  const device=code?devices.find(d=>d.identifier===code):null;
+  const vehicle=device?vehicleOfDevice(device):null;
+  document.getElementById('simBindingType').value=device?device.type:'—';
+  document.getElementById('simBindingProject').value=(vehicle&&vehicle.project)||'—';
+}
+function openSimBinding(imsi){
+  activeSim=sims.find(s=>s.imsi===imsi)||currentSim;
+  document.getElementById('simBindingImsi').textContent=activeSim.imsi;
+  document.getElementById('simBindingCarrier').textContent=activeSim.carrier;
+  const bound=deviceOfSim(activeSim.imsi);
+  simVehicleSelect.setValue(bound?bound.vehicleVin||null:null);
+  simDeviceSelect.setItems();
+  simDeviceSelect.setValue(bound?bound.identifier:null);
+  syncSimDeviceMeta();
+  Common.openModal('simBindingModal');
+}
+function saveSimBinding(e){
+  e.preventDefault();
+  if(!activeSim)return false;
+  const result=applySimBinding(activeSim,simDeviceSelect.getValue()||'','2026-10-14 '+new Date().toTimeString().slice(0,5));
+  Common.closeModal('simBindingModal');
+  if(!result.changed){Common.showToast('绑定关系无变化，未生成记录','info');return false}
+  // 卡自身字段与绑定字段重新派生，终端信息与绑定记录同步刷新
+  const fresh=sims.find(s=>s.imsi===activeSim.imsi)||activeSim;
+  Object.assign(currentSim,Object.assign({},fresh,{used:`${fresh.usedGb}G / ${fresh.quotaGb}G`},simBinding(fresh.imsi)));
+  bindings=currentSim.bindings;bp=1;
+  applySimContext();renderBindings();
+  Common.showToast(result.device?'保存成功，已新增绑定记录':'已解除绑定，已新增绑定记录','success');
+  return false;
+}
+applySimContext();renderUsage();renderBindings();
 </script></body></html>

@@ -1,0 +1,55 @@
+/**
+ * 表单弹窗公共样式(公共组件)
+ * 供设备管理与 SIM 卡管理的绑定/维护类弹窗共用,保证两侧弹窗风格一致:
+ * 字段栅格、只读回显、提示条、顶部对象预览条与弹窗宽度修饰类。
+ * 弹窗骨架(.modal-overlay/.modal-box/.modal-header/.modal-body/.modal-footer)见 components/common.css。
+ */
+
+/* ========== 字段栅格 ========== */
+.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field.full { grid-column: 1 / -1; }
+.field > label { color: var(--text-secondary); font-size: 13px; }
+.field > label .required { color: var(--error); margin-right: 3px; }
+/* 只作用于字段的直接子控件,避免影响字段内嵌组件(如可搜索选择器)自身的输入框 */
+.field > input, .field > select, .field > textarea {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius);
+  outline: none;
+  color: var(--text-primary);
+  background: #fff;
+}
+.field > textarea { min-height: 78px; resize: vertical; line-height: 22px; }
+.field > input:focus, .field > select:focus, .field > textarea:focus { border-color: var(--primary); }
+.field > input[readonly] { color: var(--text-secondary); background: #fafafa; }
+
+/* 选择器落在字段内时,字段自身向上对齐,避免标签高度与控件错位 */
+.field .search-select { position: relative; }
+
+/* ========== 提示条 ========== */
+.form-tip {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: #f6faff;
+  color: #5b6b82;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+/* ========== 弹窗宽度 ========== */
+.modal-box.device-modal { width: 720px; }
+.modal-box.binding-modal { width: 650px; }
+
+/* ========== 顶部对象预览条 ========== */
+.binding-preview { margin-bottom: 18px; padding: 12px 14px; background: #fafafa; border: 1px solid var(--border-color); border-radius: var(--radius); }
+.binding-preview strong { font-family: var(--font-number); }
+.binding-preview span { margin-left: 10px; color: var(--text-secondary); font-size: 13px; }
+
+@media (max-width: 720px) {
+  .field-grid { grid-template-columns: 1fr; }
+  .field.full, .form-tip { grid-column: auto; }
+}

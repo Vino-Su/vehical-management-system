@@ -29,7 +29,7 @@
 - **设备台账页**：独立维护 T-Box、ADU、OBU、DTU、视频盒子等车端网联终端，字段与车辆档案「硬件信息」表对齐（设备名称、设备类型、设备识别码、是否有SIM卡、IMSI、状态、厂商/型号）；采用「左栏分组管理 + 右栏台账表格」工作台布局：左栏支持按设备识别码检索、按设备类型/车辆VIN码/项目三种维度分组浏览，分组可折叠展开并显示组内台数，缺少当前分组属性的设备归入「无分组」并固定置末，顶部「全部」默认选中、组内设备按识别码排序（按「车辆VIN码」分组时分组标题仅展示 VIN 码、不附带车牌）；点击分组行选中该分组、点击行首箭头仅折叠展开、点击设备定位到单台设备，右栏表格随左栏选择范围收敛；右栏仅保留是否有SIM卡、状态两项筛选（设备类型、车辆、归属项目由左栏承担），支持设备主数据新增/编辑、分页、导出；行内「详情」跳转设备详情页。新增设备保存后自动定位到该设备并清空左栏检索，编辑与绑定保存后保留当前浏览范围并刷新左栏分组与计数。
 - **设备详情页**：二级页面（替代原抽屉样式），展示设备信息、当前绑定（车辆VIN码、是否有SIM卡、IMSI）与设备变更日志，顶部提供「返回列表 / 编辑设备 / 维护绑定」入口。设备变更日志为只读字段级事件表（操作类型、修改字段、修改前、修改后、操作人、操作时间），列与对齐口径对齐车辆资产详情「变更日志」Tab：设备主数据按变化字段逐项记录（修改字段严格沿用设备字段名），绑定关系按「车辆VIN码」「IMSI」两项分别记录且只存纯 VIN / 纯 IMSI，解绑侧留空显示「—」，按操作时间倒序、默认每页 10 条、无记录展示空态；保存后无任何字段变化时不写入日志。变更日志仅在设备侧留痕，不写入车辆资产详情的变更日志。台账与详情页的车辆 VIN 码、IMSI 均为超链接，分别跳转车辆资产详情页与 SIM 卡详情页。
 - **绑定关系维护**：支持从设备台账或详情页维护设备与车辆、SIM 卡的当前绑定关系，并保留绑定/解绑/更换等历史记录；同一张 SIM 卡同一时间只能绑定一个设备。本期暂不展示设备在线、最近上报和健康诊断等动态信息。
-- **数据来源**：设备/车辆/SIM 演示数据统一维护在 `03-高保真页面/vehicle-device/vehicle-device-data.js`，由台账页与详情页共用。
+- **数据来源**：设备/车辆/SIM 演示数据统一维护在 `03-高保真页面/components/fleet-data.js`，由设备管理与 SIM 卡管理两侧页面共用；SIM 卡的绑定字段（VIN 码、车牌号、归属项目、硬件类型、硬件识别码）由设备台账的绑定关系派生。
 - 详细设计见《设备管理PRD》。
 
 ### 3. 车型管理
@@ -56,12 +56,13 @@
 - 详细设计见《调度管理PRD》。
 
 ### 5.1 车辆运营
-- **用车记录**：位于“运行监管 > 车辆运营”（侧栏排在“异常事件”之后），查询区与表格参照车辆资产列表；首行按空间展示司机、车牌、状态及绑车/交车日期，放不下的条件默认收起并可展开；支持跨页选择、详情查看、分页和导出 CSV。详见《车辆运营-用车记录PRD》。
+- **用车记录**：位于“运行监管 > 车辆运营”（侧栏排在“异常事件”之后），查询区与表格参照车辆资产列表；列表在“关联车牌号”前展示车架号与网联编号（同一车辆取值一致）；查询区支持司机、车牌号、车架号、网联编号模糊匹配，首行按空间展示，放不下的条件默认收起并可展开；支持跨页选择、详情查看、分页和导出 CSV。详见《车辆运营-用车记录PRD》。
 
 ### 6. SIM 卡管理
-- **SIM 卡台账列表页**：支持 SIM 卡、套餐、用量、车辆及终端等多条件筛选，并支持选择数据或按当前条件导出。
-- **SIM 卡详情页**：展示基本信息、计费周期、终端信息、日/月流量统计及可分页的历史绑定记录。
-- **信息维护页**：支持 VIN 码和车牌号双向联动，按选定车辆选择终端硬件；保存后自动记录绑定历史。
+- **SIM 卡台账列表页**：支持 SIM 卡、套餐、用量、车辆及终端等多条件筛选，并支持选择数据或按当前条件导出；行内提供「详情」与「信息维护」入口。
+- **SIM 卡详情页**：展示基本信息、计费周期、终端信息、日/月流量统计及可分页的历史绑定记录；顶部提供「信息维护」入口。
+- **信息维护弹窗**：由台账行内或详情页顶部打开，样式与设备管理「维护绑定关系」弹窗统一。车辆与硬件识别码均使用可搜索选择器（按车牌号/VIN 码/项目、硬件识别码/类型模糊匹配并高亮），车辆仅用于定位终端、不改变设备与车辆的绑定关系；已被其他 SIM 卡占用的硬件可见但置灰不可选并标注占用 IMSI；清空硬件即解绑。保存后关闭弹窗并新增一条绑定记录，同时写入该终端的设备变更日志。
+- **数据口径**：SIM 卡的绑定字段统一由设备台账派生，与设备管理共用一份数据源（`components/fleet-data.js`），两侧台账不再各维护一份绑定关系。
 - **SIM 卡流量明细页**：左侧支持按运营商、套餐或项目分组检索 SIM 卡，右侧按单卡查询日/月流量，支持分页选择与导出。
 - **车辆流量明细页**：左侧支持按项目或车型分组检索车辆，右侧汇总车辆关联全部 SIM 卡的日/月流量，支持分页选择与导出。
 - 详细设计见《SIM卡管理PRD》。
@@ -107,10 +108,14 @@
 │   │   ├── fixed-table.js    # 固定首尾列横向滚动表格交互
 │   │   ├── master-list.css   # 主从列表样式（左侧分组列表面板）
 │   │   ├── master-list.js    # 主从列表交互（分组、折叠、分批加载、选中态、空态）
+│   │   ├── search-select.css # 可搜索选择器样式
+│   │   ├── search-select.js  # 可搜索选择器交互（模糊匹配、高亮、分组、禁用项、清空）
+│   │   ├── modal-form.css    # 表单弹窗公共样式（字段栅格、提示条、预览条、弹窗宽度）
 │   │   ├── form.css          # 表单样式（左置外置标签、字段校验提示）
 │   │   ├── pagination-component.js  # 分页渲染
 │   │   ├── filter-component.js      # 查询筛选区条件展开/收起
 │   │   ├── export-component.js      # 列表导出范围确认与反馈
+│   │   ├── fleet-data.js            # 车辆/设备/SIM 卡统一数据源（设备管理与 SIM 卡管理共用）
 │   │   ├── vehicle-model-store.js   # 车型与版本原型数据
 │   │   └── vehicle-monitor-data.js  # 车辆监管一张图原型数据
 │   ├── vehicle-register/     # 车辆建档模块
@@ -143,9 +148,8 @@
 │       ├── vehicle-fault-info.html       # 车辆故障信息
 │       └── vehicle-anomaly-records.html  # 车辆异常记录
 │   └── sim-card/             # SIM 卡管理模块
-│       ├── sim-card-list.html      # SIM 卡台账列表页
-│       ├── sim-card-detail.html    # SIM 卡详情页
-│       ├── sim-card-maintain.html  # SIM 卡信息维护页
+│       ├── sim-card-list.html      # SIM 卡台账列表页（含信息维护弹窗）
+│       ├── sim-card-detail.html    # SIM 卡详情页（含信息维护弹窗）
 │       └── sim-card-traffic-detail.html # SIM 卡流量明细页
 │       └── vehicle-traffic-detail.html # 车辆流量明细页
 │   └── expense/              # 费用管理模块
@@ -171,10 +175,13 @@
 | 表格 | `common.css` | `.table-wrapper`（横向滚动）、48px 行高、`.col-left/.col-center/.col-right` 对齐类、`.ellipsis`、`.num` |
 | 固定列长表格 | `fixed-table.css` + `fixed-table.js` | 在 `.table-wrapper` 增加 `.fixed-table`，用 `data-fixed-first` / `data-fixed-last` 固定首个业务列和末列，自动跳过复选框；单元格不换行，`data-fixed-min-width` 指定横向滚动阈值 |
 | 主从列表 | `master-list.css` + `master-list.js` | 左侧分组列表 + 右侧明细工作台的左栏列表组件。按 `.master-panel / .master-heading / .master-filter / .group-toolbar / .group-list` 固定结构组织，由 `MasterList.init(options)` 驱动分组、折叠（默认仅展开首个分组）、组内分批加载、选中态与空态。`groupModes` 声明分组维度并支持 `labelOf` 定制分组名，`sortGroups` 定制分组排序（命中项置首与「无分组」置末由组件保证）；`groupSelectable` 区分「箭头折叠 / 分组行选中」，`scopeRow` 提供「全部」范围行（`count` 支持函数），`renderCard` 注入卡片主标识、状态圆点与次要信息（`meta` 可传数组渲染多行）。返回 `{render, reset, setMode, getMode, getGroupText}`。规范详见 `02-产品文档/公共组件规范.md` 第 3 节 |
+| 可搜索选择器 | `search-select.css` + `search-select.js` | 绑定/维护类表单中选取业务对象的下拉选择器。由 `SearchSelect.init(options)` 驱动输入即搜（`matchText` 声明参与匹配的字段，命中片段高亮）、`groupOf` 候选分组、键盘上下键与回车选中/`Esc` 关闭、`allowClear` 清空（业务语义为解除绑定）；`renderOption` 可返回 `disabled` + `disabledReason` 实现「可见但置灰不可选」（如已被其他设备占用的 SIM 卡）。下拉面板挂载到 `body` 固定定位，避免被弹窗滚动容器裁切。返回 `{getValue, getItem, setValue, setItems, clear, close}`。规范详见 `02-产品文档/公共组件规范.md` 第 4 节 |
+| 表单弹窗样式 | `modal-form.css` | 绑定/维护类弹窗共用样式：`.field-grid`/`.field`（含 `.full`）两列字段栅格、`.form-tip` 提示条、`.binding-preview` 顶部对象预览条，以及 `.binding-modal`(650px)/`.device-modal`(720px) 弹窗宽度。字段内控件样式仅作用于直接子元素，不影响内嵌的可搜索选择器 |
 | 标签 | `common.css` | `.tag` 及 `.tag-blue/green/orange/red/default/purple/yellow` |
 | 分页 | `pagination-component.js` + `common.js` | 公共 `Pagination` 组件统一渲染页码、每页条数与翻页状态；`Common.renderPagination()` 保持旧页面调用兼容 |
 | 查询筛选 | `filter-component.js` | 统一处理历史查询栏及子页面查询区的展开/收起，超过一行时自动收纳多余条件 |
 | 车型原型数据 | `vehicle-model-store.js` | 共享车型与版本的原型数据，支持跨页面创建、编辑、删除和刷新后验证 |
+| 车队统一数据源 | `fleet-data.js` | 车辆、设备、SIM 卡三者的唯一数据源，设备管理与 SIM 卡管理共用，避免两侧台账口径不一致。设备是绑定关系的锚点：`simBinding(imsi)` 由设备派生 SIM 卡的绑定字段，`simRows()` 输出 SIM 卡台账行，`applySimBinding(sim, deviceCode, time)` 负责一次绑定/解绑（改写设备 `simImsi`、写设备变更日志、追加 SIM 卡绑定记录），另有 `recordDeviceEdits` 等设备变更日志写入助手 |
 | 列表导出 | `export-component.js` | `ListExport.run({rows, selectedIds, currentPage, pageSize, getId, pageRows, onExport})`：有勾选时仅导出当前页选中数据；仅其他页有勾选时提示当前页未选择；无勾选时提示“是否导出所有数据？”，选择“是”导出已应用筛选条件下全部数据，选择“否”取消。不修改选择状态，`onExport(rows, {selected})` 保留各页真实下载或模拟反馈；`exportCSV`、`exportTableToCSV` 为底层文件工具。二维码、BOM、用量统计等专用导出沿用自身规则 |
 | 弹窗 | `common.css` + `common.js` | `.modal-overlay/.modal-box`（600px）与 `.modal-box--lg`（800px）；`Common.openModal/closeModal/confirm` |
 | Toast | `common.js` | `Common.showToast(msg, type)` |

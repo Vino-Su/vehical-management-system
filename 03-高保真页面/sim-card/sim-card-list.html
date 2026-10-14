@@ -6,6 +6,9 @@
 <title>SIM卡台账 - 车辆管理系统</title>
 <link rel="stylesheet" href="../components/common.css">
 <link rel="stylesheet" href="../components/fixed-table.css">
+<link rel="stylesheet" href="../components/modal-form.css">
+<link rel="stylesheet" href="../components/search-select.css">
+<link rel="icon" href="data:,">
 <!-- 页面用途：SIM 卡台账列表，支持多条件筛选、选择与导出。交互逻辑：筛选/重置回到第一页；未选数据导出时二次确认。 -->
 <style>
   .search-item { display:none; align-items:center; gap:8px; }
@@ -53,35 +56,88 @@
   <div class="pagination-row"><span>共 <b id="total-count">0</b> 条</span><select class="page-size" id="page-size" onchange="changePageSize()"><option>10</option><option>20</option><option>50</option></select><span id="page-info">第 1 / 1 页</span><div id="pagination"></div></div>
 </section></main></div></div>
 
+<!-- 信息维护弹窗：车辆仅用于定位终端，保存后关闭弹窗并由系统新增一条绑定记录 -->
+<div class="modal-overlay" id="simBindingModal"><div class="modal-box binding-modal" role="dialog" aria-modal="true" aria-labelledby="simBindingModalTitle"><div class="modal-header"><h3 id="simBindingModalTitle">信息维护</h3><button class="modal-close" type="button" onclick="Common.closeModal('simBindingModal')" aria-label="关闭">×</button></div><div class="modal-body"><div class="binding-preview"><strong id="simBindingImsi">—</strong><span id="simBindingCarrier">—</span></div><form id="simBindingForm" onsubmit="return saveSimBinding(event)"><div class="field-grid"><div class="field full"><label>车辆（定位终端）</label><div id="simBindingVehicle"></div></div><div class="field full"><label>硬件识别码</label><div id="simBindingDevice"></div></div><div class="field"><label>硬件类型</label><input id="simBindingType" value="—" readonly></div><div class="field"><label>归属项目</label><input id="simBindingProject" value="—" readonly></div><div class="form-tip">车辆仅用于定位终端，不改变设备与车辆的绑定关系；同一硬件同一时间只能绑定一张 SIM 卡，清空硬件识别码即解除绑定。保存后系统自动新增一条绑定记录。</div></div></form></div><div class="modal-footer"><button class="btn" type="button" onclick="Common.closeModal('simBindingModal')">取消</button><button class="btn btn-primary" type="submit" form="simBindingForm">保存绑定</button></div></div></div>
+
 <script src="../components/common.js"></script>
-<script src="../components/export-component.js"></script><script src="../components/pagination-component.js"></script><script src="../components/filter-component.js"></script><script src="../components/fixed-table.js"></script>
+<script src="../components/export-component.js"></script><script src="../components/pagination-component.js"></script><script src="../components/filter-component.js"></script><script src="../components/fixed-table.js"></script><script src="../components/search-select.js"></script><script src="../components/fleet-data.js"></script>
 <script>
 Common.initLayout({basePath:'../',sidebarId:'sidebar',activeMenuId:'sim-ledger',headerId:'header',headerOptions:{showProject:false}});
-const data=[
- {id:1,imsi:'460041234567890',msisdn:'13916881234',iccid:'898600F202601001',carrier:'中国移动',plan:'10G/月',used:7.6,vin:'LSVAU2A39EN000001',plate:'京ADG090',project:'鸠江项目',type:'T-Box',device:'TBX-2026-001',status:'正使用'},
- {id:2,imsi:'460011234567891',msisdn:'18602185678',iccid:'898601F202601002',carrier:'中国联通',plan:'100G/月',used:112.4,vin:'LSVAU2A39EN000002',plate:'京ADG091',project:'椒北街道',type:'视频盒子',device:'VBX-2026-018',status:'正使用'},
- {id:3,imsi:'460031234567892',msisdn:'13311780192',iccid:'898603F202601003',carrier:'中国电信',plan:'30G/月',used:9.3,vin:'LSVAU2A39EN000003',plate:'浙JAR6538',project:'镜湖区项目',type:'DTU',device:'DTU-2026-027',status:'沉默期'},
- {id:4,imsi:'460041234567893',msisdn:'13916885632',iccid:'898600F202601004',carrier:'中国移动',plan:'300G/月',used:238.7,vin:'LSVAU2A39EN000006',plate:'沪AAB124',project:'嘉定研发',type:'ADU',device:'ADU-2026-006',status:'正使用'},
- {id:5,imsi:'460011234567894',msisdn:'18602183219',iccid:'898601F202601005',carrier:'中国联通',plan:'10G/月',used:1.2,vin:'LSVAU2A39EN000007',plate:'京ADJ055',project:'鸠江项目',type:'T-Box',device:'TBX-2026-032',status:'测试期'},
- {id:6,imsi:'460031234567895',msisdn:'13311783654',iccid:'898603F202601006',carrier:'中国电信',plan:'30G/月',used:30.8,vin:'LSVAU2A39EN000009',plate:'粤AEE077',project:'鸠江项目',type:'视频盒子',device:'VBX-2026-041',status:'停机保号'},
- {id:7,imsi:'460041234567896',msisdn:'13916883456',iccid:'898600F202601007',carrier:'中国移动',plan:'100G/月',used:66.1,vin:'LSVAU2A39EN000011',plate:'京ADK033',project:'镜湖区项目',type:'T-Box',device:'TBX-2026-048',status:'正使用'},
- {id:8,imsi:'460011234567897',msisdn:'18602189876',iccid:'898601F202601008',carrier:'中国联通',plan:'10G/月',used:0,vin:'',plate:'',project:'',type:'',device:'',status:'库存期'},
- {id:9,imsi:'460031234567898',msisdn:'13311780987',iccid:'898603F202601009',carrier:'中国电信',plan:'30G/月',used:17.5,vin:'LSVAU2A39EN000005',plate:'浙JDB1062',project:'镜湖区项目',type:'DTU',device:'DTU-2026-054',status:'停机'},
- {id:10,imsi:'460041234567899',msisdn:'13916887890',iccid:'898600F202601010',carrier:'中国移动',plan:'100G/月',used:94.8,vin:'LSVAU2A39EN000008',plate:'京ADJ056',project:'椒北街道',type:'T-Box',device:'TBX-2026-057',status:'预销号'},
- {id:11,imsi:'460011234567800',msisdn:'18602184567',iccid:'898601F202601011',carrier:'中国联通',plan:'10G/月',used:4.3,vin:'LSVAU2A39EN000010',plate:'粤AEE078',project:'嘉定研发',type:'视频盒子',device:'VBX-2026-063',status:'未知'},
- {id:12,imsi:'460031234567801',msisdn:'13311781234',iccid:'898603F202601012',carrier:'中国电信',plan:'300G/月',used:263.4,vin:'LSVAU2A39EN000012',plate:'京ADG092',project:'鸠江项目',type:'ADU',device:'ADU-2026-012',status:'正使用'}];
+let data=simRows();
 let filtered=[...data],page=1,size=10,selected=new Set(),expanded=false;
-const quota=p=>parseInt(p,10);
 function tag(s){const m={'正使用':'tag-green','测试期':'tag-blue','沉默期':'tag-orange','停机':'tag-red','停机保号':'tag-purple','预销号':'tag-yellow','库存期':'tag-default','未知':'tag-default'};return `<span class="tag ${m[s]||'tag-default'}">${s}</span>`}
-function render(){const rows=filtered.slice((page-1)*size,page*size),body=document.getElementById('table-body');body.innerHTML=rows.map(x=>{const q=quota(x.plan),p=Math.round(x.used/q*100),c=p>100?'over':p>80?'warn':'',w=Math.min(p,100);return `<tr class="${selected.has(x.id)?'selected':''}"><td class="col-center"><input type="checkbox" ${selected.has(x.id)?'checked':''} onchange="toggleOne(${x.id},this.checked)"></td><td class="col-center num">${x.imsi}</td><td class="col-center num">${x.msisdn}</td><td class="col-center num">${x.iccid}</td><td>${x.carrier}</td><td>${x.plan}</td><td><div class="meter"><div class="meter-top"><span>${x.used.toFixed(1)}G / ${q}G</span>${p>100?'<span class="over-text">超套餐</span>':`<span>${p}%</span>`}</div><div class="meter-track"><i class="meter-fill ${c}" style="width:${w}%"></i></div></div></td><td class="col-center num">${x.vin||'--'}</td><td>${x.plate||'--'}</td><td>${x.project||'--'}</td><td>${x.type||'--'}</td><td class="col-center num">${x.device||'--'}</td><td class="col-center"><span class="operation-links"><a class="btn-link" href="./sim-card-detail.html?imsi=${x.imsi}">详情</a><a class="btn-link" href="./sim-card-maintain.html?imsi=${x.imsi}">信息维护</a></span></td></tr>`}).join('');document.getElementById('check-all').checked=rows.length>0&&rows.every(x=>selected.has(x.id));Common.renderPagination({total:filtered.length,currentPage:page,pageSize:size,containerId:'pagination',infoId:'total-count',pageInfoId:'page-info',onPageChange:p=>{page=p;render()}});}
+function render(){const rows=filtered.slice((page-1)*size,page*size),body=document.getElementById('table-body');body.innerHTML=rows.map(x=>{const q=x.quotaGb,p=Math.round(x.usedGb/q*100),c=p>100?'over':p>80?'warn':'',w=Math.min(p,100);return `<tr class="${selected.has(x.id)?'selected':''}"><td class="col-center"><input type="checkbox" ${selected.has(x.id)?'checked':''} onchange="toggleOne(${x.id},this.checked)"></td><td class="col-center num">${x.imsi}</td><td class="col-center num">${x.msisdn}</td><td class="col-center num">${x.iccid}</td><td>${x.carrier}</td><td>${x.plan}</td><td><div class="meter"><div class="meter-top"><span>${x.usedGb.toFixed(1)}G / ${q}G</span>${p>100?'<span class="over-text">超套餐</span>':`<span>${p}%</span>`}</div><div class="meter-track"><i class="meter-fill ${c}" style="width:${w}%"></i></div></div></td><td class="col-center num">${x.vin||'--'}</td><td>${x.plate||'--'}</td><td>${x.project||'--'}</td><td>${x.type||'--'}</td><td class="col-center num">${x.device||'--'}</td><td class="col-center"><span class="operation-links"><a class="btn-link" href="./sim-card-detail.html?imsi=${x.imsi}">详情</a><a class="btn-link" href="javascript:;" onclick="openSimBinding('${x.imsi}')">信息维护</a></span></td></tr>`}).join('');document.getElementById('check-all').checked=rows.length>0&&rows.every(x=>selected.has(x.id));Common.renderPagination({total:filtered.length,currentPage:page,pageSize:size,containerId:'pagination',infoId:'total-count',pageInfoId:'page-info',onPageChange:p=>{page=p;render()}});}
 function filterText(id,key,x){const v=document.getElementById(id).value.trim().toLowerCase();return !v||String(x[key]).toLowerCase().includes(v)}
-function search(){filtered=data.filter(x=>filterText('f-imsi','imsi',x)&&filterText('f-msisdn','msisdn',x)&&filterText('f-iccid','iccid',x)&&filterText('f-vin','vin',x)&&filterText('f-plate','plate',x)&&filterText('f-device','device',x)&&(!document.getElementById('f-carrier').value||x.carrier===document.getElementById('f-carrier').value)&&(!document.getElementById('f-status').value||x.status===document.getElementById('f-status').value)&&(!document.getElementById('f-plan').value||x.plan===document.getElementById('f-plan').value)&&(!document.getElementById('f-project').value||x.project===document.getElementById('f-project').value)&&(!document.getElementById('f-over').value||(document.getElementById('f-over').value==='yes'?x.used>quota(x.plan):x.used<=quota(x.plan))));page=1;selected.clear();render()}
+function search(){filtered=data.filter(x=>filterText('f-imsi','imsi',x)&&filterText('f-msisdn','msisdn',x)&&filterText('f-iccid','iccid',x)&&filterText('f-vin','vin',x)&&filterText('f-plate','plate',x)&&filterText('f-device','device',x)&&(!document.getElementById('f-carrier').value||x.carrier===document.getElementById('f-carrier').value)&&(!document.getElementById('f-status').value||x.status===document.getElementById('f-status').value)&&(!document.getElementById('f-plan').value||x.plan===document.getElementById('f-plan').value)&&(!document.getElementById('f-project').value||x.project===document.getElementById('f-project').value)&&(!document.getElementById('f-over').value||(document.getElementById('f-over').value==='yes'?x.usedGb>x.quotaGb:x.usedGb<=x.quotaGb)));page=1;selected.clear();render()}
 function resetFilters(){document.querySelectorAll('.search-item input,.search-item select').forEach(x=>x.value='');filtered=[...data];page=1;selected.clear();render()}
 function toggleFilters(){expanded=!expanded;document.querySelectorAll('.search-item:not(.visible)').forEach(x=>x.classList.toggle('visible',expanded));document.getElementById('toggle').textContent=expanded?'收起 ▴':'展开 ▾'}
 function checkAll(el){filtered.slice((page-1)*size,page*size).forEach(x=>el.checked?selected.add(x.id):selected.delete(x.id));render()}function toggleOne(id,on){on?selected.add(id):selected.delete(id);render()}function changePageSize(){size=+document.getElementById('page-size').value;page=1;render()}
 function exportData(){
   ListExport.run({rows:filtered,selectedIds:selected,currentPage:page,pageSize:size,
     onExport:()=>Common.showToast('已生成导出文件（原型演示）','success')});
+}
+
+// ===== 信息维护弹窗：车辆仅用于定位终端（不改变设备与车辆的绑定关系），保存后关闭弹窗并新增一条绑定记录 =====
+let activeSim=null;
+const simVehicleSelect=SearchSelect.init({
+  container:'#simBindingVehicle',
+  placeholder:'输入车牌 / VIN / 项目搜索（不填即不按车辆定位）',
+  allowClear:true,
+  items:()=>vehicles,
+  getValue:v=>v.vin,
+  getLabel:v=>`${v.plate} · ${v.vin}`,
+  matchText:v=>[v.plate,v.vin,v.project],
+  groupOf:v=>v.project,
+  sortItems:(a,b)=>String(a.plate).localeCompare(String(b.plate)),
+  renderOption:v=>({primary:v.plate,primaryClass:'num',meta:`${v.vin} · ${v.project}`}),
+  empty:{title:'无匹配车辆',desc:'请调整关键字后重试'},
+  onChange:()=>{simDeviceSelect.setItems();syncSimDeviceMeta()}
+});
+const simDeviceSelect=SearchSelect.init({
+  container:'#simBindingDevice',
+  placeholder:'输入硬件识别码 / 类型搜索',
+  allowClear:true,
+  items:()=>{const vin=simVehicleSelect.getValue();return devices.filter(d=>!vin||d.vehicleVin===vin)},
+  getValue:d=>d.identifier,
+  getLabel:d=>`${d.identifier} · ${d.type}`,
+  matchText:d=>[d.identifier,d.type,d.vehicleVin],
+  groupOf:d=>d.type,
+  sortItems:(a,b)=>a.identifier.localeCompare(b.identifier),
+  renderOption:d=>{
+    const holder=d.simImsi&&d.simImsi!==(activeSim?activeSim.imsi:'')?d.simImsi:'';
+    return {primary:d.identifier,primaryClass:'num',meta:d.type,disabled:!!holder,disabledReason:holder?`已被 ${holder} 占用`:''};
+  },
+  empty:{title:'无可绑定的终端',desc:'请调整车辆或关键字后重试'},
+  onChange:()=>syncSimDeviceMeta()
+});
+function syncSimDeviceMeta(){
+  const code=simDeviceSelect.getValue();
+  const device=code?devices.find(d=>d.identifier===code):null;
+  const vehicle=device?vehicleOfDevice(device):null;
+  document.getElementById('simBindingType').value=device?device.type:'—';
+  document.getElementById('simBindingProject').value=(vehicle&&vehicle.project)||'—';
+}
+function openSimBinding(imsi){
+  activeSim=sims.find(s=>s.imsi===imsi)||null;
+  if(!activeSim)return;
+  document.getElementById('simBindingImsi').textContent=activeSim.imsi;
+  document.getElementById('simBindingCarrier').textContent=activeSim.carrier;
+  const bound=deviceOfSim(activeSim.imsi);
+  simVehicleSelect.setValue(bound?bound.vehicleVin||null:null);
+  simDeviceSelect.setItems();
+  simDeviceSelect.setValue(bound?bound.identifier:null);
+  syncSimDeviceMeta();
+  Common.openModal('simBindingModal');
+}
+function saveSimBinding(e){
+  e.preventDefault();
+  if(!activeSim)return false;
+  const result=applySimBinding(activeSim,simDeviceSelect.getValue()||'','2026-10-14 '+new Date().toTimeString().slice(0,5));
+  Common.closeModal('simBindingModal');
+  if(!result.changed){Common.showToast('绑定关系无变化，未生成记录','info');return false}
+  data=simRows();filtered=[...data];page=1;selected.clear();render();
+  Common.showToast(result.device?'保存成功，已新增绑定记录':'已解除绑定，已新增绑定记录','success');
+  return false;
 }
 render();
 </script></body></html>
