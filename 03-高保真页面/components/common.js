@@ -12,6 +12,7 @@ const Common = {
         { label: '车辆资产管理', id: 'asset-manage', href: 'vehicle-asset/vehicle-asset-list.html' },
         { label: '标签管理', id: 'tag-manage', href: 'vehicle-tag/tag-manage-list.html' },
         { label: '车型管理', id: 'vehicle-model', href: 'vehicle-model/vehicle-model-list.html' },
+        { label: '设备管理', id: 'device-manage', href: 'vehicle-device/vehicle-device-list.html' },
       ]},
       { label: '资产管理', symbol: '资', items: [
         { label: '车辆资产盘点', id: 'asset-inventory', disabled: true },

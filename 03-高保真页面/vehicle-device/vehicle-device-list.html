@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备管理 - 车辆管理系统</title>
+<link rel="stylesheet" href="../components/common.css">
+<link rel="stylesheet" href="../components/fixed-table.css">
+<link rel="stylesheet" href="../components/master-list.css">
+<link rel="icon" href="data:,">
+<style>
+  .search-panel { margin-bottom:24px; }
+  .search-row { display:flex; align-items:flex-end; flex-wrap:wrap; gap:14px 20px; }
+  .search-item { display:flex; align-items:center; gap:8px; }
+  .search-item label { color:var(--text-secondary); white-space:nowrap; }
+  .search-item input,.search-item select { width:170px; height:32px; padding:0 10px; border:1px solid var(--border-input); border-radius:var(--radius); outline:none; background:#fff; color:var(--text-primary); }
+  .search-item input:focus,.search-item select:focus { border-color:var(--primary); }
+  .search-actions { display:flex; align-items:center; gap:8px; margin-left:auto; }
+  /* ===== 左栏设备分组工作台 ===== */
+  /* ===== 左栏设备分组工作台（面板与卡片样式见 components/master-list.css） ===== */
+  .device-shell { display:grid; grid-template-columns:304px minmax(0,1fr); min-height:calc(100vh - 112px); padding:0; overflow:hidden; }
+  .device-detail-col { min-width:0; padding:16px 24px 24px; }
+  .action-bar { margin-bottom:16px; }
+  .device-table { --fixed-table-min-width:1480px; }
+  .device-table table { table-layout:fixed; }
+  .device-table th:nth-child(1) { width:48px; }
+  .device-table th:nth-child(2) { width:136px; }
+  .device-table th:nth-child(3) { width:104px; }
+  .device-table th:nth-child(4) { width:156px; }
+  .device-table th:nth-child(5) { width:180px; }
+  .device-table th:nth-child(6) { width:104px; }
+  .device-table th:nth-child(7) { width:170px; }
+  .device-table th:nth-child(8) { width:170px; }
+  .device-table th:nth-child(9) { width:96px; }
+  .device-table th:nth-child(10) { width:136px; }
+  .device-table th:nth-child(11) { width:176px; }
+  .device-table th.col-center,.device-table td.col-center { text-align:center; }
+  .device-table td { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .device-code,.num { font-family:var(--font-number); font-variant-numeric:tabular-nums; }
+  .empty-cell { color:var(--text-disabled); }
+  .row-actions { display:inline-flex; align-items:center; gap:10px; white-space:nowrap; }
+  .pagination-row { display:flex; align-items:center; justify-content:flex-end; gap:12px; padding-top:16px; flex-wrap:wrap; }
+  .page-size { height:32px; padding:0 8px; border:1px solid var(--border-input); border-radius:var(--radius); background:#fff; }
+  .field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field.full { grid-column:1/-1; }
+  .field label { color:var(--text-secondary); font-size:13px; }
+  .field label .required { color:var(--error); margin-right:3px; }
+  .field input,.field select,.field textarea { width:100%; min-height:34px; padding:6px 10px; border:1px solid var(--border-input); border-radius:var(--radius); outline:none; color:var(--text-primary); background:#fff; }
+  .field textarea { min-height:78px; resize:vertical; line-height:22px; }
+  .field input:focus,.field select:focus,.field textarea:focus { border-color:var(--primary); }
+  .field input[readonly] { color:var(--text-secondary); background:#fafafa; }
+  .form-tip { grid-column:1/-1; padding:10px 12px; border-radius:var(--radius); background:#f6faff; color:#5b6b82; font-size:12px; line-height:20px; }
+  .modal-box.device-modal { width:720px; }
+  .modal-box.binding-modal { width:650px; }
+  .binding-preview { margin-bottom:18px; padding:12px 14px; background:#fafafa; border:1px solid var(--border-color); border-radius:var(--radius); }
+  .binding-preview strong { font-family:var(--font-number); }
+  .binding-preview span { margin-left:10px; color:var(--text-secondary); font-size:13px; }
+  .danger-link { color:var(--error); cursor:pointer; }
+  .danger-link:hover { color:#ff7875; }
+  @media(max-width:1280px) { .device-shell { grid-template-columns:264px minmax(0,1fr); } .device-detail-col { padding:16px; } }
+  @media(max-width:1100px) { .search-actions { margin-left:0; } }
+  @media(max-width:900px) { .device-shell { display:block; padding:0; } }
+  @media(max-width:720px) { .field-grid { grid-template-columns:1fr; } .field.full,.form-tip { grid-column:auto; } .content { padding:16px; } .device-shell { padding:0; } }
+</style>
+</head>
+<body>
+<div class="layout"><aside class="sidebar" id="sidebar"></aside><div class="main-area"><div id="header"></div><main class="content"><section class="page-container device-shell">
+  <aside class="master-panel" aria-label="设备分组">
+    <div class="master-heading">
+      <h2 class="panel-title">设备列表</h2>
+      <span class="panel-total" id="masterTotal">共 0 台</span>
+    </div>
+    <div class="master-filter" id="masterFilter">
+      <div class="compact-field"><label for="left-identifier">识别码</label><input id="left-identifier" placeholder="请输入设备识别码"></div>
+      <div class="compact-actions">
+        <span aria-hidden="true"></span>
+        <div class="compact-action-buttons"><button class="btn" type="button" onclick="resetLeftSearch()">重置</button><button class="btn btn-primary" type="button" onclick="searchLeft()">查询</button></div>
+      </div>
+    </div>
+    <div class="group-toolbar">
+      <div class="segmented" id="groupMode" role="group" aria-label="设备分组方式"><button class="segment-btn active" type="button" data-mode="type" onclick="changeGroupMode('type')">设备类型</button><button class="segment-btn" type="button" data-mode="vin" onclick="changeGroupMode('vin')">车辆VIN码</button><button class="segment-btn" type="button" data-mode="project" onclick="changeGroupMode('project')">项目</button></div>
+      <span class="list-result" id="groupCount">0 个分组</span>
+    </div>
+    <div class="group-list" id="groupList"></div>
+  </aside>
+  <div class="device-detail-col">
+  <div class="search-panel" id="searchPanel">
+    <div class="search-row">
+      <div class="search-item"><label for="f-sim">是否有SIM卡</label><select id="f-sim"><option value="">全部</option><option value="bound">有</option><option value="unbound">无</option></select></div>
+      <div class="search-item"><label for="f-status">状态</label><select id="f-status"><option value="">全部</option><option>正常</option><option>维修中</option><option>已报废</option></select></div>
+      <div class="search-actions"><button class="btn btn-primary" type="button" onclick="applyFilters()">查询</button><button class="btn" type="button" onclick="resetFilters()">重置</button></div>
+    </div>
+  </div>
+
+  <div class="action-bar"><button class="btn btn-primary" type="button" onclick="openEditor()">＋ 新增设备</button><button class="btn" type="button" onclick="exportDevices()">导出</button></div>
+
+  <div class="table-wrapper fixed-table device-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1480px"><table><thead><tr><th class="col-center"><input id="checkAll" type="checkbox" onchange="toggleAll(this.checked)" aria-label="全选当前页"></th><th>设备名称</th><th class="col-center">设备类型</th><th class="col-center">设备识别码</th><th>车辆VIN码</th><th class="col-center">是否有SIM卡</th><th>IMSI</th><th>厂商 / 型号</th><th class="col-center">状态</th><th class="col-center">最近维护</th><th class="col-center">操作</th></tr></thead><tbody id="deviceBody"></tbody></table></div>
+  <div class="pagination-area"><div class="pagination-left"><div class="pagination-info">共 <strong id="totalCount">0</strong> 台</div><span class="pagination-pages" id="pageInfo"></span></div><div style="display:flex;align-items:center;gap:8px"><div class="pagination" id="pagination"></div><select class="page-size-select" id="pageSize" onchange="changePageSize()"><option value="10" selected>10条/页</option><option value="20">20条/页</option><option value="50">50条/页</option></select></div></div>
+  </div>
+</section></main></div></div>
+
+<div class="modal-overlay" id="deviceModal"><div class="modal-box device-modal" role="dialog" aria-modal="true" aria-labelledby="deviceModalTitle"><div class="modal-header"><h3 id="deviceModalTitle">新增设备</h3><button class="modal-close" type="button" onclick="Common.closeModal('deviceModal')" aria-label="关闭">×</button></div><div class="modal-body"><form id="deviceForm" onsubmit="return saveDevice(event)"><div class="field-grid"><div class="field"><label><span class="required">*</span>设备名称</label><input id="deviceName" required placeholder="请输入设备名称，如 T-BOX"></div><div class="field"><label><span class="required">*</span>设备类型</label><select id="deviceType" required><option value="">请选择</option><option>T-Box</option><option>ADU</option><option>OBU</option><option>DTU</option><option>视频盒子</option></select></div><div class="field"><label><span class="required">*</span>设备识别码</label><input id="deviceIdentifier" required placeholder="请输入设备识别码"></div><div class="field"><label>设备序列号</label><input id="deviceSerial" placeholder="请输入设备序列号"></div><div class="field"><label>厂商</label><input id="deviceVendor" placeholder="请输入厂商"></div><div class="field"><label>型号</label><input id="deviceModel" placeholder="请输入型号"></div><div class="field"><label>状态</label><select id="deviceStatus"><option>正常</option><option>维修中</option><option>已报废</option></select></div><div class="field full"><label>备注</label><textarea id="deviceNotes" placeholder="补充设备来源、安装说明等信息"></textarea></div><div class="form-tip">设备与车辆、SIM 卡的关系在“维护绑定关系”操作中单独维护。设备名称、识别码保存后不可与其他设备重复。</div></div></form></div><div class="modal-footer"><button class="btn" type="button" onclick="Common.closeModal('deviceModal')">取消</button><button class="btn btn-primary" type="submit" form="deviceForm">保存</button></div></div></div>
+
+<div class="modal-overlay" id="bindingModal"><div class="modal-box binding-modal" role="dialog" aria-modal="true" aria-labelledby="bindingModalTitle"><div class="modal-header"><h3 id="bindingModalTitle">维护绑定关系</h3><button class="modal-close" type="button" onclick="Common.closeModal('bindingModal')" aria-label="关闭">×</button></div><div class="modal-body"><div class="binding-preview"><strong id="bindingDeviceCode">—</strong><span id="bindingDeviceType">—</span></div><form id="bindingForm" onsubmit="return saveBinding(event)"><div class="field-grid"><div class="field full"><label>绑定车辆</label><select id="bindingVehicle"></select></div><div class="field full"><label>绑定 SIM 卡</label><select id="bindingSim"></select></div><div class="form-tip">同一张 SIM 卡在同一时间只能绑定一个设备。清空某一项即可解除对应关系，保存后系统会写入绑定历史。</div></div></form></div><div class="modal-footer"><button class="btn" type="button" onclick="Common.closeModal('bindingModal')">取消</button><button class="btn btn-primary" type="submit" form="bindingForm">保存绑定</button></div></div></div>
+
+<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/fixed-table.js"></script><script src="../components/master-list.js"></script><script src="vehicle-device-data.js"></script>
+<script>
+Common.initLayout({basePath:'../',sidebarId:'sidebar',activeMenuId:'device-manage',headerId:'header',headerOptions:{showProject:true}});
+
+const NO_GROUP='无分组';
+let groupMode='type', leftKeyword='';
+let scope={kind:'all'};
+let filtered=[...devices], currentPage=1, pageSize=10, selected=new Set(), editingId=null, bindingId=null;
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const vehicleOf=d=>vehicles.find(v=>v.vin===d.vehicleVin);
+const simOf=d=>sims.find(s=>s.imsi===d.simImsi);
+function statusTag(value){const map={'正常':'tag-green','维修中':'tag-orange','已报废':'tag-red'};return `<span class="tag ${map[value]||'tag-default'}">${esc(value)}</span>`}
+function sortDevices(list){return list.slice().sort((a,b)=>a.identifier.localeCompare(b.identifier))}
+function leftDevices(){const keyword=leftKeyword.trim().toLowerCase();return devices.filter(d=>!keyword||d.identifier.toLowerCase().includes(keyword))}
+function groupKeyOf(d){if(groupMode==='type')return d.type||NO_GROUP;if(groupMode==='vin')return d.vehicleVin||NO_GROUP;const v=vehicleOf(d);return (v&&v.project)||NO_GROUP}
+function statusDotClass(value){return {'正常':'is-success','维修中':'is-warn','已报废':'is-danger'}[value]||'is-success'}
+function scopeDevices(){const list=leftDevices();if(scope.kind==='all')return list;return scope.kind==='group'?list.filter(d=>groupKeyOf(d)===scope.key):list.filter(d=>d.id===scope.id)}
+function normalizeScope(list){const ordered=sortDevices(list);if(!list.length){if(scope.kind!=='all')scope={kind:'all'};return}if(scope.kind==='all')return;const fallback=()=>{scope={kind:'device',id:ordered[0].id}};if(scope.kind==='group'){if(!list.some(d=>groupKeyOf(d)===scope.key))fallback();return}if(!list.some(d=>d.id===scope.id))fallback()}
+function activeGroupKey(){if(scope.kind==='group')return scope.key;if(scope.kind!=='device')return null;const d=devices.find(x=>x.id===scope.id);return d?groupKeyOf(d):null}
+
+// 左侧设备主从列表：统一由公共组件管理分组、折叠(默认仅展开首个分组)与选中态
+const deviceList=MasterList.init({
+  container:'#groupList',
+  totalEl:'#masterTotal',
+  countEl:'#groupCount',
+  totalText:count=>`共 ${count} 台`,
+  items:()=>leftDevices(),
+  getId:d=>d.id,
+  groupModes:[
+    {key:'type',label:'设备类型',of:d=>d.type},
+    {key:'vin',label:'车辆VIN码',of:d=>d.vehicleVin,labelOf:key=>{const v=vehicles.find(x=>x.vin===key);return v&&v.plate?`${key}（${v.plate}）`:key}},
+    {key:'project',label:'项目',of:d=>{const v=vehicleOf(d);return v&&v.project}}
+  ],
+  defaultMode:'type',
+  sortItems:(a,b)=>a.identifier.localeCompare(b.identifier),
+  // 分组排序沿用原规则：字母编码类分组在前、中文分组在后，「无分组」置末(命中项置首由组件保证)
+  sortGroups:(a,b)=>{if(a===NO_GROUP)return 1;if(b===NO_GROUP)return -1;const aAscii=/^[\x00-\x7f]/.test(a),bAscii=/^[\x00-\x7f]/.test(b);if(aAscii!==bAscii)return aAscii?-1:1;return a.localeCompare(b,'zh-CN')},
+  isActive:d=>scope.kind==='device'&&scope.id===d.id,
+  isGroupActive:key=>scope.kind==='group'&&scope.key===key,
+  activeGroupKey:activeGroupKey,
+  groupSelectable:true,
+  scopeRow:{text:'全部设备',count:()=>leftDevices().length,isActive:()=>scope.kind==='all',onSelect:selectAll},
+  renderCard:d=>{const v=vehicleOf(d);return{primary:d.identifier,primaryClass:'num',dot:statusDotClass(d.status),dotTitle:d.status,meta:`${d.name||'—'} · ${v?(v.plate||v.vin):'未绑定车辆'}`}},
+  empty:{title:'未找到匹配的设备',desc:'请调整识别码后重试'},
+  onSelect:d=>selectDevice(d.id),
+  onGroupSelect:key=>selectGroup(key)
+});
+function refreshGroups(reset){normalizeScope(leftDevices());if(reset)deviceList.reset();else deviceList.render();render()}
+function searchLeft(){leftKeyword=document.getElementById('left-identifier').value;selected.clear();currentPage=1;refreshGroups(true)}
+function resetLeftSearch(){document.getElementById('left-identifier').value='';leftKeyword='';selected.clear();currentPage=1;refreshGroups(true)}
+function changeGroupMode(mode){if(groupMode===mode)return;const wasGroup=scope.kind==='group'?leftDevices().filter(d=>groupKeyOf(d)===scope.key):null;groupMode=mode;document.querySelectorAll('#groupMode button').forEach(button=>button.classList.toggle('active',button.dataset.mode===mode));if(wasGroup&&wasGroup.length)scope={kind:'device',id:sortDevices(wasGroup)[0].id};selected.clear();currentPage=1;deviceList.setMode(mode);render()}
+function selectAll(){if(scope.kind==='all')return;scope={kind:'all'};selected.clear();currentPage=1;refreshGroups()}
+function selectGroup(key){if(scope.kind==='group'&&scope.key===key)return;scope={kind:'group',key};selected.clear();currentPage=1;refreshGroups()}
+function selectDevice(id){if(scope.kind==='device'&&scope.id===id)return;scope={kind:'device',id};selected.clear();currentPage=1;refreshGroups()}
+function render(){filtered=rightFiltered(scopeDevices());const maxPage=Math.max(1,Math.ceil(filtered.length/pageSize));if(currentPage>maxPage)currentPage=maxPage;const start=(currentPage-1)*pageSize, rows=filtered.slice(start,start+pageSize), body=document.getElementById('deviceBody');body.innerHTML=rows.length?rows.map(d=>{const v=vehicleOf(d),s=simOf(d);return `<tr class="${selected.has(d.id)?'selected':''}"><td class="col-center"><input type="checkbox" ${selected.has(d.id)?'checked':''} onchange="toggleOne(${d.id},this.checked)" aria-label="选择 ${esc(d.identifier)}"></td><td>${esc(d.name)||'—'}</td><td>${esc(d.type)}</td><td class="device-code">${esc(d.identifier)}</td><td>${v?`<a class="btn-link device-code" href="../vehicle-asset/vehicle-asset-detail.html?id=${v.assetId}">${esc(v.vin)}</a>`:'<span class="empty-cell">未绑定车辆</span>'}</td><td>${s?'有':'<span class="empty-cell">无</span>'}</td><td>${s?`<a class="btn-link device-code" href="../sim-card/sim-card-detail.html?imsi=${encodeURIComponent(s.imsi)}">${esc(s.imsi)}</a>`:'<span class="empty-cell">未绑定</span>'}</td><td>${[d.vendor,d.model].filter(Boolean).map(esc).join(' ')||'—'}</td><td>${statusTag(d.status)}</td><td class="num">${esc(d.updated)}</td><td class="col-center"><span class="row-actions"><a class="btn-link" href="./vehicle-device-detail.html?id=${d.id}">查看</a><a class="btn-link" href="javascript:;" onclick="openEditor(${d.id})">编辑</a><a class="btn-link" href="javascript:;" onclick="openBinding(${d.id})">绑定</a></span></td></tr>`}).join(''):'<tr><td colspan="11"><div class="placeholder-state"><div class="placeholder-icon">⌕</div><div class="placeholder-text">暂无匹配设备</div><div class="placeholder-hint">请调整左侧分组或筛选条件后重试</div></div></td></tr>';document.getElementById('checkAll').checked=rows.length>0&&rows.every(x=>selected.has(x.id));Common.renderPagination({total:filtered.length,currentPage,pageSize,containerId:'pagination',infoId:'totalCount',pageInfoId:'pageInfo',onPageChange:p=>{currentPage=p;render()}})}
+function rightFiltered(list){const simState=document.getElementById('f-sim').value,status=document.getElementById('f-status').value;return list.filter(d=>(!simState||(simState==='bound'?!!d.simImsi:!d.simImsi))&&(!status||d.status===status))}
+function applyFilters(){currentPage=1;selected.clear();render()}
+function refreshAfterSave(createdId){if(createdId){document.getElementById('left-identifier').value='';leftKeyword='';scope={kind:'device',id:createdId}}selected.clear();currentPage=1;refreshGroups(true)}
+function resetFilters(){document.getElementById('f-sim').value='';document.getElementById('f-status').value='';currentPage=1;selected.clear();render()}
+function toggleAll(on){filtered.slice((currentPage-1)*pageSize,currentPage*pageSize).forEach(d=>on?selected.add(d.id):selected.delete(d.id));render()}
+function toggleOne(id,on){on?selected.add(id):selected.delete(id);render()}
+function changePageSize(){pageSize=Number(document.getElementById('pageSize').value);currentPage=1;render()}
+function openEditor(id){editingId=id||null;const d=id?devices.find(x=>x.id===id):null;document.getElementById('deviceModalTitle').textContent=d?'编辑设备':'新增设备';document.getElementById('deviceName').value=d?.name||'';document.getElementById('deviceIdentifier').value=d?.identifier||'';document.getElementById('deviceType').value=d?.type||'';document.getElementById('deviceSerial').value=d?.serial||'';document.getElementById('deviceVendor').value=d?.vendor||'';document.getElementById('deviceModel').value=d?.model||'';document.getElementById('deviceStatus').value=d?.status||'正常';document.getElementById('deviceNotes').value=d?.notes||'';Common.openModal('deviceModal');setTimeout(()=>document.getElementById('deviceName').focus(),0)}
+function saveDevice(e){e.preventDefault();const name=document.getElementById('deviceName').value.trim(),identifier=document.getElementById('deviceIdentifier').value.trim(),type=document.getElementById('deviceType').value;if(!name||!identifier||!type)return false;const duplicate=devices.find(d=>d.identifier.toLowerCase()===identifier.toLowerCase()&&d.id!==editingId);if(duplicate){Common.showToast('设备识别码已存在，请更换后再保存','error');return false}const now='2026-10-13 '+new Date().toTimeString().slice(0,5);let createdId=null;if(editingId){const d=devices.find(x=>x.id===editingId);Object.assign(d,{name,identifier,type,serial:document.getElementById('deviceSerial').value.trim(),status:document.getElementById('deviceStatus').value,vendor:document.getElementById('deviceVendor').value.trim(),model:document.getElementById('deviceModel').value.trim(),notes:document.getElementById('deviceNotes').value.trim(),updated:now});d.history.unshift([now,'编辑设备','更新设备基础信息'])}else{const d={id:Date.now(),name,identifier,type,serial:document.getElementById('deviceSerial').value.trim(),status:document.getElementById('deviceStatus').value,vendor:document.getElementById('deviceVendor').value.trim(),model:document.getElementById('deviceModel').value.trim(),notes:document.getElementById('deviceNotes').value.trim(),vehicleVin:'',simImsi:'',updated:now,history:[[now,'新增设备','创建设备台账']]};devices.unshift(d);createdId=d.id}Common.closeModal('deviceModal');refreshAfterSave(createdId);Common.showToast(editingId?'设备信息已更新':'设备已新增','success');return false}
+function populateBindingOptions(d){const vSel=document.getElementById('bindingVehicle'),sSel=document.getElementById('bindingSim');vSel.innerHTML='<option value="">不绑定车辆</option>'+vehicles.map(v=>`<option value="${esc(v.vin)}">${esc(v.plate)} · ${esc(v.vin)} · ${esc(v.project)}</option>`).join('');sSel.innerHTML='<option value="">不绑定 SIM 卡</option>'+sims.map(s=>{const used=devices.find(x=>x.simImsi===s.imsi&&x.id!==d.id);return `<option value="${esc(s.imsi)}" ${used?'disabled':''}>${esc(s.imsi)} · ${esc(s.carrier)}${used?'（已被 '+esc(used.identifier)+' 占用）':''}</option>`}).join('');vSel.value=d.vehicleVin||'';sSel.value=d.simImsi||''}
+function openBinding(id){bindingId=id;const d=devices.find(x=>x.id===id);if(!d)return;document.getElementById('bindingDeviceCode').textContent=d.identifier;document.getElementById('bindingDeviceType').textContent=d.type;populateBindingOptions(d);Common.openModal('bindingModal')}
+function saveBinding(e){e.preventDefault();const d=devices.find(x=>x.id===bindingId);if(!d)return false;const newVin=document.getElementById('bindingVehicle').value,newSim=document.getElementById('bindingSim').value;const conflict=devices.find(x=>x.id!==d.id&&x.simImsi&&x.simImsi===newSim);if(conflict){Common.showToast(`SIM 卡已绑定设备 ${conflict.identifier}`,'error');return false}const now='2026-10-13 '+new Date().toTimeString().slice(0,5),oldVin=d.vehicleVin,oldSim=d.simImsi;d.vehicleVin=newVin;d.simImsi=newSim;d.updated=now;if(oldVin!==newVin){const old=vehicleOf({vehicleVin:oldVin});const next=vehicleOf({vehicleVin:newVin});d.history.unshift([now,newVin?'绑定车辆':'解绑车辆',newVin?`绑定 ${next?.plate||newVin}`:`解除 ${old?.plate||oldVin||'车辆'} 关系`])}if(oldSim!==newSim){d.history.unshift([now,newSim?'绑定 SIM':'解绑 SIM',newSim?`绑定 ${newSim}`:`解除 ${oldSim||'SIM'} 关系`])}Common.closeModal('bindingModal');refreshAfterSave(null);Common.showToast('绑定关系已保存','success');return false}function exportDevices(){const rows=selected.size?devices.filter(d=>selected.has(d.id)):filtered;if(!rows.length){Common.showToast('当前没有可导出的设备','info');return}Common.showToast(`已生成 ${rows.length} 台设备的导出文件（原型演示）`,'success')}
+document.getElementById('left-identifier').addEventListener('keydown',event=>{if(event.key==='Enter')searchLeft()});
+refreshGroups(true);
+</script>
+</body>
+</html>

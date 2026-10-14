@@ -25,6 +25,13 @@
 车辆详情“车辆功能配置”支持查看与编辑绑定对讲机，枚举值为“有、无”。
 车辆详情“车辆档案”的查看态、编辑态及档案目录，与车辆建档“单个录入”统一按“摄像头图片配置 → 车辆功能配置 → 平行驾驶配置”的顺序展示。
 
+### 2.1 设备管理
+- **设备台账页**：独立维护 T-Box、ADU、OBU、DTU、视频盒子等车端网联终端，字段与车辆档案「硬件信息」表对齐（设备名称、设备类型、设备识别码、是否有SIM卡、IMSI、状态、厂商/型号）；采用「左栏分组管理 + 右栏台账表格」工作台布局：左栏支持按设备识别码检索、按设备类型/车辆VIN码/项目三种维度分组浏览，分组可折叠展开并显示组内台数，缺少当前分组属性的设备归入「无分组」并固定置末，顶部「全部设备」默认选中、组内设备按识别码排序；点击分组行选中该分组、点击行首箭头仅折叠展开、点击设备定位到单台设备，右栏表格随左栏选择范围收敛；右栏仅保留是否有SIM卡、状态两项筛选（设备类型、车辆、归属项目由左栏承担），支持设备主数据新增/编辑、分页、导出；行内「查看」跳转设备详情页。新增设备保存后自动定位到该设备并清空左栏检索，编辑与绑定保存后保留当前浏览范围并刷新左栏分组与计数。
+- **设备详情页**：二级页面（替代原抽屉样式），展示设备信息、当前绑定（车辆VIN码、是否有SIM卡、IMSI）与绑定/维护历史，顶部提供「返回列表 / 编辑设备 / 维护绑定」入口。台账与详情页的车辆 VIN 码、IMSI 均为超链接，分别跳转车辆资产详情页与 SIM 卡详情页。
+- **绑定关系维护**：支持从设备台账或详情页维护设备与车辆、SIM 卡的当前绑定关系，并保留绑定/解绑/更换等历史记录；同一张 SIM 卡同一时间只能绑定一个设备。本期暂不展示设备在线、最近上报和健康诊断等动态信息。
+- **数据来源**：设备/车辆/SIM 演示数据统一维护在 `03-高保真页面/vehicle-device/vehicle-device-data.js`，由台账页与详情页共用。
+- 详细设计见《设备管理PRD》。
+
 ### 3. 车型管理
 - **列表页**：车型主数据管理，支持可折叠展开的版本子列表；车型可暂时没有版本。两级操作文案统一带层级后缀：车型行提供车型详情、编辑车型、新建版本、删除车型入口，版本行提供版本详情、编辑版本、新建版本、删除版本入口（内外操作列同宽 280px，按钮统一左对齐）。版本列表展示车型版本、车辆型号、整车厂商、创建人、创建时间、更新人、更新时间。查询区默认展示 4 个条件、可展开全部 11 个，收起/展开复用公共组件 `filter-component.js`（`data-visible-count="4"`，legacy 自动绑定）。
 - **新增页**：车型信息必填，版本信息可选；支持创建车型后从列表快捷补充首个版本。
@@ -98,7 +105,14 @@
 │   │   ├── common.js         # 公共脚本（布局初始化、分页、弹窗、Toast）
 │   │   ├── fixed-table.css   # 固定首尾列横向滚动表格样式
 │   │   ├── fixed-table.js    # 固定首尾列横向滚动表格交互
-│   │   └── form.css          # 表单样式（左置外置标签、字段校验提示）
+│   │   ├── master-list.css   # 主从列表样式（左侧分组列表面板）
+│   │   ├── master-list.js    # 主从列表交互（分组、折叠、分批加载、选中态、空态）
+│   │   ├── form.css          # 表单样式（左置外置标签、字段校验提示）
+│   │   ├── pagination-component.js  # 分页渲染
+│   │   ├── filter-component.js      # 查询筛选区条件展开/收起
+│   │   ├── export-component.js      # 列表导出范围确认与反馈
+│   │   ├── vehicle-model-store.js   # 车型与版本原型数据
+│   │   └── vehicle-monitor-data.js  # 车辆监管一张图原型数据
 │   ├── vehicle-register/     # 车辆建档模块
 │   │   ├── vehicle-register-list.html    # 列表页
 │   │   ├── vehicle-register-add.html     # 新增页
@@ -113,6 +127,10 @@
 │   │   ├── vehicle-model-add.html        # 新增页
 │   │   ├── vehicle-model-detail.html     # 详情页
 │   │   └── vehicle-model-new-version.html# 新建版本页
+│   └── vehicle-device/       # 设备管理模块
+│       ├── vehicle-device-list.html      # 设备列表页
+│       ├── vehicle-device-detail.html    # 设备详情页
+│       └── vehicle-device-data.js        # 设备与绑定关系原型数据
 │   └── vehicle-dispatch/     # 车辆调度管理模块
 │       ├── dispatch-vehicle-list.html    # 可用车辆库列表页
 │       ├── dispatch-record-list.html     # 调度记录管理列表页
@@ -152,6 +170,7 @@
 | 按钮 | `common.css` | `.btn`（32px）、`.btn-primary`、`.btn-danger`、`.btn-sm`（24px）、`.btn-link` |
 | 表格 | `common.css` | `.table-wrapper`（横向滚动）、48px 行高、`.col-left/.col-center/.col-right` 对齐类、`.ellipsis`、`.num` |
 | 固定列长表格 | `fixed-table.css` + `fixed-table.js` | 在 `.table-wrapper` 增加 `.fixed-table`，用 `data-fixed-first` / `data-fixed-last` 固定首个业务列和末列，自动跳过复选框；单元格不换行，`data-fixed-min-width` 指定横向滚动阈值 |
+| 主从列表 | `master-list.css` + `master-list.js` | 左侧分组列表 + 右侧明细工作台的左栏列表组件。按 `.master-panel / .master-heading / .master-filter / .group-toolbar / .group-list` 固定结构组织，由 `MasterList.init(options)` 驱动分组、折叠（默认仅展开首个分组）、组内分批加载、选中态与空态。`groupModes` 声明分组维度并支持 `labelOf` 定制分组名，`sortGroups` 定制分组排序（命中项置首与「无分组」置末由组件保证）；`groupSelectable` 区分「箭头折叠 / 分组行选中」，`scopeRow` 提供「全部」范围行（`count` 支持函数），`renderCard` 注入卡片主标识、状态圆点与次要信息（`meta` 可传数组渲染多行）。返回 `{render, reset, setMode, getMode, getGroupText}`。规范详见 `02-产品文档/公共组件规范.md` 第 3 节 |
 | 标签 | `common.css` | `.tag` 及 `.tag-blue/green/orange/red/default/purple/yellow` |
 | 分页 | `pagination-component.js` + `common.js` | 公共 `Pagination` 组件统一渲染页码、每页条数与翻页状态；`Common.renderPagination()` 保持旧页面调用兼容 |
 | 查询筛选 | `filter-component.js` | 统一处理历史查询栏及子页面查询区的展开/收起，超过一行时自动收纳多余条件 |
