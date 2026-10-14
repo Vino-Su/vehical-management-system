@@ -6,7 +6,9 @@
 <title>设备详情 - 车辆管理系统</title>
 <link rel="stylesheet" href="../components/common.css">
 <link rel="stylesheet" href="../components/fixed-table.css">
-<!-- 页面用途：展示单台车端网联终端的基础信息、当前绑定关系与绑定/维护历史，并提供编辑设备、维护绑定入口。 -->
+<link rel="icon" href="data:,">
+<!-- 页面用途：展示单台车端网联终端的基础信息、当前绑定关系与设备变更日志，并提供编辑设备、维护绑定入口。 -->
+<!-- 设备变更日志为字段级事件流：保存设备信息或绑定后按字段差异逐项追加（操作类型/修改字段/修改前/修改后/操作人/操作时间），口径对齐车辆资产详情「变更日志」Tab。 -->
 <style>
   .detail-header { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; padding:0 0 18px; border-bottom:1px solid var(--border-color); }
   .detail-actions { display:flex; align-items:center; gap:8px; }
@@ -25,12 +27,11 @@
   .description-value { padding:14px 12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); }
   .description-value.num { font-family:var(--font-number); }
   .empty-cell { color:var(--text-disabled); }
-  .history-list { border:1px solid var(--border-color); border-radius:var(--radius); overflow:hidden; }
-  .history-item { display:grid; grid-template-columns:150px 90px minmax(0,1fr); gap:12px; padding:12px 14px; border-bottom:1px solid var(--border-color); font-size:13px; line-height:20px; }
-  .history-item:last-child { border-bottom:0; }
-  .history-time { color:var(--text-secondary); font-family:var(--font-number); }
-  .history-type { color:var(--primary); }
-  .history-note { color:var(--text-primary); }
+  /* ===== 设备变更日志：区块标题行 + 字段级事件表，列与对齐口径对齐车辆资产详情「变更日志」Tab ===== */
+  .log-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .log-head .section-title { margin-bottom:0; }
+  .log-head-hint { font-size:13px; color:var(--text-secondary); }
+  .log-pagination { display:flex; justify-content:flex-end; align-items:center; gap:12px; padding-top:16px; font-size:13px; color:var(--text-secondary); }
   .field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
   .field { display:flex; flex-direction:column; gap:6px; }
   .field.full { grid-column:1/-1; }
@@ -54,14 +55,14 @@
   <div class="detail-header"><div class="detail-id">设备详情 <span id="detailIdSub">—</span></div><div class="detail-actions"><a class="btn" href="./vehicle-device-list.html">返回列表</a><button class="btn" type="button" onclick="openEditor()">编辑设备</button><button class="btn btn-primary" type="button" onclick="openBinding()">维护绑定</button></div></div>
   <div class="section"><h2 class="section-title">设备信息</h2><div class="description-grid" id="deviceInfoGrid"></div></div>
   <div class="section"><h2 class="section-title">当前绑定</h2><div class="description-grid" id="bindingGrid"></div></div>
-  <div class="section"><h2 class="section-title">绑定与维护历史</h2><div class="history-list" id="historyList"></div></div>
+  <div class="section"><div class="log-head"><h2 class="section-title">设备变更日志</h2><span class="log-head-hint">保存设备信息或绑定后自动新增记录</span></div><div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="0" data-fixed-min-width="940"><table><thead><tr><th class="col-center" style="width:96px">操作类型</th><th class="col-left" style="width:130px">修改字段</th><th class="col-left" style="width:232px">修改前</th><th class="col-left" style="width:232px">修改后</th><th class="col-center" style="width:96px">操作人</th><th class="col-center" style="width:154px">操作时间</th></tr></thead><tbody id="changeLogBody"></tbody></table></div><div class="log-pagination"><span>共 <b id="changeLogCount">0</b> 条</span><span id="changeLogInfo"></span><div id="changeLogPagination"></div></div></div>
 </section></main></div></div>
 
 <div class="modal-overlay" id="deviceModal"><div class="modal-box device-modal" role="dialog" aria-modal="true" aria-labelledby="deviceModalTitle"><div class="modal-header"><h3 id="deviceModalTitle">编辑设备</h3><button class="modal-close" type="button" onclick="Common.closeModal('deviceModal')" aria-label="关闭">×</button></div><div class="modal-body"><form id="deviceForm" onsubmit="return saveDevice(event)"><div class="field-grid"><div class="field"><label><span class="required">*</span>设备名称</label><input id="deviceName" required placeholder="请输入设备名称，如 T-BOX"></div><div class="field"><label><span class="required">*</span>设备类型</label><select id="deviceType" required><option value="">请选择</option><option>T-Box</option><option>ADU</option><option>OBU</option><option>DTU</option><option>视频盒子</option></select></div><div class="field"><label><span class="required">*</span>设备识别码</label><input id="deviceIdentifier" required placeholder="请输入设备识别码"></div><div class="field"><label>设备序列号</label><input id="deviceSerial" placeholder="请输入设备序列号"></div><div class="field"><label>厂商</label><input id="deviceVendor" placeholder="请输入厂商"></div><div class="field"><label>型号</label><input id="deviceModel" placeholder="请输入型号"></div><div class="field"><label>状态</label><select id="deviceStatus"><option>正常</option><option>维修中</option><option>已报废</option></select></div><div class="field full"><label>备注</label><textarea id="deviceNotes" placeholder="补充设备来源、安装说明等信息"></textarea></div><div class="form-tip">设备与车辆、SIM 卡的关系在“维护绑定”操作中单独维护。设备名称、识别码保存后不可与其他设备重复。</div></div></form></div><div class="modal-footer"><button class="btn" type="button" onclick="Common.closeModal('deviceModal')">取消</button><button class="btn btn-primary" type="submit" form="deviceForm">保存</button></div></div></div>
 
 <div class="modal-overlay" id="bindingModal"><div class="modal-box binding-modal" role="dialog" aria-modal="true" aria-labelledby="bindingModalTitle"><div class="modal-header"><h3 id="bindingModalTitle">维护绑定关系</h3><button class="modal-close" type="button" onclick="Common.closeModal('bindingModal')" aria-label="关闭">×</button></div><div class="modal-body"><div class="binding-preview"><strong id="bindingDeviceCode">—</strong><span id="bindingDeviceType">—</span></div><form id="bindingForm" onsubmit="return saveBinding(event)"><div class="field-grid"><div class="field full"><label>绑定车辆</label><select id="bindingVehicle"></select></div><div class="field full"><label>绑定 SIM 卡</label><select id="bindingSim"></select></div><div class="form-tip">同一张 SIM 卡在同一时间只能绑定一个设备。清空某一项即可解除对应关系，保存后系统会写入绑定历史。</div></div></form></div><div class="modal-footer"><button class="btn" type="button" onclick="Common.closeModal('bindingModal')">取消</button><button class="btn btn-primary" type="submit" form="bindingForm">保存绑定</button></div></div></div>
 
-<script src="../components/common.js"></script><script src="vehicle-device-data.js"></script>
+<script src="../components/common.js"></script><script src="../components/pagination-component.js"></script><script src="../components/fixed-table.js"></script><script src="vehicle-device-data.js"></script>
 <script>
 Common.initLayout({basePath:'../',sidebarId:'sidebar',activeMenuId:'device-manage',headerId:'header',headerOptions:{showProject:true}});
 
@@ -92,17 +93,30 @@ function renderPage(){
     item('车辆VIN码',v?`<a class="btn-link" href="../vehicle-asset/vehicle-asset-detail.html?id=${v.assetId}">${esc(v.vin)}</a>`:'<span class="empty-cell">未绑定车辆</span>',{num:true})
     +item('是否有SIM卡',s?'有':'<span class="empty-cell">无</span>')
     +item('IMSI',s?`<a class="btn-link" href="../sim-card/sim-card-detail.html?imsi=${encodeURIComponent(s.imsi)}">${esc(s.imsi)}</a>`:'<span class="empty-cell">未绑定 SIM 卡</span>',{num:true});
-  document.getElementById('historyList').innerHTML=(current.history&&current.history.length)
-    ? current.history.map(h=>`<div class="history-item"><span class="history-time">${esc(h[0])}</span><span class="history-type">${esc(h[1])}</span><span class="history-note">${esc(h[2])}</span></div>`).join('')
-    : '<div class="history-item"><span class="history-note">暂无绑定与维护记录</span></div>';
+  renderChangeLog();
+}
+
+// 设备变更日志：字段级事件流，保存设备信息或绑定后按字段差异逐项追加（写入助手见 vehicle-device-data.js）
+let changeLogPage=1;
+const CHANGE_LOG_PAGE_SIZE=10;
+function renderChangeLog(){
+  const records=current.changeLog||[];
+  const maxPage=Math.max(1,Math.ceil(records.length/CHANGE_LOG_PAGE_SIZE));
+  if(changeLogPage>maxPage)changeLogPage=maxPage;
+  const rows=records.slice((changeLogPage-1)*CHANGE_LOG_PAGE_SIZE,changeLogPage*CHANGE_LOG_PAGE_SIZE);
+  const cell=value=>esc(value)||'<span class="empty-cell">—</span>';
+  document.getElementById('changeLogBody').innerHTML=rows.length
+    ? rows.map(r=>`<tr><td class="col-center"><span class="tag ${r.type==='新增'?'tag-green':'tag-blue'}">${esc(r.type)}</span></td><td class="col-left">${cell(r.field)}</td><td class="col-left ellipsis" title="${esc(r.before)}">${cell(r.before)}</td><td class="col-left ellipsis" title="${esc(r.after)}">${cell(r.after)}</td><td class="col-center">${cell(r.operator)}</td><td class="col-center num">${esc(r.time)}</td></tr>`).join('')
+    : '<tr><td class="col-center" colspan="6" style="color:var(--text-secondary)">暂无变更记录</td></tr>';
+  Common.renderPagination({total:records.length,currentPage:changeLogPage,pageSize:CHANGE_LOG_PAGE_SIZE,containerId:'changeLogPagination',infoId:'changeLogCount',pageInfoId:'changeLogInfo',onPageChange:p=>{changeLogPage=p;renderChangeLog()}});
 }
 
 function openEditor(){const d=current;document.getElementById('deviceModalTitle').textContent='编辑设备';document.getElementById('deviceName').value=d.name||'';document.getElementById('deviceIdentifier').value=d.identifier||'';document.getElementById('deviceType').value=d.type||'';document.getElementById('deviceSerial').value=d.serial||'';document.getElementById('deviceVendor').value=d.vendor||'';document.getElementById('deviceModel').value=d.model||'';document.getElementById('deviceStatus').value=d.status||'正常';document.getElementById('deviceNotes').value=d.notes||'';Common.openModal('deviceModal');setTimeout(()=>document.getElementById('deviceName').focus(),0)}
-function saveDevice(e){e.preventDefault();const name=document.getElementById('deviceName').value.trim(),identifier=document.getElementById('deviceIdentifier').value.trim(),type=document.getElementById('deviceType').value;if(!name||!identifier||!type)return false;const duplicate=devices.find(d=>d.identifier.toLowerCase()===identifier.toLowerCase()&&d.id!==current.id);if(duplicate){Common.showToast('设备识别码已存在，请更换后再保存','error');return false}const now='2026-10-13 '+new Date().toTimeString().slice(0,5);Object.assign(current,{name,identifier,type,serial:document.getElementById('deviceSerial').value.trim(),status:document.getElementById('deviceStatus').value,vendor:document.getElementById('deviceVendor').value.trim(),model:document.getElementById('deviceModel').value.trim(),notes:document.getElementById('deviceNotes').value.trim(),updated:now});current.history.unshift([now,'编辑设备','更新设备基础信息']);Common.closeModal('deviceModal');renderPage();Common.showToast('设备信息已更新','success');return false}
+function saveDevice(e){e.preventDefault();const name=document.getElementById('deviceName').value.trim(),identifier=document.getElementById('deviceIdentifier').value.trim(),type=document.getElementById('deviceType').value;if(!name||!identifier||!type)return false;const duplicate=devices.find(d=>d.identifier.toLowerCase()===identifier.toLowerCase()&&d.id!==current.id);if(duplicate){Common.showToast('设备识别码已存在，请更换后再保存','error');return false}const now='2026-10-13 '+new Date().toTimeString().slice(0,5);const before={name:current.name,type:current.type,identifier:current.identifier,serial:current.serial,vendor:current.vendor,model:current.model,status:current.status,notes:current.notes};Object.assign(current,{name,identifier,type,serial:document.getElementById('deviceSerial').value.trim(),status:document.getElementById('deviceStatus').value,vendor:document.getElementById('deviceVendor').value.trim(),model:document.getElementById('deviceModel').value.trim(),notes:document.getElementById('deviceNotes').value.trim(),updated:now});recordDeviceEdits(current,before,current,now);changeLogPage=1;Common.closeModal('deviceModal');renderPage();Common.showToast('设备信息已更新','success');return false}
 
 function populateBindingOptions(d){const vSel=document.getElementById('bindingVehicle'),sSel=document.getElementById('bindingSim');vSel.innerHTML='<option value="">不绑定车辆</option>'+vehicles.map(v=>`<option value="${esc(v.vin)}">${esc(v.plate)} · ${esc(v.vin)} · ${esc(v.project)}</option>`).join('');sSel.innerHTML='<option value="">不绑定 SIM 卡</option>'+sims.map(s=>{const used=devices.find(x=>x.simImsi===s.imsi&&x.id!==d.id);return `<option value="${esc(s.imsi)}" ${used?'disabled':''}>${esc(s.imsi)} · ${esc(s.carrier)}${used?'（已被 '+esc(used.identifier)+' 占用）':''}</option>`}).join('');vSel.value=d.vehicleVin||'';sSel.value=d.simImsi||''}
 function openBinding(){const d=current;document.getElementById('bindingDeviceCode').textContent=d.identifier;document.getElementById('bindingDeviceType').textContent=d.type;populateBindingOptions(d);Common.openModal('bindingModal')}
-function saveBinding(e){e.preventDefault();const d=current;const newVin=document.getElementById('bindingVehicle').value,newSim=document.getElementById('bindingSim').value;const conflict=devices.find(x=>x.id!==d.id&&x.simImsi&&x.simImsi===newSim);if(conflict){Common.showToast(`SIM 卡已绑定设备 ${conflict.identifier}`,'error');return false}const now='2026-10-13 '+new Date().toTimeString().slice(0,5),oldVin=d.vehicleVin,oldSim=d.simImsi;d.vehicleVin=newVin;d.simImsi=newSim;d.updated=now;if(oldVin!==newVin){const old=vehicles.find(v=>v.vin===oldVin);const next=vehicles.find(v=>v.vin===newVin);d.history.unshift([now,newVin?'绑定车辆':'解绑车辆',newVin?`绑定 ${next?.plate||newVin}`:`解除 ${old?.plate||oldVin||'车辆'} 关系`])}if(oldSim!==newSim){d.history.unshift([now,newSim?'绑定 SIM':'解绑 SIM',newSim?`绑定 ${newSim}`:`解除 ${oldSim||'SIM'} 关系`])}Common.closeModal('bindingModal');renderPage();Common.showToast('绑定关系已保存','success');return false}
+function saveBinding(e){e.preventDefault();const d=current;const newVin=document.getElementById('bindingVehicle').value,newSim=document.getElementById('bindingSim').value;const conflict=devices.find(x=>x.id!==d.id&&x.simImsi&&x.simImsi===newSim);if(conflict){Common.showToast(`SIM 卡已绑定设备 ${conflict.identifier}`,'error');return false}const now='2026-10-13 '+new Date().toTimeString().slice(0,5),oldVin=d.vehicleVin,oldSim=d.simImsi;if(oldVin===newVin&&oldSim===newSim){Common.closeModal('bindingModal');Common.showToast('绑定关系无变化，未生成变更记录','info');return false}d.vehicleVin=newVin;d.simImsi=newSim;d.updated=now;recordBindingChanges(d,now,oldVin,oldSim);changeLogPage=1;Common.closeModal('bindingModal');renderPage();Common.showToast('绑定关系已保存','success');return false}
 
 renderPage();
 </script>
