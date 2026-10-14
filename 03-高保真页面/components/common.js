@@ -141,7 +141,7 @@ const Common = {
    *   - activeMenuId: 当前激活菜单项ID
    *   - headerId: 头部容器ID（null则不渲染头部）
    *   - breadcrumbs: 面包屑数组 [{label, href?}]
-   *   - headerOptions: 头部附加选项 {showProject, userName?}
+   *   - headerOptions: 头部附加选项 {userName?}；项目入口统一展示，兼容旧页面的 showProject 配置。
    */
   initLayout(opts) {
     this._basePath = opts.basePath || '';
@@ -223,9 +223,14 @@ const Common = {
       html += `<button class="top-module-item${active}" type="button" onclick="Common.selectTopModule('${module.id}')">${module.label}</button>`;
     });
     html += '</nav><div class="header-right">';
-    if (!options || options.showProject !== false) {
-      html += '<div class="project-select"><select><option>全部项目</option></select></div>';
-    }
+    // 本阶段仅演示全局项目选择，不过滤业务数据或实现真实权限。
+    html += '<div class="project-select"><button class="project-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="headerProjectPanel" onclick="Common.toggleProjectMenu(this)">' +
+      '<svg class="project-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 13.5V3.5h7v10M9.5 6.5h4v7M1.5 13.5h13M5 6h2M5 9h2M5 12h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '<span class="project-current"></span><svg class="project-chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+      '<div class="project-dropdown" id="headerProjectPanel" role="dialog" aria-label="项目查看范围" hidden><div class="project-heading"><span>项目查看范围</span><span class="project-total">8 个项目</span></div>' +
+      '<div class="project-search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="6.8" cy="6.8" r="4.3" stroke="currentColor" stroke-width="1.3"/><path d="m10 10 3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>' +
+      '<input id="headerProjectSearch" type="search" placeholder="搜索项目名称" aria-label="搜索项目名称" autocomplete="off" oninput="Common.renderProjectOptions(this.value)"></div>' +
+      '<div class="project-options" id="headerProjectOptions" role="listbox" aria-label="选择项目"></div><div class="project-empty" role="status" hidden>未找到匹配项目<span>请尝试其他关键词</span></div></div></div>';
     html += '<div class="user-menu"><button class="user-info" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="headerUserMenu" onclick="Common.toggleUserMenu(this)"><span class="user-avatar" aria-hidden="true"></span><span class="user-name"></span><svg class="user-chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="user-dropdown" id="headerUserMenu" role="menu" hidden><button class="user-logout" type="button" role="menuitem" onclick="Common.requestLogout()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3H3v10h3M6 8h7m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>退出登录</button></div></div>';
     html += '</div>';
 
@@ -236,6 +241,77 @@ const Common = {
     container.querySelector('.user-avatar').textContent = Array.from(name)[0];
     container.querySelector('.user-info').title = name;
     container.querySelector('.user-info').setAttribute('aria-label', name + '，用户菜单');
+    this.updateProjectTrigger();
+    this.renderProjectOptions();
+  },
+
+  // ===== 公共项目切换：静态示意，项目名称复用车辆资产页的现有示例 =====
+  projectStorageKey: 'vehicle-system-project-preview',
+  projectOptions: [
+    { id: 'jiading-rd', name: '嘉定研发' },
+    { id: 'jiaobei', name: '椒北街道' },
+    { id: 'jingkai-east', name: '经开东区项目' },
+    { id: 'jinghu', name: '镜湖区项目' },
+    { id: 'jiujiang-north', name: '鸠江江北项目' },
+    { id: 'jiujiang-development', name: '鸠江开发区项目' },
+    { id: 'jiujiang', name: '鸠江项目' },
+    { id: 'lingshui', name: '陵水项目' },
+  ],
+  getProjectStorageKey() {
+    const name = this.normalizeUserName(this._headerOptions && this._headerOptions.userName) || this.getCurrentUser().name;
+    return this.projectStorageKey + ':' + name;
+  },
+  getSelectedProject() {
+    let id = 'all';
+    try { id = window.localStorage.getItem(this.getProjectStorageKey()) || 'all'; }
+    catch (e) { id = this._previewProjectId || 'all'; }
+    return this.projectOptions.find(project => project.id === id) || { id: 'all', name: '全部授权项目' };
+  },
+  updateProjectTrigger() {
+    const trigger = document.querySelector('.project-trigger');
+    if (!trigger) return;
+    const project = this.getSelectedProject();
+    trigger.querySelector('.project-current').textContent = project.name;
+    trigger.title = project.name;
+    trigger.setAttribute('aria-label', '项目查看范围：' + project.name + '，切换项目');
+  },
+  renderProjectOptions(query = '') {
+    const list = document.getElementById('headerProjectOptions');
+    if (!list) return;
+    const selected = this.getSelectedProject();
+    const matches = this.projectOptions.filter(project => project.name.includes(query.trim()));
+    const options = [{ id: 'all', name: '全部授权项目' }, ...matches];
+    list.innerHTML = options.map(project => {
+      const active = project.id === selected.id;
+      return `<button class="project-option${project.id === 'all' ? ' project-option-all' : ''}${active ? ' selected' : ''}" type="button" role="option" aria-selected="${active}" data-project-id="${project.id}" onclick="Common.selectProject('${project.id}')"><span class="project-option-name">${project.name}</span><svg class="project-check" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3 8 3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+    }).join('');
+    document.querySelector('.project-empty').hidden = matches.length > 0;
+  },
+  toggleProjectMenu(button) {
+    const panel = button.parentElement.querySelector('.project-dropdown');
+    if (button.getAttribute('aria-expanded') === 'true') { this.closeProjectMenu(true); return; }
+    this.closeUserMenu();
+    const search = panel.querySelector('input');
+    search.value = '';
+    this.renderProjectOptions();
+    panel.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+    search.focus();
+  },
+  closeProjectMenu(restoreFocus = false) {
+    const button = document.querySelector('.project-trigger[aria-expanded="true"]');
+    if (!button) return;
+    button.setAttribute('aria-expanded', 'false');
+    button.parentElement.querySelector('.project-dropdown').hidden = true;
+    if (restoreFocus) button.focus();
+  },
+  selectProject(id) {
+    if (id !== 'all' && !this.projectOptions.some(project => project.id === id)) return;
+    this._previewProjectId = id;
+    try { window.localStorage.setItem(this.getProjectStorageKey(), id); } catch (e) { /* 受限存储时保留本页选择。 */ }
+    this.updateProjectTrigger();
+    this.renderProjectOptions();
+    this.closeProjectMenu(true);
   },
 
   // ===== 用户名称：由页面配置或共享用户信息提供，静态预览默认管理员 =====
@@ -260,6 +336,7 @@ const Common = {
     if (document.getElementById('header')) this.renderHeader('header', this._headerOptions);
   },
   toggleUserMenu(button) {
+    this.closeProjectMenu();
     const menu = button.parentElement.querySelector('.user-dropdown');
     const open = button.getAttribute('aria-expanded') !== 'true';
     menu.hidden = !open;
@@ -334,25 +411,47 @@ const Common = {
 
     document.addEventListener('click', e => {
       if (!e.target.closest('.user-menu')) this.closeUserMenu();
+      if (!e.target.closest('.project-select')) this.closeProjectMenu();
       const overlay = e.target.closest && e.target.closest('.modal-overlay');
       if (overlay && e.target === overlay) this.closeModal(overlay);
     });
 
     document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' && e.target.matches('.project-trigger')) {
+        e.preventDefault();
+        if (e.target.getAttribute('aria-expanded') !== 'true') this.toggleProjectMenu(e.target);
+        document.querySelector('.project-option').focus();
+      } else if (e.target.closest('.project-dropdown') && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        e.preventDefault();
+        const options = Array.from(document.querySelectorAll('.project-option'));
+        const index = options.indexOf(e.target);
+        const next = index < 0 ? (e.key === 'ArrowDown' ? 0 : options.length - 1) : (index + (e.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+        options[next].focus();
+      } else if (e.key === 'Enter' && e.target.matches('#headerProjectSearch')) {
+        e.preventDefault();
+        const matches = Array.from(document.querySelectorAll('.project-option:not(.project-option-all)'));
+        if (matches.length === 1) this.selectProject(matches[0].dataset.projectId);
+      }
       if (e.key === 'ArrowDown' && e.target.matches('.user-info')) {
         e.preventDefault();
         if (e.target.getAttribute('aria-expanded') !== 'true') this.toggleUserMenu(e.target);
         e.target.parentElement.querySelector('.user-logout').focus();
       }
       if (e.key !== 'Escape') return;
+      this.closeProjectMenu(true);
       this.closeUserMenu(true);
       const opened = document.querySelectorAll('.modal-overlay.active');
       if (opened.length) this.closeModal(opened[opened.length - 1]);
     });
     document.addEventListener('focusin', e => {
       if (!e.target.closest('.user-menu')) this.closeUserMenu();
+      if (!e.target.closest('.project-select')) this.closeProjectMenu();
     });
     window.addEventListener('storage', e => {
+      if (e.key === this.getProjectStorageKey() || e.key === null) {
+        this.updateProjectTrigger();
+        this.renderProjectOptions(document.getElementById('headerProjectSearch')?.value || '');
+      }
       if (e.key !== this.userStorageKey) return;
       this.renderHeader('header', this._headerOptions);
     });

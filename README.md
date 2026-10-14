@@ -8,6 +8,8 @@
 
 业务页右上角统一展示当前用户名称，支持长名称省略与完整提示；点击名称展开账号菜单。“退出登录”为占位按钮，点击提示暂未开放，保留当前页面与数据；顶部不展示通知占位图标。
 
+公共顶部导航统一提供项目查看范围入口，支持“全部授权项目”与单个项目选择、项目名称搜索、选中标识、搜索空态及键盘操作；按用户名称记忆选择，刷新和跨业务页面跳转后保持，项目面板与账号菜单互斥展开。本阶段仅演示导航选择，业务列表、地图、统计和页面内项目筛选尚未联动，不实现真实权限控制。
+
 ## 功能模块
 
 ### 1. 车辆建档
@@ -187,6 +189,7 @@
 | Toast | `common.js` | `Common.showToast(msg, type)` |
 | 表单 | `form.css` | `.form-row`（标签左置外置）、`.field-error`（控件下方红字）、`.form-grid` |
 | 顶部导航 / 侧边栏 | `common.js` | `Common.initLayout()` 按 `activeMenuId` 自动定位一级模块；切换模块默认进入首个可访问页面，渲染二三级菜单并记忆侧栏收起状态 |
+| 项目查看范围 | `common.js` + `common.css` | 公共导航统一展示项目入口（兼容旧页面 `showProject:false` 配置），支持名称搜索、单选、勾选状态、空态、菜单互斥与键盘操作；`Common.getSelectedProject()` 读取当前选择，`Common.selectProject(id)` 设置预览选择，按用户名称记忆并跨页面保持。本阶段仅导航示意，不过滤业务数据。规范见《公共组件规范》6.5 |
 | 用户名称 / 账号菜单 | `common.js` + `common.css` | `headerOptions.userName` 配置显示名称；未配置时读取 `vehicle-system-current-user` 中的 `name`，默认“管理员”。`Common.setCurrentUser(name)` 可更新共享名称；点击展开退出占位入口，支持菜单外点击、Esc 与键盘操作 |
 
 ## 使用方式
