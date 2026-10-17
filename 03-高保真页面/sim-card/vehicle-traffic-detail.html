@@ -46,7 +46,7 @@
               <span class="panel-total" id="panelTotal">共 0 辆</span>
             </div>
             <div class="master-filter" id="masterFilter">
-              <div class="compact-field"><label for="filter-vin">VIN码</label><input id="filter-vin" type="text" placeholder="请输入 VIN 码"></div>
+              <div class="compact-field"><label for="filter-vin">车架号</label><input id="filter-vin" type="text" placeholder="请输入车架号"></div>
               <div class="master-filter-extra" id="masterFilterExtra">
                 <div class="compact-field"><label for="filter-plate">车牌号</label><input id="filter-plate" type="text" placeholder="请输入车牌号"></div>
               </div>
@@ -74,7 +74,7 @@
             </div>
             <div class="table-wrapper fixed-table traffic-table" data-fixed-first="1" data-fixed-last="2" data-fixed-min-width="980"><table><thead><tr>
               <th class="col-center" style="width:54px"><input id="check-all" type="checkbox" aria-label="选择当前页全部数据" onchange="toggleCurrentPage(this.checked)"></th>
-              <th class="col-center">VIN码</th><th class="col-center">车牌号</th><th class="col-center">归属项目</th><th class="col-center">卡 IMSI 号</th><th class="col-center">日期</th><th class="col-center">使用流量（GB）</th>
+              <th class="col-center">车架号</th><th class="col-center">车牌号</th><th class="col-center">归属项目</th><th class="col-center">卡 IMSI 号</th><th class="col-center">日期</th><th class="col-center">使用流量（GB）</th>
             </tr></thead><tbody id="traffic-body"></tbody></table></div>
             <div class="pagination-row"><span>共 <b id="total-count">0</b> 条</span><select class="page-size" id="page-size" aria-label="每页条数" onchange="changePageSize()"><option>10</option><option>20</option><option>50</option></select><span id="page-info">第 1 / 1 页</span><div id="pagination"></div></div>
           </section>

@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="../components/common.css">
 <link rel="stylesheet" href="../components/fixed-table.css">
 <link rel="stylesheet" href="./energy-ledger.css">
-<!-- 页面用途：以车辆为主体、按月度展示流量费用汇总明细。交互逻辑：统计月份/车牌号/VIN码/归属项目查询、合计统计、分页勾选、详情下钻与导出。 -->
+<!-- 页面用途：以车辆为主体、按月度展示流量费用汇总明细。交互逻辑：统计月份/车牌号/车架号/归属项目查询、合计统计、分页勾选、详情下钻与导出。 -->
 <style>
   .fee-meter { display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 0; }
   .fee-meter-value { font-family:var(--font-number); font-size:13px; line-height:18px; color:var(--text-primary); }
@@ -24,7 +24,7 @@
 </head>
 <body>
 <div class="layout"><aside class="sidebar" id="sidebar"></aside><main class="main-area"><header id="header"></header><section class="content"><div class="page-container">
-<div class="search-bar" data-visible-count="3"><div class="search-row"><div class="ledger-search-item"><label>统计月份</label><div class="ledger-date-range"><input id="startMonth" type="month" aria-label="开始月份"><span>至</span><input id="endMonth" type="month" aria-label="结束月份"></div></div><div class="ledger-search-item"><label>车牌号</label><input id="plateFilter" placeholder="支持模糊搜索"></div><div class="ledger-search-item"><label>VIN码</label><input id="vinFilter" placeholder="支持模糊搜索"></div><div class="ledger-search-item"><label>归属项目</label><select id="projectFilter"></select></div><div class="ledger-search-item"><button class="btn btn-primary" id="searchBtn" type="button">查询</button><button class="btn" id="resetBtn" type="button">重置</button></div></div></div>
+<div class="search-bar" data-visible-count="3"><div class="search-row"><div class="ledger-search-item"><label>统计月份</label><div class="ledger-date-range"><input id="startMonth" type="month" aria-label="开始月份"><span>至</span><input id="endMonth" type="month" aria-label="结束月份"></div></div><div class="ledger-search-item"><label>车牌号</label><input id="plateFilter" placeholder="支持模糊搜索"></div><div class="ledger-search-item"><label>车架号</label><input id="vinFilter" placeholder="支持模糊搜索"></div><div class="ledger-search-item"><label>归属项目</label><select id="projectFilter"></select></div><div class="ledger-search-item"><button class="btn btn-primary" id="searchBtn" type="button">查询</button><button class="btn" id="resetBtn" type="button">重置</button></div></div></div>
 <div class="action-bar"><button class="btn push-right" id="exportBtn" type="button">导出</button></div>
 <div class="table-wrapper ledger-table fixed-table" data-fixed-first="2" data-fixed-last="2" data-fixed-min-width="1420px" style="--ledger-table-min-width:1420px"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
 <div class="ledger-summary" id="summary"></div>

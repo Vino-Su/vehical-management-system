@@ -47,7 +47,7 @@
   }
 
   function renderHead() {
-    get('tableHead').innerHTML = '<tr><th><input id="checkAll" class="ledger-check" type="checkbox" aria-label="全选当前页"></th><th>车牌号</th><th>VIN码</th><th>归属项目</th><th>加油费用</th><th>加水费用</th><th>充电费用</th><th>流量费用</th><th>费用合计（元）</th><th>操作</th></tr>';
+    get('tableHead').innerHTML = '<tr><th><input id="checkAll" class="ledger-check" type="checkbox" aria-label="全选当前页"></th><th>车牌号</th><th>车架号</th><th>归属项目</th><th>加油费用</th><th>加水费用</th><th>充电费用</th><th>流量费用</th><th>费用合计（元）</th><th>操作</th></tr>';
     get('checkAll').addEventListener('change', e => {
       const start=(pager.getCurrentPage()-1)*pager.getPageSize();
       vehicles.slice(start,start+pager.getPageSize()).forEach(v => e.target.checked ? selected.add(v.key) : selected.delete(v.key));
@@ -90,7 +90,7 @@
   }
   function doExport(chosen) {
     const cell=v=>'"'+String(v).replaceAll('"','""')+'"';
-    const header=['车牌号','VIN码','归属项目',...Object.values(categories),'费用合计','开始日期','结束日期'];
+    const header=['车牌号','车架号','归属项目',...Object.values(categories),'费用合计','开始日期','结束日期'];
     const lines=[header,...chosen.map(v=>[v.plate,v.vin,v.project,...Object.keys(categories).map(k=>money(v[k])),money(v.total),appliedStart,appliedEnd])];
     const url=URL.createObjectURL(new Blob(['\ufeff'+lines.map(line=>line.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));
     const link=document.createElement('a'); link.href=url; link.download='单车费用台账.csv'; document.body.appendChild(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);

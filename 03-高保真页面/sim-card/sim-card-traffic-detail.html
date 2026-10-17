@@ -47,7 +47,7 @@
             <div class="master-filter" id="masterFilter">
               <div class="compact-field"><label for="filter-imsi">IMSI</label><input id="filter-imsi" type="text" placeholder="请输入 IMSI"></div>
               <div class="master-filter-extra" id="masterFilterExtra">
-                <div class="compact-field"><label for="filter-vin">VIN码</label><input id="filter-vin" type="text" placeholder="请输入 VIN 码"></div>
+                <div class="compact-field"><label for="filter-vin">车架号</label><input id="filter-vin" type="text" placeholder="请输入车架号"></div>
                 <div class="compact-field"><label for="filter-plan">套餐</label><select id="filter-plan"><option value="">全部</option><option>10G/月</option><option>30G/月</option><option>100G/月</option><option>300G/月</option><option value="__none__">无套餐</option></select></div>
                 <div class="compact-field"><label for="filter-project">项目</label><select id="filter-project"><option value="">全部</option><option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江项目</option><option>陵水项目</option><option value="__none__">无归属项目</option></select></div>
               </div>
@@ -75,7 +75,7 @@
             </div>
             <div class="table-wrapper fixed-table traffic-table" data-fixed-first="1" data-fixed-last="2" data-fixed-min-width="1530"><table><thead><tr>
               <th class="col-center" style="width:54px"><input id="check-all" type="checkbox" aria-label="选择当前页全部数据" onchange="toggleCurrentPage(this.checked)"></th>
-              <th class="col-center">IMSI</th><th class="col-center">运营商</th><th class="col-center">套餐</th><th class="col-center">VIN码</th><th class="col-center">车牌号</th><th class="col-center">归属项目</th><th class="col-center">硬件类型</th><th class="col-center">硬件识别码</th><th class="col-center">日期</th><th class="col-center">使用流量（GB）</th>
+              <th class="col-center">IMSI</th><th class="col-center">运营商</th><th class="col-center">套餐</th><th class="col-center">车架号</th><th class="col-center">车牌号</th><th class="col-center">归属项目</th><th class="col-center">硬件类型</th><th class="col-center">硬件识别码</th><th class="col-center">日期</th><th class="col-center">使用流量（GB）</th>
             </tr></thead><tbody id="traffic-body"></tbody></table></div>
             <div class="pagination-row"><span>共 <b id="total-count">0</b> 条</span><select class="page-size" id="page-size" aria-label="每页条数" onchange="changePageSize()"><option>10</option><option>20</option><option>50</option></select><span id="page-info">第 1 / 1 页</span><div id="pagination"></div></div>
           </section>

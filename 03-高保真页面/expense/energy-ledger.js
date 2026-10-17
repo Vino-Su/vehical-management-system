@@ -13,7 +13,7 @@
       title: '加油费用明细台账', singular: '加油记录', timeLabel: '加油时间', unitLabel: '加油量', unit: 'L', activeMenuId: 'fuel-fee',
       filterExtra: { label: '关联油卡', key: 'oilCard', placeholder: '油卡号' },
       columns: [
-        ['plate','车牌号','left'], ['time','加油时间','center'], ['quantity','加油量 (L)','right'], ['unitPrice','加油单价 (元/L)','right'], ['amount','加油金额 (元)','right'], ['oilCard','关联油卡','left'], ['cardBalance','油卡余额 (元)','right'], ['mileage','当前里程 (km)','right'], ['evidence','交易凭证','center'], ['reporter','上报人','center']
+        ['plate','车牌号','left'], ['vin','车架号','left'], ['time','加油时间','center'], ['quantity','加油量 (L)','right'], ['unitPrice','加油单价 (元/L)','right'], ['amount','加油金额 (元)','right'], ['oilCard','关联油卡','left'], ['cardBalance','油卡余额 (元)','right'], ['mileage','当前里程 (km)','right'], ['evidence','交易凭证','center'], ['reporter','上报人','center']
       ],
       fields: [
         ['plate','车牌号','text',true], ['vin','车架号','text',true], ['project','所属项目','select',true], ['reporter','上报人','text',true], ['time','加油时间','datetime-local',true], ['unitPrice','加油单价 (元/L)','number',true], ['quantity','加油量 (L)','number',true], ['amount','加油金额 (元)','number',true], ['paymentMethod','支付方式','select',true], ['oilCard','关联油卡','text',true], ['cardBalance','油卡余额 (元)','number',true], ['mileage','当前里程数 (km)','number',true], ['remark','备注','textarea',false]
@@ -36,7 +36,7 @@
     },
     water: {
       title: '加水费用明细台账', singular: '加水记录', timeLabel: '加水时间', unitLabel: '加水量', unit: '吨', activeMenuId: 'water-fee',
-      columns: [['plate','车牌号','left'], ['time','加水时间','center'], ['quantity','加水量 (吨)','right'], ['paymentMethod','支付方式','center'], ['amount','加水金额 (元)','right'], ['mileage','当前里程 (km)','right'], ['reporter','上报人','center']],
+      columns: [['plate','车牌号','left'], ['vin','车架号','left'], ['time','加水时间','center'], ['quantity','加水量 (吨)','right'], ['paymentMethod','支付方式','center'], ['amount','加水金额 (元)','right'], ['mileage','当前里程 (km)','right'], ['reporter','上报人','center']],
       fields: [['plate','车牌号','text',true], ['vin','车架号','text',true], ['project','所属项目','select',true], ['reporter','上报人','text',true], ['time','加水时间','datetime-local',true], ['paymentMethod','支付方式','select',true], ['quantity','加水量 (吨)','number',true], ['amount','加水金额 (元)','number',false], ['mileage','当前里程数 (km)','number',false], ['remark','备注','textarea',false]],
       attachments: [['mileagePhoto','里程照片',false], ['voucherPhoto','支付照片',true]],
       data: [
@@ -44,7 +44,7 @@
     },
     charge: {
       title: '充电费用明细台账', singular: '充电记录', timeLabel: '充电开始时间', unitLabel: '充电度数', unit: '度', activeMenuId: 'charge-fee',
-      columns: [['plate','车牌号','left'], ['time','充电开始时间','center'], ['duration','充电时长 (分钟)','right'], ['paymentMethod','支付方式','center'], ['quantity','充电度数 (度)','right'], ['amount','充电金额 (元)','right'], ['mileage','当前里程 (km)','right'], ['evidence','充电明细','center'], ['reporter','上报人','center']],
+      columns: [['plate','车牌号','left'], ['vin','车架号','left'], ['time','充电开始时间','center'], ['duration','充电时长 (分钟)','right'], ['paymentMethod','支付方式','center'], ['quantity','充电度数 (度)','right'], ['amount','充电金额 (元)','right'], ['mileage','当前里程 (km)','right'], ['evidence','充电明细','center'], ['reporter','上报人','center']],
       fields: [['plate','车牌号','text',true], ['vin','车架号','text',true], ['project','所属项目','select',true], ['reporter','上报人','text',true], ['time','充电开始时间','datetime-local',true], ['endTime','充电结束时间','datetime-local',true], ['quantity','充电度数 (度)','number',true], ['electricFee','充电电费 (元)','number',true], ['serviceFee','充电服务费 (元)','number',true], ['amount','充电金额 (元)','number',true], ['paymentMethod','支付方式','select',true], ['mileage','当前里程数 (km)','number',false], ['remark','备注','textarea',false]],
       attachments: [['mileagePhoto','里程照片',true], ['chargePhoto','充电明细截图',true], ['voucherPhoto','支付照片',false]],
       auto: ['electricFee','serviceFee'],
@@ -53,7 +53,7 @@
     }
   };
 
-  // 单车台账读取原费用记录，车辆按 VIN 关联。
+  // 单车台账读取原费用记录，车辆按车架号关联。
   window.EnergyExpenseSource = {
     read(kind) {
       if (!ledgers[kind]) return [];
@@ -139,7 +139,7 @@
     const body = document.getElementById('tableBody');
     if (!records.length) { body.innerHTML = `<tr><td colspan="${config.columns.length + 2}" class="ledger-empty"><strong>暂无符合条件的记录</strong>请调整查询条件后重试</td></tr>`; return; }
     body.innerHTML = records.map(record => {
-      const cells = config.columns.map(([key]) => `<td class="col-center ${key === 'amount' ? 'num' : ''}">${cell(record, key)}</td>`).join('');
+      const cells = config.columns.map(([key]) => `<td class="col-center ${['amount', 'vin'].includes(key) ? 'num' : ''}">${cell(record, key)}</td>`).join('');
       return `<tr class="${selectedIds.has(record.id) ? 'selected' : ''}"><td class="col-center"><input type="checkbox" ${selectedIds.has(record.id) ? 'checked' : ''} aria-label="选择${record.plate}" onchange="EnergyLedger.toggle(${record.id},this.checked)" /></td>${cells}<td class="col-center"><div class="ledger-action-cell"><button class="btn-link" type="button" onclick="EnergyLedger.detail(${record.id})">详情</button><button class="btn-link" type="button" onclick="EnergyLedger.edit(${record.id})">编辑</button><button class="btn-link" type="button" onclick="EnergyLedger.change(${record.id})">变更记录</button><button class="btn-link is-danger" type="button" onclick="EnergyLedger.remove(${record.id})">删除</button></div></td></tr>`;
     }).join('');
   }
@@ -161,12 +161,12 @@
 
   function search() {
     const start = document.getElementById('startDate').value, end = document.getElementById('endDate').value;
-    const plate = document.getElementById('plateFilter').value.trim(), reporter = document.getElementById('reporterFilter').value.trim();
+    const plate = document.getElementById('plateFilter').value.trim(), vin = document.getElementById('vinFilter').value.trim(), reporter = document.getElementById('reporterFilter').value.trim();
     const extra = config.filterExtra ? document.getElementById('filterExtra').value.trim() : '';
-    filteredData = allData.filter(record => (!start || record.time.slice(0,10) >= start) && (!end || record.time.slice(0,10) <= end) && (!plate || record.plate.includes(plate)) && (!reporter || record.reporter.includes(reporter)) && (!extra || String(record[config.filterExtra.key] || '').includes(extra)));
+    filteredData = allData.filter(record => (!start || record.time.slice(0,10) >= start) && (!end || record.time.slice(0,10) <= end) && (!plate || record.plate.includes(plate)) && (!vin || String(record.vin || '').toLowerCase().includes(vin.toLowerCase())) && (!reporter || record.reporter.includes(reporter)) && (!extra || String(record[config.filterExtra.key] || '').includes(extra)));
     selectedIds.clear(); resetToFirstPage();
   }
-  function reset() { document.getElementById('startDate').value = ''; document.getElementById('endDate').value = ''; document.getElementById('plateFilter').value = ''; document.getElementById('reporterFilter').value = ''; if (config.filterExtra) document.getElementById('filterExtra').value = ''; filteredData = [...allData]; selectedIds.clear(); resetToFirstPage(); }
+  function reset() { document.getElementById('startDate').value = ''; document.getElementById('endDate').value = ''; document.getElementById('plateFilter').value = ''; document.getElementById('vinFilter').value = ''; document.getElementById('reporterFilter').value = ''; if (config.filterExtra) document.getElementById('filterExtra').value = ''; filteredData = [...allData]; selectedIds.clear(); resetToFirstPage(); }
   function resetToFirstPage() { if (pager) { pager.reset(); } else { currentPage = 1; render(); } }
 
   function openForm(id) {

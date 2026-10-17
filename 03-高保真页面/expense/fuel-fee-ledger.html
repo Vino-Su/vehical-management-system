@@ -11,15 +11,16 @@
 </head>
 <body data-ledger-type="fuel">
 <div class="layout"><aside class="sidebar" id="sidebar"></aside><main class="main-area"><header id="header"></header><section class="content"><div class="page-container">
-  <div class="search-bar" data-visible-count="3"><div class="search-row">
+  <div class="search-bar" data-visible-count="4"><div class="search-row">
     <div class="ledger-search-item"><label id="timeFilterLabel">加油时间</label><div class="ledger-date-range"><input id="startDate" type="date"><span>至</span><input id="endDate" type="date"></div></div>
     <div class="ledger-search-item"><label>车牌号</label><input id="plateFilter" placeholder="支持模糊搜索"></div>
+    <div class="ledger-search-item"><label>车架号</label><input id="vinFilter" placeholder="支持模糊搜索"></div>
     <div class="ledger-search-item" id="extraFilter"></div>
     <div class="ledger-search-item"><label>上报人</label><input id="reporterFilter" placeholder="支持模糊搜索"></div>
     <div class="ledger-search-item"><button class="btn btn-primary" id="searchBtn" type="button">查询</button><button class="btn" id="resetBtn" type="button">重置</button></div>
   </div></div>
   <div class="action-bar"><button class="btn btn-primary" id="addBtn" type="button"><span id="newRecordText"></span></button><button class="btn" id="importBtn" type="button">导入</button><button class="btn" id="exportBtn" type="button">导出</button></div>
-  <div class="table-wrapper ledger-table fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1560px" style="--ledger-table-min-width:1560px"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+  <div class="table-wrapper ledger-table fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1720px" style="--ledger-table-min-width:1720px"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
   <div class="ledger-summary" id="summary"></div>
   <div id="paginationEl"></div>
 </div></section></main></div>

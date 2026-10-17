@@ -1182,7 +1182,7 @@ async function downloadTagVehicles(list,scope){
         if(button) button.disabled=false;
     }
 }
-// 复用本地 JSZip 生成 XLSX；所有单元格按文本写入，保留 VIN 与车牌原文。
+// 复用本地 JSZip 生成 XLSX；所有单元格按文本写入，保留车架号与车牌原文。
 async function downloadVehicleWorkbook(headers,rows,filename){
     const xml=value=>String(value??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');

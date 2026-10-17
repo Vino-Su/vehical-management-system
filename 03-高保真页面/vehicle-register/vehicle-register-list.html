@@ -92,6 +92,14 @@
                                 <option>嘉定研发</option><option>椒北街道</option><option>经开东区项目</option><option>镜湖区项目</option><option>鸠江江北项目</option><option>鸠江开发区项目</option><option>鸠江项目</option><option>陵水项目</option>
                             </select>
                         </div>
+                        <div class="search-item"><label for="s_import_method">导入方式</label>
+                            <select id="s_import_method">
+                                <option value="">全部</option>
+                                <option value="单个录入">单个录入</option>
+                                <option value="批量导入">批量导入</option>
+                                <option value="接口接入">接口接入</option>
+                            </select>
+                        </div>
                         <div class="search-item"><label>建档人</label><input type="text" id="s_creator" placeholder="请输入建档人"></div>
                         <div class="search-item"><label>建档时间</label><input type="date" id="s_start"><span style="margin:0 4px;color:var(--text-disabled)">~</span><input type="date" id="s_end"></div>
                         <div class="search-actions">
@@ -170,18 +178,18 @@ Common.initLayout({
 
 // ===== 模拟数据（参照01-需求文档/示例数据参考.md） =====
 const mockData = [
-    { id:1,  vin:'LSVAU2A39EN000001', gbt_vin:'GB0000000001', model_name:'麒麟清扫车', plate_no:'京ADG090', iot_code:'14156', model_code:'QL-QJ01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'鸠江项目', creator:'王强', create_time:'2025-03-15 10:30:00' },
-    { id:2,  vin:'LSVAU2A39EN000002', gbt_vin:'GB0000000002', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'京ADG091', iot_code:'11527', model_code:'ART-GY01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'椒北街道', creator:'王强', create_time:'2025-03-15 10:35:00' },
-    { id:3,  vin:'LSVAU2A39EN000003', gbt_vin:'GB0000000003', model_name:'中联清洗车', plate_no:'浙JAR6538', iot_code:'14158', model_code:'ZL-QX01', asset_attr:'运营车辆-电动', status:'在库-闲置留用', project:'镜湖区项目', creator:'李明', create_time:'2025-04-20 14:00:00' },
-    { id:4,  vin:'LSVAU2A39EN000004', gbt_vin:'GB0000000004', model_name:'泰坦智能驾驶洒水车', plate_no:'京ADH066', iot_code:'11530', model_code:'TT-SS01', asset_attr:'智能驾驶设备', status:'待分配', project:'经开东区项目', creator:'赵伟', create_time:'2025-05-10 09:20:00' },
-    { id:5,  vin:'LSVAU2A39EN000005', gbt_vin:'GB0000000005', model_name:'三力洒水车', plate_no:'浙JDB1062', iot_code:'14159', model_code:'SL-SS01', asset_attr:'运营车辆-电动', status:'在库-维修', project:'鸠江江北项目', creator:'李明', create_time:'2025-06-01 16:45:00' },
-    { id:6,  vin:'LSVAU2A39EN000006', gbt_vin:'GB0000000006', model_name:'独角兽', plate_no:'沪AAB124', iot_code:'11532', model_code:'DJS-ZN01', asset_attr:'智能驾驶设备', status:'在库-正常使用', project:'嘉定研发', creator:'赵伟', create_time:'2025-06-01 16:50:00' },
-    { id:7,  vin:'LSVAU2A39EN000007', gbt_vin:'GB0000000007', model_name:'麒麟无人化扫地车', plate_no:'京ADJ055', iot_code:'14160', model_code:'QL-WR01', asset_attr:'智能驾驶设备', status:'在库-正常使用', project:'鸠江开发区项目', creator:'王强', create_time:'2025-07-12 08:30:00' },
-    { id:8,  vin:'LSVAU2A39EN000008', gbt_vin:'GB0000000008', model_name:'长城多用途货车', plate_no:'京ADJ056', iot_code:'11535', model_code:'CC-HY01', asset_attr:'乘用车', status:'在库-正常使用', project:'陵水项目', creator:'李明', create_time:'2025-08-22 11:15:00' },
-    { id:9,  vin:'LSVAU2A39EN000009', gbt_vin:'GB0000000009', model_name:'麒麟清扫车', plate_no:'粤AEE077', iot_code:'14161', model_code:'QL-QJ01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'鸠江项目', creator:'赵伟', create_time:'2025-09-05 15:00:00' },
-    { id:10, vin:'LSVAU2A39EN000010', gbt_vin:'GB0000000010', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'粤AEE078', iot_code:'11538', model_code:'ART-GY01', asset_attr:'运营车辆-电动', status:'在库-闲置留用', project:'椒北街道', creator:'王强', create_time:'2025-10-18 09:00:00' },
-    { id:11, vin:'LSVAU2A39EN000011', gbt_vin:'GB0000000011', model_name:'中联清洗车', plate_no:'京ADK033', iot_code:'14162', model_code:'ZL-QX01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'镜湖区项目', creator:'李明', create_time:'2025-11-01 14:20:00' },
-    { id:12, vin:'LSVAU2A39EN000012', gbt_vin:'GB0000000012', model_name:'三力洒水车', plate_no:'京ADG092', iot_code:'11540', model_code:'SL-SS01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'鸠江江北项目', creator:'王强', create_time:'2025-12-10 10:00:00' },
+    { id:1,  create_type:'单个录入', vin:'LSVAU2A39EN000001', gbt_vin:'GB0000000001', model_name:'麒麟清扫车', plate_no:'京ADG090', iot_code:'14156', model_code:'QL-QJ01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'鸠江项目', creator:'王强', create_time:'2025-03-15 10:30:00' },
+    { id:2,  create_type:'批量导入', vin:'LSVAU2A39EN000002', gbt_vin:'GB0000000002', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'京ADG091', iot_code:'11527', model_code:'ART-GY01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'椒北街道', creator:'王强', create_time:'2025-03-15 10:35:00' },
+    { id:3,  create_type:'采购系统', vin:'LSVAU2A39EN000003', gbt_vin:'GB0000000003', model_name:'中联清洗车', plate_no:'浙JAR6538', iot_code:'14158', model_code:'ZL-QX01', asset_attr:'运营车辆-电动', status:'在库-闲置留用', project:'镜湖区项目', creator:'李明', create_time:'2025-04-20 14:00:00' },
+    { id:4,  create_type:'MES系统', vin:'LSVAU2A39EN000004', gbt_vin:'GB0000000004', model_name:'泰坦智能驾驶洒水车', plate_no:'京ADH066', iot_code:'11530', model_code:'TT-SS01', asset_attr:'智能驾驶设备', status:'待分配', project:'经开东区项目', creator:'赵伟', create_time:'2025-05-10 09:20:00' },
+    { id:5,  create_type:'单个录入', vin:'LSVAU2A39EN000005', gbt_vin:'GB0000000005', model_name:'三力洒水车', plate_no:'浙JDB1062', iot_code:'14159', model_code:'SL-SS01', asset_attr:'运营车辆-电动', status:'在库-维修', project:'鸠江江北项目', creator:'李明', create_time:'2025-06-01 16:45:00' },
+    { id:6,  create_type:'批量导入', vin:'LSVAU2A39EN000006', gbt_vin:'GB0000000006', model_name:'独角兽', plate_no:'沪AAB124', iot_code:'11532', model_code:'DJS-ZN01', asset_attr:'智能驾驶设备', status:'在库-正常使用', project:'嘉定研发', creator:'赵伟', create_time:'2025-06-01 16:50:00' },
+    { id:7,  create_type:'采购系统', vin:'LSVAU2A39EN000007', gbt_vin:'GB0000000007', model_name:'麒麟无人化扫地车', plate_no:'京ADJ055', iot_code:'14160', model_code:'QL-WR01', asset_attr:'智能驾驶设备', status:'在库-正常使用', project:'鸠江开发区项目', creator:'王强', create_time:'2025-07-12 08:30:00' },
+    { id:8,  create_type:'MES系统', vin:'LSVAU2A39EN000008', gbt_vin:'GB0000000008', model_name:'长城多用途货车', plate_no:'京ADJ056', iot_code:'11535', model_code:'CC-HY01', asset_attr:'乘用车', status:'在库-正常使用', project:'陵水项目', creator:'李明', create_time:'2025-08-22 11:15:00' },
+    { id:9,  create_type:'单个录入', vin:'LSVAU2A39EN000009', gbt_vin:'GB0000000009', model_name:'麒麟清扫车', plate_no:'粤AEE077', iot_code:'14161', model_code:'QL-QJ01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'鸠江项目', creator:'赵伟', create_time:'2025-09-05 15:00:00' },
+    { id:10, create_type:'批量导入', vin:'LSVAU2A39EN000010', gbt_vin:'GB0000000010', model_name:'爱瑞特纯电动高压冲洗车', plate_no:'粤AEE078', iot_code:'11538', model_code:'ART-GY01', asset_attr:'运营车辆-电动', status:'在库-闲置留用', project:'椒北街道', creator:'王强', create_time:'2025-10-18 09:00:00' },
+    { id:11, create_type:'采购系统', vin:'LSVAU2A39EN000011', gbt_vin:'GB0000000011', model_name:'中联清洗车', plate_no:'京ADK033', iot_code:'14162', model_code:'ZL-QX01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'镜湖区项目', creator:'李明', create_time:'2025-11-01 14:20:00' },
+    { id:12, create_type:'MES系统', vin:'LSVAU2A39EN000012', gbt_vin:'GB0000000012', model_name:'三力洒水车', plate_no:'京ADG092', iot_code:'11540', model_code:'SL-SS01', asset_attr:'运营车辆-电动', status:'在库-正常使用', project:'鸠江江北项目', creator:'王强', create_time:'2025-12-10 10:00:00' },
 ];
 
 let currentPage = 1, pageSize = 10;
@@ -246,6 +254,7 @@ function doSearch() {
     const sc = document.getElementById('s_mcode').value.trim().toLowerCase();
     const sa = document.getElementById('s_attr').value;
     const spr = document.getElementById('s_project').value;
+    const importMethod = document.getElementById('s_import_method').value;
     const scr = document.getElementById('s_creator').value.trim().toLowerCase();
     const srs = document.getElementById('s_start').value;
     const sre = document.getElementById('s_end').value;
@@ -258,6 +267,9 @@ function doSearch() {
         if (sc && !item.model_code.toLowerCase().includes(sc)) return false;
         if (sa && item.asset_attr !== sa) return false;
         if (spr && item.project !== spr) return false;
+        if (importMethod === '接口接入') {
+            if (!['接口接入', '采购系统', 'MES系统'].includes(item.create_type)) return false;
+        } else if (importMethod && item.create_type !== importMethod) return false;
         if (scr && !item.creator.toLowerCase().includes(scr)) return false;
         if (srs && item.create_time < srs) return false;
         if (sre && item.create_time > sre + ' 23:59:59') return false;

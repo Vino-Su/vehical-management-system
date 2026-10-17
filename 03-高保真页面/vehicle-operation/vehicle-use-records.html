@@ -21,7 +21,7 @@
     .selection-summary.visible { display:flex; }
     .selection-summary strong { color:var(--primary); font-family:var(--font-number); }
     .selection-clear { border:0; background:transparent; color:var(--primary); cursor:pointer; }
-    .records-table table { min-width:1220px; table-layout:fixed; }
+    .records-table table { min-width:1540px; table-layout:fixed; }
     .records-table th, .records-table td { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .records-table thead th, .records-table tbody td { text-align:center; }
     .records-table input[type="checkbox"] {
@@ -72,6 +72,8 @@
             <div class="filter-row filter-primary">
               <div class="filter-item"><label for="driverFilter">司机名称</label><input class="ant-input" id="driverFilter" type="text" placeholder="支持模糊搜索"></div>
               <div class="filter-item"><label for="plateFilter">车牌号</label><input class="ant-input" id="plateFilter" type="text" placeholder="支持模糊搜索"></div>
+              <div class="filter-item"><label for="vinFilter">车架号</label><input class="ant-input" id="vinFilter" type="text" placeholder="支持模糊搜索"></div>
+              <div class="filter-item"><label for="iotFilter">网联编号</label><input class="ant-input" id="iotFilter" type="text" placeholder="支持模糊搜索"></div>
               <div class="filter-actions"><button class="btn btn-primary" id="searchButton" type="button">查询</button><button class="btn" id="resetButton" type="button">重置</button></div>
               <button class="filter-more-toggle" type="button" aria-expanded="false"><span class="filter-more-text">展开更多</span><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg></button>
             </div>
@@ -82,14 +84,14 @@
             </div>
           </div>
           <div class="action-bar">
-            <div class="selection-summary" id="selectionSummary"><span>已选择 <strong id="selectedCount">0</strong> 条</span><button class="selection-clear" id="clearSelectionButton" type="button">清空选择</button></div>
-            <button class="btn push-right" id="exportButton" type="button">导出</button>
+            <button class="btn" id="exportButton" type="button">导出</button>
+            <div class="selection-summary push-right" id="selectionSummary"><span>已选择 <strong id="selectedCount">0</strong> 条</span><button class="selection-clear" id="clearSelectionButton" type="button">清空选择</button></div>
           </div>
-          <div class="table-wrapper fixed-table records-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1220px">
+          <div class="table-wrapper fixed-table records-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1540px">
             <table>
               <thead><tr>
                 <th class="col-center" style="width:50px"><input id="checkAll" type="checkbox" aria-label="全选当前页"></th>
-                <th class="col-center" style="width:140px">司机名称</th><th class="col-center" style="width:150px">关联车牌号</th>
+                <th class="col-center" style="width:140px">司机名称</th><th class="col-center" style="width:200px">车架号</th><th class="col-center" style="width:120px">网联编号</th><th class="col-center" style="width:150px">关联车牌号</th>
                 <th class="col-center" style="width:180px">绑车时间</th><th class="col-center" style="width:180px">交车时间</th>
                 <th class="col-center" style="width:150px">用车时长（min）</th><th class="col-center" style="width:150px">轨迹里程（km）</th>
                 <th class="col-center" style="width:120px">状态</th><th class="col-center" style="width:100px">操作</th>

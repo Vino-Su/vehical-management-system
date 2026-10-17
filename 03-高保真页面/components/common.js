@@ -46,6 +46,10 @@ const Common = {
         { label: '维修申请工单', id: 'repair-apply', disabled: true },
         { label: '维修结算单', id: 'repair-settle', disabled: true },
       ]},
+      { label: '日常维护管理', symbol: '日', items: [
+        { label: '日常维护计划', id: 'maintenance-plan', href: 'maintenance/maintenance-plan-list.html' },
+        { label: '维护任务台账', id: 'maintenance-task', href: 'maintenance/maintenance-task-list.html' },
+      ]},
       { label: '保养管理', symbol: '保', items: [
         { label: '保养任务清单', id: 'maintain-task', disabled: true },
         { label: '保养结算单', id: 'maintain-settle', disabled: true },

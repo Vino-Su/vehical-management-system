@@ -11,7 +11,7 @@
     <!--
       页面用途：查询车辆网联终端上报的运行数据。
       核心功能：可展开的车辆筛选、项目/车型分组、分组折叠、选车联动、采集时间查询、分页选择与导出。
-      交互逻辑：车辆筛选默认仅显示 VIN 码；默认按项目分组、仅展开首个分组并选中 VIN 排序最前车辆；未选择记录时导出当前查询结果需二次确认。
+      交互逻辑：车辆筛选默认仅显示车架号；默认按项目分组、仅展开首个分组并选中车架号排序最前车辆；未选择记录时导出当前查询结果需二次确认。
     -->
     <style>
         .running-content { display: flex; min-height: 0; overflow: hidden; }
@@ -39,7 +39,7 @@
         .running-table { flex: 1; min-height: 0; overflow: auto; }
         .running-table table { table-layout: fixed; }
         .running-table thead { position: sticky; top: 0; z-index: 4; }
-        .running-table th, .running-table td { white-space: nowrap; }
+        #runtimeTable th, #runtimeTable td { white-space: nowrap; text-align: center; }
         .running-table tbody tr { cursor: default; }
         .running-table .mode-cell { color: var(--text-primary); }
         .status-online { color: var(--success); }
@@ -69,7 +69,7 @@
                         <span class="panel-total" id="panelTotal">共 0 辆</span>
                     </div>
                     <div class="master-filter" id="masterFilter">
-                        <div class="compact-field"><label for="filterVin">VIN 码</label><input id="filterVin" type="text" placeholder="请输入 VIN 码"></div>
+                        <div class="compact-field"><label for="filterVin">车架号</label><input id="filterVin" type="text" placeholder="请输入车架号"></div>
                         <div class="master-filter-extra" id="masterFilterExtra">
                             <div class="compact-field"><label for="filterPlate">车牌号</label><input id="filterPlate" type="text" placeholder="请输入车牌号"></div>
                             <div class="compact-field"><label for="filterModel">车型名称</label><input id="filterModel" type="text" placeholder="请输入车型名称"></div>
@@ -116,34 +116,28 @@
                         </div>
                     </div>
                     <div class="table-zone">
-                        <div class="table-wrapper fixed-table running-table" data-fixed-first="1" data-fixed-min-width="2090px">
+                        <div class="table-wrapper fixed-table running-table" data-fixed-first="1" data-fixed-min-width="1990px">
                             <table id="runtimeTable">
                                 <colgroup>
-                                    <col style="width:50px"><col style="width:190px"><col style="width:140px">
-                                    <col style="width:108px"><col style="width:108px"><col style="width:110px">
-                                    <col style="width:110px"><col style="width:112px"><col style="width:140px">
-                                    <col style="width:140px"><col style="width:140px"><col style="width:140px">
-                                    <col style="width:90px"><col style="width:150px"><col style="width:90px">
-                                    <col style="width:174px"><col style="width:110px">
+                                    <col style="width:50px"><col style="width:190px"><col style="width:140px"><col style="width:108px"><col style="width:108px"><col style="width:110px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:112px"><col style="width:90px"><col style="width:150px"><col style="width:100px"><col style="width:120px"><col style="width:130px"><col style="width:174px">
                                 </colgroup>
                                 <thead><tr>
-                                    <th class="col-center"><input type="checkbox" id="checkAll" aria-label="全选当前页" onchange="toggleCheckAll(this)"></th>
-                                    <th class="col-center">VIN 码</th>
+                                    <th><input type="checkbox" id="checkAll" aria-label="全选当前页" onchange="toggleCheckAll(this)"></th>
+                                    <th>车架号</th>
                                     <th>所属项目</th>
-                                    <th class="col-right">经度</th>
-                                    <th class="col-right">纬度</th>
-                                    <th>驾驶模式</th>
-                                    <th>接管状态</th>
-                                    <th class="col-right">车辆速度</th>
-                                    <th class="col-right">车辆横向加速度</th>
-                                    <th class="col-right">车辆纵向加速度</th>
-                                    <th class="col-right">车辆侧倾角速度</th>
-                                    <th class="col-right">车辆横摆角速度</th>
-                                    <th class="col-center">档位</th>
+                                    <th>经度</th>
+                                    <th>纬度</th>
+                                    <th>驾驶状态</th>
+                                    <th>信号强度</th>
+                                    <th>运行状态</th>
+                                    <th>补给状态</th>
+                                    <th>车辆速度(km/h)</th>
+                                    <th>档位</th>
                                     <th>物联网终端在线状态</th>
-                                    <th class="col-right">SOC(%)</th>
-                                    <th class="col-center">数据采集时间</th>
-                                    <th>车辆作业模式</th>
+                                    <th>SOC(%)</th>
+                                    <th>剩余水量(%)</th>
+                                    <th>垃圾箱状态(%)</th>
+                                    <th>数据采集时间</th>
                                 </tr></thead>
                                 <tbody id="telemetryBody"></tbody>
                             </table>
@@ -183,9 +177,10 @@ const vehicles = [
     { id: 10, vin: 'LSVAU2A39EN000010', plate: '临牌-010', iot: '11538', model: '爱瑞特纯电动高压冲洗车', project: '', online: false }
 ];
 
-const modes = ['工作', '工作', '转场', '停靠', '充电', '休眠', '关机'];
+const runningStates = ['作业', '作业', '转场', '停靠', '运维', '停靠', '关机'];
+const supplyStates = ['未补给', '未补给', '未补给', '充电', '未补给', '加水', '未补给'];
+const percent = VehicleMonitorData.formatPercent;
 const drivingModes = ['自动驾驶', '自动驾驶', '人工驾驶', '远程驾驶'];
-const takeoverStates = ['未接管', '未接管', '人工接管', '远程接管'];
 const telemetry = [];
 vehicles.forEach((vehicle, vehicleIndex) => {
     for (let i = 0; i < 26; i += 1) {
@@ -193,22 +188,23 @@ vehicles.forEach((vehicle, vehicleIndex) => {
         const hour = minute >= 0 ? 14 : 13;
         const normalizedMinute = minute >= 0 ? minute : minute + 60;
         const timestamp = `2026-09-15 ${String(hour).padStart(2, '0')}:${String(normalizedMinute).padStart(2, '0')}:${String((vehicleIndex * 7 + i * 3) % 60).padStart(2, '0')}`;
-        const mode = modes[(i + vehicleIndex) % modes.length];
-        const moving = mode === '工作' || mode === '转场';
+        const runningState = runningStates[(i + vehicleIndex) % runningStates.length];
+        const moving = runningState === '作业' || runningState === '转场';
+        const shared = vehicleIndex === 0 && i === 0;
         telemetry.push({
             id: `${vehicle.id}-${i}`, vehicleId: vehicle.id, vin: vehicle.vin, project: vehicle.project || '无分组',
             longitude: (vehicleIndex === 0 ? sharedVehicle.lng + i * .00011 : 118.365421 + vehicleIndex * .0132 + i * .00011).toFixed(6),
             latitude: (vehicleIndex === 0 ? sharedVehicle.lat + i * .00008 : 31.326482 + vehicleIndex * .0087 + i * .00008).toFixed(6),
             drivingMode: vehicleIndex === 0 && i === 0 ? sharedVehicle.modeText : drivingModes[(i + vehicleIndex) % drivingModes.length],
-            takeover: vehicleIndex === 0 && i === 0 ? sharedVehicle.takeover : takeoverStates[(i + vehicleIndex) % takeoverStates.length],
             speed: vehicleIndex === 0 && i === 0 ? Number(sharedVehicle.speed).toFixed(1) : moving ? (18 + ((i * 7 + vehicleIndex) % 28)).toFixed(1) : '0.0',
-            lateralAcceleration: moving ? (((i % 7) - 3) * .07).toFixed(2) : '0.00',
-            longitudinalAcceleration: moving ? (((i % 9) - 4) * .09).toFixed(2) : '0.00',
-            rollRate: moving ? (((i % 6) - 2) * .12).toFixed(2) : '0.00',
-            yawRate: moving ? (((i % 8) - 3) * .15).toFixed(2) : '0.00',
-            gear: vehicleIndex === 0 && i === 0 ? sharedVehicle.gear : moving ? (i % 5 === 0 ? 'R' : 'D') : 'P', online: vehicle.online && mode !== '关机',
+            gear: vehicleIndex === 0 && i === 0 ? sharedVehicle.gear : moving ? (i % 5 === 0 ? 'R' : 'D') : 'N', online: vehicle.online,
             soc: vehicleIndex === 0 && i === 0 ? Number(sharedVehicle.soc).toFixed(1) : Math.max(18, 91 - i - vehicleIndex).toFixed(1),
-            collectedAt: timestamp, workMode: mode
+            signalStrength: shared ? sharedVehicle.signalStrength : ['强', '中', '弱'][(i + vehicleIndex) % 3],
+            runningState: shared ? sharedVehicle.runningState : runningState,
+            supplyState: shared ? sharedVehicle.supplyState : supplyStates[(i + vehicleIndex) % supplyStates.length],
+            water: shared ? sharedVehicle.water : Math.max(0, 80 - i * 2 - vehicleIndex),
+            bin: shared ? sharedVehicle.bin : [0, 5, 6, 8].includes(vehicleIndex) ? Math.min(100, 20 + i * 2) : null,
+            collectedAt: shared ? sharedVehicle.time : timestamp
         });
     }
 });
@@ -251,13 +247,11 @@ const vehicleList = MasterList.init({
         return (groupMode === 'project' ? selected.project : selected.model) || '无分组';
     },
     renderCard: vehicle => ({
-        primary: vehicle.plate,
+        primary: [vehicle.plate, vehicle.iot].map(value => String(value ?? '').trim()).filter(Boolean).join('-'),
         dot: vehicle.online ? 'is-success' : 'is-muted',
         dotTitle: vehicle.online ? '终端在线' : '终端离线',
-        meta: [
-            { text: vehicle.vin, className: 'num' },
-            { text: `${vehicle.model} · ${vehicle.iot}`, muted: true }
-        ]
+        meta: String(vehicle.vin ?? '').trim(),
+        metaClass: 'num'
     }),
     empty: { title: '暂无匹配车辆', desc: '请调整筛选条件后重试' },
     onSelect: vehicle => selectVehicle(vehicle.id)
@@ -374,20 +368,28 @@ function renderTelemetry() {
         <td class="col-center"><input type="checkbox" aria-label="选择 ${item.collectedAt}" ${selectedRows.has(item.id) ? 'checked' : ''} onchange="toggleRow('${item.id}', this)"></td>
         <td class="col-center num">${item.vin}</td><td title="${escapeHtml(item.project)}">${escapeHtml(item.project)}</td>
         <td class="col-right num">${item.longitude}</td><td class="col-right num">${item.latitude}</td>
-        <td>${item.drivingMode}</td><td>${item.takeover}</td><td class="col-right num">${item.speed} km/h</td>
-        <td class="col-right num">${item.lateralAcceleration} m/s²</td><td class="col-right num">${item.longitudinalAcceleration} m/s²</td>
-        <td class="col-right num">${item.rollRate} °/s</td><td class="col-right num">${item.yawRate} °/s</td>
-        <td class="col-center">${item.gear}</td><td class="${item.online ? 'status-online' : 'status-offline'}">${item.online ? '在线' : '离线'}</td>
-        <td class="col-right num">${item.soc}</td>
-        <td class="col-center num">${item.collectedAt}</td><td class="mode-cell"><span class="tag ${workModeClass(item.workMode)}">${item.workMode}</span></td>
-    </tr>`).join('') : '<tr><td colspan="17"><div class="empty-state"><strong>暂无运行数据</strong>请调整采集时间或选择其他车辆</div></td></tr>';
+        <td><span class="tag ${drivingStateClass(item.drivingMode)}">${item.drivingMode}</span></td><td>${item.signalStrength || '—'}</td>
+        <td><span class="tag ${runningStateClass(item.runningState)}">${item.runningState}</span></td><td><span class="tag ${supplyStateClass(item.supplyState)}">${item.supplyState}</span></td>
+        <td class="num">${item.speed}</td><td>${item.gear}</td>
+        <td class="${item.online ? 'status-online' : 'status-offline'}">${item.online ? '在线' : '离线'}</td>
+        <td class="num">${percent(item.soc)}</td><td class="num">${percent(item.water)}</td><td class="num">${percent(item.bin)}</td>
+        <td class="num">${item.collectedAt}</td>
+    </tr>`).join('') : '<tr><td colspan="16"><div class="empty-state"><strong>暂无运行数据</strong>请调整采集时间或选择其他车辆</div></td></tr>';
     pager.setTotal(filteredTelemetry.length);
     updateSelectionState();
     if (window.FixedTable) FixedTable.refresh(document.querySelector('.running-table'));
 }
 
-function workModeClass(mode) {
-    return ({ '工作': 'tag-green', '充电': 'tag-blue', '转场': 'tag-purple', '停靠': 'tag-orange', '休眠': 'tag-default', '关机': 'tag-red' })[mode] || 'tag-default';
+function drivingStateClass(state) {
+    return ({ '自动驾驶': 'tag-blue', '远程驾驶': 'tag-green', '人工驾驶': 'tag-default' })[state] || 'tag-default';
+}
+
+function supplyStateClass(state) {
+    return ({ '未补给': 'tag-default', '充电': 'tag-blue', '加水': 'tag-green', '换电': 'tag-purple' })[state] || 'tag-default';
+}
+
+function runningStateClass(state) {
+    return ({ '作业': 'tag-green', '转场': 'tag-purple', '停靠': 'tag-orange', '运维': 'tag-blue', '关机': 'tag-default' })[state] || 'tag-default';
 }
 
 function toggleRow(id, checkbox) {
@@ -410,10 +412,11 @@ function updateSelectionState() {
     document.getElementById('selectionHint').innerHTML = selectedRows.size ? `已选 <strong>${selectedRows.size}</strong> 条` : '';
 }
 
-const exportHeaders = ['VIN 码', '所属项目', '经度', '纬度', '驾驶模式', '接管状态', '车辆速度', '车辆横向加速度', '车辆纵向加速度', '车辆侧倾角速度', '车辆横摆角速度', '档位', '物联网终端在线状态', 'SOC(%)', '数据采集时间', '车辆作业模式'];
+const exportHeaders = ["车架号","所属项目","经度","纬度","驾驶状态","信号强度","运行状态","补给状态","车辆速度(km/h)","档位","物联网终端在线状态","SOC(%)","剩余水量(%)","垃圾箱状态(%)","数据采集时间"];
 function toExportRow(item) {
-    return [item.vin, item.project, item.longitude, item.latitude, item.drivingMode, item.takeover, item.speed, item.lateralAcceleration, item.longitudinalAcceleration, item.rollRate, item.yawRate, item.gear, item.online ? '在线' : '离线', item.soc, item.collectedAt, item.workMode];
+    return [item.vin, item.project, item.longitude, item.latitude, item.drivingMode, item.signalStrength || '—', item.runningState, item.supplyState, item.speed, item.gear, item.online ? '在线' : '离线', percent(item.soc), percent(item.water), percent(item.bin), item.collectedAt];
 }
+
 function exportRows(rows) {
     const vehicle = vehicles.find(item => item.id === selectedVehicleId);
     exportCSV({ filename: `车辆运行数据_${vehicle ? vehicle.plate.replace('·', '') : '未选择'}.csv`, headers: exportHeaders, rows: rows.map(toExportRow) });

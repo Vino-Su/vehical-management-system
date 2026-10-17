@@ -13,7 +13,7 @@
   const formatMonth = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 
   const columns = [
-    ['month', '统计月份'], ['plate', '车牌号'], ['vin', 'VIN码'], ['project', '归属项目'],
+    ['month', '统计月份'], ['plate', '车牌号'], ['vin', '车架号'], ['project', '归属项目'],
     ['cardCount', '关联卡数'], ['usage', '当月用量 (GB)'], ['rate', '流量使用率'],
     ['unitCost', '单位成本 (元/GB)'], ['amount', '流量费用 (元)']
   ];
@@ -241,7 +241,7 @@
     if (!record) return;
     document.getElementById('detailTitle').textContent = `流量费用详情 · ${record.plate || record.vin} · ${record.month}`;
     const rows = [
-      ['统计月份', record.month], ['车牌号', text(record.plate)], ['VIN码', record.vin],
+      ['统计月份', record.month], ['车牌号', text(record.plate)], ['车架号', record.vin],
       ['归属项目', record.project || '未归属'], ['关联卡数', `${record.cardCount} 张`],
       ['当月用量', `${number(record.usage)} GB`], ['流量使用率', record.rate === null ? '—' : `${record.rate.toFixed(1)}%`],
       ['单位成本（加权平均）', record.unitCost === null ? '—' : `${number(record.unitCost)} 元/GB`], ['流量费用合计', currency(record.fee)]

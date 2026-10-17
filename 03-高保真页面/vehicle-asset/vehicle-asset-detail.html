@@ -182,7 +182,7 @@
 .monitor-resource-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; padding:16px; }
 .monitor-resource-item { min-width:0; padding:12px; border:1px solid var(--border-color); border-radius:var(--radius); background:#fafafa; }
 .monitor-resource-label { color:var(--text-secondary); font-size:12px; line-height:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.monitor-resource-value { margin-top:4px; color:var(--text-disabled); font-family:var(--font-number); font-size:18px; font-weight:600; line-height:26px; }
+.monitor-resource-value { margin-top:4px; color:var(--text-primary); font-family:var(--font-number); font-size:18px; font-weight:600; line-height:26px; }
 .monitor-resource-note { margin-top:2px; color:var(--text-disabled); font-size:12px; line-height:18px; }
 .monitor-task { display:grid; grid-template-columns:minmax(0,1fr) 180px; gap:16px; align-items:center; padding:16px; }
 .monitor-task-title { color:var(--text-disabled); font-size:15px; font-weight:600; line-height:24px; }
@@ -902,252 +902,6 @@
 
         <!-- Tab Content: 车辆概览（单车档案总览 Tab） -->
         <div class="tab-content" id="tab-overview">
-          <div class="overview-grid" style="display:none">
-
-            <!-- 车辆身份 -->
-            <div class="overview-card overview-card--blue overview-card--full">
-              <div class="overview-card-head">
-                <div class="overview-card-title">车辆身份</div>
-                <div class="overview-card-actions" onclick="switchTab('basic')">查看基础信息 →</div>
-              </div>
-              <div class="identity-list">
-                <div class="identity-item"><span class="label">车牌号</span><span class="value">京 A·12345</span></div>
-                <div class="identity-item"><span class="label">VIN</span><span class="value">LSGBH52H45Y123456</span></div>
-                <div class="identity-item"><span class="label">车辆编号</span><span class="value">AUTO-EV-2024-001</span></div>
-                <div class="identity-item"><span class="label">车型 / 版本</span><span class="value">环卫机器人 R3 / 2025 款</span></div>
-                <div class="identity-item"><span class="label">归属项目</span><span class="value">A 项目 - 智慧园区</span></div>
-                <div class="identity-item"><span class="label">资产来源</span><span class="value">自购</span></div>
-                <div class="identity-item"><span class="label">网联编号</span><span class="value">NL-2024-08-0091</span></div>
-                <div class="identity-item"><span class="label">标签</span><span class="value"><span class="tag tag-blue">自动驾驶</span>&nbsp;<span class="tag tag-green">新能源</span>&nbsp;<span class="tag tag-purple">试点车辆</span></span></div>
-              </div>
-            </div>
-
-            <!-- 自动驾驶域（仅自动驾驶环卫机器人展示） -->
-            <div class="overview-card overview-card--purple" id="overviewCardAd">
-              <div class="overview-card-head">
-                <div class="overview-card-title">
-                  自动驾驶域
-                  <span class="tag tag-purple">自动驾驶环卫机器人</span>
-                </div>
-                <div class="overview-card-actions">查看完整 →</div>
-              </div>
-              <div class="metrics-grid">
-                <div class="metric-card">
-                  <div class="metric-label">运行模式</div>
-                  <div class="metric-value">自动</div>
-                  <div class="metric-extra">自检：通过</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">系统就绪</div>
-                  <div class="metric-value">就绪</div>
-                  <div class="metric-extra">v3.2.1</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">定位可信度</div>
-                  <div class="metric-value metric-empty">— —</div>
-                  <div class="metric-extra">外部系统查看</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">接管人</div>
-                  <div class="metric-value metric-empty">— —</div>
-                  <div class="metric-extra">未触发接管</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">电子围栏</div>
-                  <div class="metric-value">未越界</div>
-                  <div class="metric-extra">园区 A 区</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">急停状态</div>
-                  <div class="metric-value">未触发</div>
-                  <div class="metric-extra">安全链路：正常</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">关键传感器</div>
-                  <div class="metric-value">健康</div>
-                  <div class="metric-extra">8 / 8 在线</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">OTA 状态</div>
-                  <div class="metric-value">最新</div>
-                  <div class="metric-extra">2026-09-08 已更新</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 作业设备域 -->
-            <div class="overview-card overview-card--green" id="overviewCardWork">
-              <div class="overview-card-head">
-                <div class="overview-card-title">
-                  作业设备域
-                  <span class="tag tag-green">环卫作业</span>
-                </div>
-                <div class="overview-card-actions">查看完整 →</div>
-              </div>
-              <div class="metrics-grid">
-                <div class="metric-card">
-                  <div class="metric-label">清水</div>
-                  <div class="metric-value">72%</div>
-                  <div class="metric-extra">建议 ≥ 30%</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">污水箱</div>
-                  <div class="metric-value">18%</div>
-                  <div class="metric-extra">建议 ≤ 80%</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">垃圾箱</div>
-                  <div class="metric-value">65%</div>
-                  <div class="metric-extra">接近预警</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">边刷</div>
-                  <div class="metric-value">正常</div>
-                  <div class="metric-extra">寿命 78%</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">风机</div>
-                  <div class="metric-value">正常</div>
-                  <div class="metric-extra">转速 1450 rpm</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">喷淋</div>
-                  <div class="metric-value">正常</div>
-                  <div class="metric-extra">水压 0.4 MPa</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">清扫盘</div>
-                  <div class="metric-value">正常</div>
-                  <div class="metric-extra">左 / 右：在线</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">作业模式</div>
-                  <div class="metric-value">清扫中</div>
-                  <div class="metric-extra">自动循迹</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 资源 / 能源 -->
-            <div class="overview-card">
-              <div class="overview-card-head">
-                <div class="overview-card-title">能源与里程</div>
-                <div class="overview-card-actions">查看完整 →</div>
-              </div>
-              <div class="metrics-grid">
-                <div class="metric-card">
-                  <div class="metric-label">电量</div>
-                  <div class="metric-value">28%</div>
-                  <div class="metric-extra">低于阈值 30%</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">预计续航</div>
-                  <div class="metric-value">42 km</div>
-                  <div class="metric-extra">常规路况</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">充电状态</div>
-                  <div class="metric-value">未充电</div>
-                  <div class="metric-extra">任务进行中</div>
-                </div>
-                <div class="metric-card">
-                  <div class="metric-label">累计里程</div>
-                  <div class="metric-value">12,847 km</div>
-                  <div class="metric-extra">2026-09 更新</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 待办 -->
-            <div class="overview-card">
-              <div class="overview-card-head">
-                <div class="overview-card-title">待办与预警</div>
-                <div class="overview-card-actions">查看完整 →</div>
-              </div>
-              <div class="todo-list">
-                <div class="todo-item todo-item--warn">
-                  <span class="todo-icon">⚠</span>
-                  <span class="todo-text">电量低于 30%，请评估是否继续当前作业</span>
-                  <span class="todo-link">查看告警</span>
-                </div>
-                <div class="todo-item todo-item--err">
-                  <span class="todo-icon">⚠</span>
-                  <span class="todo-text">左前侧视摄像头间歇性掉线</span>
-                  <span class="todo-link">发起工单</span>
-                </div>
-                <div class="todo-item todo-item--info">
-                  <span class="todo-icon">ℹ</span>
-                  <span class="todo-text">常规保养 3 天后到期（2026-09-13）</span>
-                  <span class="todo-link">查看详情</span>
-                </div>
-                <div class="todo-item todo-item--info">
-                  <span class="todo-icon">ℹ</span>
-                  <span class="todo-text">年审将于 2026-11-20 到期</span>
-                  <span class="todo-link">查看详情</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 近期事件 -->
-            <div class="overview-card overview-card--full">
-              <div class="overview-card-head">
-                <div class="overview-card-title">近期事件</div>
-                <div class="overview-card-actions">查看完整生命周期 →</div>
-              </div>
-              <div class="event-list">
-                <div class="event-item">
-                  <div class="event-time">2026-09-10 14:20</div>
-                  <div class="event-body">
-                    <div class="event-title"><span class="tag tag-orange" style="margin-right:6px">运行异常 / 一般</span>剩余电量低于阈值，车辆可用性由「可用」变为「受限可用」</div>
-                    <div class="event-source">来源：车载终端 · 处理状态：待确认</div>
-                  </div>
-                  <div class="event-actions">查看告警 →</div>
-                </div>
-                <div class="event-item">
-                  <div class="event-time">2026-09-10 09:15</div>
-                  <div class="event-body">
-                    <div class="event-title"><span class="tag tag-blue" style="margin-right:6px">调度流转</span>调度单完成，车辆由 B 项目交接至 A 项目</div>
-                    <div class="event-source">来源：本系统 · 操作人：张三</div>
-                  </div>
-                  <div class="event-actions">查看调度 →</div>
-                </div>
-                <div class="event-item">
-                  <div class="event-time">2026-09-08 16:40</div>
-                  <div class="event-body">
-                    <div class="event-title"><span class="tag tag-green" style="margin-right:6px">维保</span>完成常规保养，更换空气滤芯</div>
-                    <div class="event-source">来源：售后系统 · 工单：WO-20260908-007</div>
-                  </div>
-                  <div class="event-actions">查看工单 →</div>
-                </div>
-                <div class="event-item">
-                  <div class="event-time">2026-09-05 11:02</div>
-                  <div class="event-body">
-                    <div class="event-title"><span class="tag tag-purple" style="margin-right:6px">自动驾驶</span>OTA 远程升级至 v3.2.1，自检通过</div>
-                    <div class="event-source">来源：自动驾驶平台 · 升级人：运维 · 王五</div>
-                  </div>
-                  <div class="event-actions">查看详情 →</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 关联入口 -->
-            <div class="overview-card overview-card--full">
-              <div class="overview-card-head">
-                <div class="overview-card-title">关联业务与外部系统</div>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <span class="btn btn-sm">查看调度单（3）</span>
-                <span class="btn btn-sm">查看维保工单（5）</span>
-                <span class="btn btn-sm">查看 BOM 部件（26）</span>
-                <span class="btn btn-sm">查看告警（1）</span>
-                <span class="btn btn-sm">进入自动驾驶平台 →</span>
-                <span class="btn btn-sm">进入车载终端管理 →</span>
-                <span class="btn btn-sm">进入售后系统 →</span>
-              </div>
-            </div>
-
-          </div>
-
           <div class="overview-dashboard">
             <section class="overview-ledger" aria-label="运行总账">
               <div class="ledger-title">运行总账</div>
@@ -1170,15 +924,15 @@
             <section class="overview-summary" aria-label="车辆当班概览">
               <div class="availability-banner">
                 <span class="availability-label">车辆可用性</span>
-                <div class="availability-body"><div class="availability-state">受限可用</div><div class="availability-reason">清水余量偏低，左前摄像头今日出现 3 次掉线</div><div class="availability-update">数据更新时间：2026-09-15 14:32</div></div>
+                <div class="availability-body"><div class="availability-state">受限可用</div><div class="availability-reason">剩余水量偏低，建议补水</div><div class="availability-update">数据更新时间：2026-09-15 14:32</div></div>
               </div>
               <div class="overview-operating-grid">
-                <section class="overview-operating-card"><div class="operating-card-title">实时运行</div><div class="operating-metrics"><span class="operating-metric">清扫中 · 自动驾驶</span><span class="operating-metric">速度 <strong>8 km/h</strong></span><span class="operating-metric">当前故障 <strong>0</strong></span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看运行监控</button></section>
-                 <section class="overview-operating-card"><div class="operating-card-title">当班保障</div><div class="operating-metrics"><span class="operating-metric">电量 <strong>68%</strong> · 清水 <strong>12%</strong></span><span class="operating-metric">垃圾箱 <strong>40%</strong> · 设备 <strong>8/8</strong></span><span class="operating-metric">今日流量 <strong>1.2GB</strong></span></div><button class="operating-card-action" onclick="openMonitorSection('monitor-resources')">查看资源明细</button></section>
-                 <section class="overview-operating-card"><div class="operating-card-title">健康与损耗</div><div class="operating-metrics"><span class="operating-metric operating-metric--warn"><span class="metric-warn-icon">⚠</span>左边刷：剩余 <strong>8 小时</strong></span><span class="operating-metric">摄像头：当前在线，待检查</span></div><button class="operating-card-action" onclick="openMonitorSection('monitor-safety')">查看安全诊断</button></section>
+                <section class="overview-operating-card"><div class="operating-card-title">实时运行</div><div class="operating-metrics"><span class="operating-metric" id="overviewDriving">驾驶状态：自动驾驶</span><span class="operating-metric" id="overviewRunning">运行状态：作业</span><span class="operating-metric" id="overviewSupply">补给状态：未补给</span><span class="operating-metric">速度 <strong>8 km/h</strong></span><span class="operating-metric">当前故障 <strong>0</strong></span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看运行监控</button></section>
+                 <section class="overview-operating-card"><div class="operating-card-title">当班保障</div><div class="operating-metrics"><span class="operating-metric">SOC <strong id="overviewSoc">68%</strong> · 剩余水量 <strong id="overviewWater">12%</strong></span><span class="operating-metric">垃圾箱状态 <strong id="overviewBin">40%</strong></span><span class="operating-metric">今日流量 <strong>1.2GB</strong></span></div><button class="operating-card-action" onclick="openMonitorSection('monitor-resources')">查看资源明细</button></section>
+                 <section class="overview-operating-card"><div class="operating-card-title">数据状态</div><div class="operating-metrics"><span class="operating-metric" id="overviewSignal">信号强度：强</span><span class="operating-metric">终端在线</span></div><button class="operating-card-action" onclick="switchTab('monitor')">查看运行数据</button></section>
                 <section class="overview-operating-card"><div class="operating-card-title">合规与风险</div><div class="operating-metrics"><span class="operating-metric">证照剩余 <strong>15 天</strong></span><span class="operating-metric">年检已预约</span></div><button class="operating-card-action" onclick="showBusinessUnavailable('合规与风险')">查看合规与风险</button></section>
               </div>
-              <div class="overview-reminder"><span class="reminder-title">当前提醒：3 项</span><span class="reminder-items"><button class="reminder-item" type="button" onclick="openMonitorSection('monitor-resources')">清水补给</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="openMonitorSection('monitor-safety')">摄像头检查</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="showBusinessUnavailable('合规与风险')">证照续办</button></span></div>
+              <div class="overview-reminder"><span class="reminder-title">当前提醒：2 项</span><span class="reminder-items"><button class="reminder-item" type="button" onclick="openMonitorSection('monitor-resources')">补水提醒</button><span class="reminder-sep">·</span><button class="reminder-item" type="button" onclick="showBusinessUnavailable('合规与风险')">证照续办</button></span></div>
             </section>
           </div>
         </div>
@@ -1189,46 +943,39 @@
             <section class="monitor-freshness" aria-label="数据新鲜度">
               <span class="monitor-freshness-icon">i</span>
               <div class="monitor-freshness-body">
-                <div class="monitor-freshness-title">实时运行快照 <span class="monitor-state-tag" id="monitorFreshnessTag">在线 · 数据正常</span></div>
-                <div class="monitor-freshness-copy" id="monitorFreshnessCopy">数据来源：车载 T-Box / 自动驾驶平台 · 最近采集：2026-09-15 14:32:18 · 延迟约 18 秒</div>
+                <div class="monitor-freshness-title">运行快照（演示数据） <span class="monitor-state-tag" id="monitorFreshnessTag">在线 · 数据正常</span></div>
+                <div class="monitor-freshness-copy" id="monitorFreshnessCopy">数据来源：车载 T-Box / 自动驾驶平台 · 最近采集：2026-09-15 14:32:18 · 演示数据</div>
               </div>
               <div class="monitor-freshness-actions"><button class="btn btn-sm" type="button" onclick="showMonitorUnavailable('实时数据刷新')">重试</button></div>
             </section>
 
             <div class="monitor-grid-2">
               <section class="monitor-card" id="monitor-location" aria-label="位置与轨迹">
-                <div class="monitor-card-head"><div class="monitor-card-title">位置与轨迹</div><span class="monitor-card-meta">定位数据：正常 · 约 5 m</span></div>
-                <div class="monitor-map-empty"><div class="monitor-map" id="vehicleDetailMap" aria-label="车辆当前位置地图"></div><div class="monitor-map-overlay"><span class="monitor-map-badge online" id="monitorMapStatus">在线 · 定位可信</span><span class="monitor-map-badge" id="monitorMapAccuracy">约 5 m</span></div><div class="monitor-map-legend">当前车辆 · 位置更新时间 14:32:18</div></div>
+                <div class="monitor-card-head"><div class="monitor-card-title">位置与轨迹</div><span class="monitor-card-meta">GPS 定位</span></div>
+                <div class="monitor-map-empty"><div class="monitor-map" id="vehicleDetailMap" aria-label="车辆当前位置地图"></div><div class="monitor-map-overlay"><span class="monitor-map-badge online" id="monitorMapStatus">当前位置</span></div><div class="monitor-map-legend">当前车辆 · 位置更新时间 14:32:18</div></div>
                 <div class="monitor-map-footer"><span id="monitorMapFooter">经纬度：31.386600, 118.401800 · 芜湖市鸠江区万春街道附近 · 定位时间：2026-09-15 14:32:18</span><button class="monitor-card-link" type="button" onclick="openMonitorPage()">在监管一张图中定位 →</button></div>
               </section>
 
               <section class="monitor-card" aria-label="运行遥测">
                 <div class="monitor-card-head"><div class="monitor-card-title">运行遥测</div><button class="monitor-card-link" type="button" onclick="openRunningData()">查看完整运行数据 →</button></div>
                 <div class="monitor-definition-list">
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">VIN 码</span><span class="monitor-definition-value" id="monitorVin">LSVAU2A39EN000001</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">驾驶 / 作业模式</span><span class="monitor-definition-value text" id="monitorMode">自动驾驶 · 工作</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">车架号</span><span class="monitor-definition-value" id="monitorVin">LSVAU2A39EN000001</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">驾驶状态</span><span class="monitor-definition-value text" id="monitorMode">自动驾驶</span></div>
                   <div class="monitor-definition-item"><span class="monitor-definition-label">经度 / 纬度</span><span class="monitor-definition-value" id="monitorCoordinates">118.401800 / 31.386600</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">接管状态</span><span class="monitor-definition-value text value-ok" id="monitorTakeover">未接管</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">信号强度</span><span class="monitor-definition-value text" id="monitorSignal">强</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">运行状态</span><span class="monitor-definition-value text" id="monitorRunning">作业</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">补给状态</span><span class="monitor-definition-value text" id="monitorSupply">未补给</span></div>
                   <div class="monitor-definition-item"><span class="monitor-definition-label">车辆速度</span><span class="monitor-definition-value" id="monitorSpeed">8 km/h</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">横向 / 纵向加速度</span><span class="monitor-definition-value" id="monitorAcceleration">0.06 / 0.02 m/s²</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">侧倾 / 横摆角速度</span><span class="monitor-definition-value" id="monitorRotation">0.01 / 0.02 °/s</span></div>
                   <div class="monitor-definition-item"><span class="monitor-definition-label">档位 / 终端状态</span><span class="monitor-definition-value text" id="monitorGear">D · 在线</span></div>
-                  <div class="monitor-definition-item"><span class="monitor-definition-label">SOC / 数据采集时间</span><span class="monitor-definition-value" id="monitorSoc">68% · 2026-09-15 14:32:18</span></div>
+                  <div class="monitor-definition-item"><span class="monitor-definition-label">数据采集时间</span><span class="monitor-definition-value text" id="monitorCollectedAt">2026-09-15 14:32:18</span></div>
                 </div>
-                <div class="monitor-card-footnote" id="monitorTelemetryFootnote">来源：车载 T-Box / 自动驾驶平台 · 数据质量：正常 · 延迟约 18 秒</div>
+                <div class="monitor-card-footnote" id="monitorTelemetryFootnote">来源：车载 T-Box / 自动驾驶平台 · 演示数据</div>
               </section>
             </div>
 
-            <div class="monitor-grid-2">
-              <section class="monitor-card" id="monitor-safety" aria-label="安全与系统诊断">
-                <div class="monitor-card-head"><div class="monitor-card-title">安全与系统诊断</div><span class="monitor-card-meta" id="monitorHealthMeta">诊断数据：正常</span></div>
-                <div class="monitor-health-list" id="monitorHealthList">
-                </div>
-                <div class="monitor-card-footnote">诊断证据来自车载终端和自动驾驶平台；关注项不直接改写车辆总览可用性结论。</div>
-              </section>
-
-              <section class="monitor-card" id="monitor-resources" aria-label="资源与设备明细">
-                <div class="monitor-card-head"><div class="monitor-card-title">资源与设备明细</div><span class="monitor-card-meta">按车型能力展示</span></div>
+            <div>
+              <section class="monitor-card" id="monitor-resources" aria-label="资源与补给明细">
+                <div class="monitor-card-head"><div class="monitor-card-title">资源与补给明细</div><span class="monitor-card-meta">百分比 · 缺失或不适用显示 —</span></div>
                 <div class="monitor-resource-grid" id="monitorResourceGrid">
                 </div>
               </section>
@@ -1819,8 +1566,7 @@ function renderMonitorMap() {
     vehicleDetailMarker = L.marker([d.lat, d.lng], {
       icon: L.divIcon({ className: '', html: '<div class="monitor-vehicle-marker"><div class="marker-pin">' + VEHICLE_ICON_SVG + '</div><div class="marker-label">' + escapeHtml(d.plate) + '</div></div>', iconSize: [74, 54], iconAnchor: [37, 17] }),
       title: d.plate
-    }).addTo(vehicleDetailMap).bindPopup('<strong>' + escapeHtml(d.plate) + '</strong><br>' + escapeHtml(d.model) + '<br>速度 ' + d.speed + ' km/h · ' + escapeHtml(d.workMode));
-    L.circle([d.lat, d.lng], { radius: 80, color: '#1677ff', weight: 1, fillColor: '#1677ff', fillOpacity: .08 }).addTo(vehicleDetailMap);
+    }).addTo(vehicleDetailMap).bindPopup('<strong>' + escapeHtml(d.plate) + '</strong><br>' + escapeHtml(d.model) + '<br>速度 ' + d.speed + ' km/h · ' + escapeHtml(d.runningState));
   }
   window.requestAnimationFrame(function () { vehicleDetailMap.invalidateSize(); vehicleDetailMap.setView([d.lat, d.lng], 14, { animate: false }); });
 }
@@ -1843,15 +1589,17 @@ function renderMonitorData() {
   const text = function (id, value) { const el = document.getElementById(id); if (el) el.textContent = value; };
   text('monitorFreshnessCopy', '数据来源：' + d.source + ' · 最近采集：' + d.time + ' · 延迟约 18 秒');
   text('monitorMapFooter', '经纬度：' + d.lat.toFixed(6) + ', ' + d.lng.toFixed(6) + ' · ' + d.address + ' · 定位时间：' + d.time);
-  text('monitorMapAccuracy', d.accuracy);
-  text('monitorVin', d.vin); text('monitorMode', d.modeText + ' · ' + d.workMode); text('monitorCoordinates', d.lng.toFixed(6) + ' / ' + d.lat.toFixed(6));
-  text('monitorTakeover', d.takeover); text('monitorSpeed', d.speed + ' km/h'); text('monitorAcceleration', d.accL.toFixed(2) + ' / ' + d.accW.toFixed(2) + ' m/s²');
-  text('monitorRotation', d.roll.toFixed(2) + ' / ' + d.yaw.toFixed(2) + ' °/s'); text('monitorGear', d.gear + ' · ' + d.online); text('monitorSoc', d.soc + '% · ' + d.time);
-  text('monitorTelemetryFootnote', '来源：' + d.source + ' · 数据质量：正常 · 延迟约 18 秒');
-  const health = document.getElementById('monitorHealthList');
-  if (health) health.innerHTML = d.health.map(function (item) { return '<div class="monitor-health-row"><span class="monitor-health-name">' + escapeHtml(item.name) + '</span><span class="monitor-health-status state-' + item.state + '">' + escapeHtml(item.value) + '</span></div>'; }).join('');
+  const percent = VehicleMonitorData.formatPercent;
+  text('monitorVin', d.vin); text('monitorMode', d.modeText); text('monitorCoordinates', d.lng.toFixed(6) + ' / ' + d.lat.toFixed(6));
+  text('monitorSignal', d.signalStrength || '—'); text('monitorRunning', d.runningState); text('monitorSupply', d.supplyState);
+  text('monitorSpeed', d.speed + ' km/h'); text('monitorGear', d.gear + ' · ' + d.online); text('monitorCollectedAt', d.time);
+  text('monitorTelemetryFootnote', '来源：' + d.source + ' · 采集时间：' + d.time + ' · 演示数据');
+  text('overviewDriving', '驾驶状态：' + d.modeText); text('overviewRunning', '运行状态：' + d.runningState); text('overviewSupply', '补给状态：' + d.supplyState);
+  text('overviewSignal', '信号强度：' + (d.signalStrength || '—')); text('overviewSoc', percent(d.soc)); text('overviewWater', percent(d.water)); text('overviewBin', percent(d.bin));
   const resources = document.getElementById('monitorResourceGrid');
-  if (resources) resources.innerHTML = [['电量', d.soc + '%', '工作中 · 续航 ' + d.range + ' km'], ['预计续航', d.range + ' km', '按当前作业负载估算'], ['清水 / 污水', d.water + '% / ' + d.sewage + '%', '清水偏低，建议补给'], ['垃圾箱余量', d.bin + '%', '当前设备在线 ' + d.equipmentOnline]].map(function (item, index) { return '<div class="monitor-resource-item"><div class="monitor-resource-label">' + item[0] + '</div><div class="monitor-resource-value' + (index === 2 ? ' is-warn' : '') + '">' + item[1] + '</div><div class="monitor-resource-note">' + item[2] + '</div></div>'; }).join('');
+  if (resources) resources.innerHTML = [['SOC', percent(d.soc)], ['剩余水量', percent(d.water)], ['垃圾箱状态', percent(d.bin)], ['补给状态', d.supplyState || '—']].map(function (item) {
+    return '<div class="monitor-resource-item"><div class="monitor-resource-label">' + item[0] + '</div><div class="monitor-resource-value">' + escapeHtml(item[1]) + '</div></div>';
+  }).join('');
   text('monitorTaskTitle', d.task.name); text('monitorTaskMeta', d.task.area + ' · ' + d.task.status + ' · ' + d.task.start + ' 开始 · ' + d.task.eta); text('monitorTaskProgressNote', '已完成 ' + d.task.progress + '%');
   const progress = document.getElementById('monitorTaskProgress'); if (progress) progress.style.width = d.task.progress + '%';
   text('monitorFaultCount', d.faults.length); text('monitorAnomalyCount', d.anomalies.length);
@@ -2202,7 +1950,7 @@ function renderVehicleGlobalInfo() {
   `;
 }
 
-// 与列表批量导出使用同一编码器：二维码实际内容为当前车辆 VIN。
+// 与列表批量导出使用同一编码器：二维码实际内容为当前车辆车架号。
 function buildVehicleQrSvg(text) {
   return VehicleQr.buildSvg(text);
 }
@@ -4061,11 +3809,11 @@ document.addEventListener('keydown', function(e) {
     <div class="modal-body vehicle-qr-body">
       <div class="vehicle-qr-frame"><img id="vehicleQrPreviewImage" src="" alt="车辆二维码"></div>
       <dl class="vehicle-qr-meta">
-        <dt>VIN码</dt><dd id="vehicleQrPreviewVin"></dd>
+        <dt>车架号</dt><dd id="vehicleQrPreviewVin"></dd>
         <dt>车牌号</dt><dd id="vehicleQrPreviewPlate"></dd>
         <dt>网联编号</dt><dd id="vehicleQrPreviewIot"></dd>
       </dl>
-      <div class="vehicle-qr-tip">二维码内容与当前车辆 VIN 绑定，下载后可用于打印或现场识别。</div>
+      <div class="vehicle-qr-tip">二维码内容与当前车辆车架号绑定，下载后可用于打印或现场识别。</div>
     </div>
     <div class="modal-footer modal-footer--right">
       <button class="btn" type="button" onclick="Common.closeModal('vehicleQrModal')">关闭</button>

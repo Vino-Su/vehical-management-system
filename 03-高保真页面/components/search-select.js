@@ -12,7 +12,7 @@
  * 用法:
  *   const sel = SearchSelect.init({
  *     container: '#ss-vehicle',            // 容器(必填),控件 DOM 由组件生成
- *     placeholder: '输入车牌 / VIN / 项目搜索',
+ *     placeholder: '输入车牌 / 车架号 / 项目搜索',
  *     allowClear: true,                    // 显示清空按钮
  *     items: () => vehicles,               // 候选集:数组或返回数组的函数
  *     getValue: v => v.vin,                // 值,默认取 item.value 或 item.id

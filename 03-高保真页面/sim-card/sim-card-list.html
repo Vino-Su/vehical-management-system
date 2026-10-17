@@ -30,6 +30,12 @@
   .pagination-row { display:flex; justify-content:flex-end; align-items:center; gap:12px; padding-top:16px; flex-wrap:wrap; }
   .page-size { height:32px; border:1px solid var(--border-input); border-radius:var(--radius); padding:0 8px; background:#fff; }
   .operation-links { display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
+  /* 表头字段说明：图标留在表头内，气泡挂载 body 并固定定位，避免被 .fixed-table 横向滚动容器裁切或撑宽滚动区 */
+  .th-tip { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; margin-left:4px; flex:0 0 auto; border:1px solid var(--text-secondary); border-radius:50%; color:var(--text-secondary); cursor:help; font-size:10px; line-height:1; vertical-align:middle; outline:none; }
+  .th-tip:hover,.th-tip:focus-visible { border-color:var(--primary); color:var(--primary); }
+  .th-tip-bubble { position:fixed; z-index:2000; box-sizing:border-box; max-width:280px; padding:6px 10px; border-radius:var(--radius); background:#000000d9; color:#fff; font-size:12px; font-weight:400; line-height:18px; text-align:left; white-space:normal; opacity:0; visibility:hidden; transform:translateY(-4px); transition:opacity .15s ease, transform .15s ease, visibility .15s; pointer-events:none; }
+  .th-tip-bubble::after { position:absolute; bottom:100%; left:var(--arrow-x, 50%); margin-left:-5px; border:5px solid transparent; border-bottom-color:#000000d9; content:""; }
+  .th-tip-bubble.is-visible { opacity:1; visibility:visible; transform:translateY(0); }
   @media(max-width:900px) { .search-actions { margin-left:0; }.content { padding:16px; } }
 </style>
 </head>
@@ -43,7 +49,7 @@
     <div class="search-item"><label>卡状态</label><select id="f-status"><option value="">全部</option><option>正使用</option><option>停机</option><option>预销号</option><option>测试期</option><option>销号</option><option>沉默期</option><option>停机保号</option><option>未知</option><option>库存期</option></select></div>
     <div class="search-item"><label>套餐</label><select id="f-plan"><option value="">全部</option><option>10G/月</option><option>30G/月</option><option>100G/月</option><option>300G/月</option></select></div>
     <div class="search-item"><label>是否超套餐</label><select id="f-over"><option value="">全部</option><option value="yes">是</option><option value="no">否</option></select></div>
-    <div class="search-item"><label>VIN码</label><input id="f-vin" placeholder="请输入 VIN 码"></div>
+    <div class="search-item"><label>车架号</label><input id="f-vin" placeholder="请输入车架号"></div>
     <div class="search-item"><label>车牌号</label><input id="f-plate" placeholder="请输入车牌号"></div>
     <div class="search-item"><label>归属项目</label><select id="f-project"><option value="">全部</option><option>鸠江项目</option><option>嘉定研发</option><option>镜湖区项目</option><option>椒北街道</option></select></div>
     <div class="search-item"><label>硬件识别码</label><input id="f-device" placeholder="请输入硬件识别码"></div>
@@ -51,7 +57,7 @@
   </div></div>
   <div class="action-bar"><button class="btn push-right" type="button" onclick="exportData()">导出</button></div>
   <div class="table-wrapper fixed-table" data-fixed-first="1" data-fixed-last="1" data-fixed-min-width="1500"><table><thead><tr>
-    <th class="col-center" style="width:54px"><input id="check-all" type="checkbox" onchange="checkAll(this)"></th><th class="col-center">IMSI</th><th class="col-center">MSISDN</th><th class="col-center">ICCID</th><th class="col-left">运营商</th><th class="col-left">套餐</th><th class="col-left">当前周期流量使用情况</th><th class="col-center">VIN码</th><th class="col-left">车牌号</th><th class="col-left">归属项目</th><th class="col-left">硬件类型</th><th class="col-center">硬件识别码</th><th class="col-center">操作</th>
+    <th class="col-center" style="width:54px"><input id="check-all" type="checkbox" onchange="checkAll(this)"></th><th class="col-center">IMSI<span class="th-tip" tabindex="0" role="img" aria-label="IMSI 字段说明：国际移动用户识别码（移动电话根据IMSI码计费）" data-tip="国际移动用户识别码（移动电话根据IMSI码计费）">?</span></th><th class="col-center">MSISDN<span class="th-tip" tabindex="0" role="img" aria-label="MSISDN 字段说明：移动基站ISDN号码（物联网卡电话号码）" data-tip="移动基站ISDN号码（物联网卡电话号码）">?</span></th><th class="col-center">ICCID<span class="th-tip" tabindex="0" role="img" aria-label="ICCID 字段说明：集成电路卡识别码（即SIM卡卡号）" data-tip="集成电路卡识别码（即SIM卡卡号）">?</span></th><th class="col-left">运营商</th><th class="col-left">套餐</th><th class="col-left">当前周期流量使用情况</th><th class="col-center">车架号</th><th class="col-left">车牌号</th><th class="col-left">归属项目</th><th class="col-left">硬件类型</th><th class="col-center">硬件识别码</th><th class="col-center">操作</th>
   </tr></thead><tbody id="table-body"></tbody></table></div>
   <div class="pagination-row"><span>共 <b id="total-count">0</b> 条</span><select class="page-size" id="page-size" onchange="changePageSize()"><option>10</option><option>20</option><option>50</option></select><span id="page-info">第 1 / 1 页</span><div id="pagination"></div></div>
 </section></main></div></div>
@@ -81,7 +87,7 @@ function exportData(){
 let activeSim=null;
 const simVehicleSelect=SearchSelect.init({
   container:'#simBindingVehicle',
-  placeholder:'输入车牌 / VIN / 项目搜索（不填即不按车辆定位）',
+  placeholder:'输入车牌 / 车架号 / 项目搜索（不填即不按车辆定位）',
   allowClear:true,
   items:()=>vehicles,
   getValue:v=>v.vin,
@@ -139,5 +145,39 @@ function saveSimBinding(e){
   Common.showToast(result.device?'保存成功，已新增绑定记录':'已解除绑定，已新增绑定记录','success');
   return false;
 }
+
+// ===== 表头字段说明提示：气泡挂载 body 并固定定位（与 search-select 下拉同口径），规避滚动容器裁切 =====
+(function(){
+  const bubble=document.createElement('div');
+  bubble.className='th-tip-bubble';bubble.id='thTipBubble';bubble.setAttribute('role','tooltip');
+  document.body.appendChild(bubble);
+  let current=null;
+  function place(){
+    if(!current)return;
+    const r=current.getBoundingClientRect(),w=bubble.offsetWidth,h=bubble.offsetHeight;
+    const left=Math.max(8,Math.min(r.left+r.width/2-w/2,window.innerWidth-w-8));
+    let top=r.bottom+8;
+    if(top+h>window.innerHeight-8)top=Math.max(8,r.top-h-8);
+    bubble.style.left=left+'px';bubble.style.top=top+'px';
+    bubble.style.setProperty('--arrow-x',(r.left+r.width/2-left)+'px');
+  }
+  function show(el){current=el;bubble.textContent=el.dataset.tip||'';bubble.classList.add('is-visible');place()}
+  function hide(){current=null;bubble.classList.remove('is-visible')}
+  function relocate(){
+    if(!current)return;
+    const wrap=current.closest('.fixed-table');
+    if(wrap){const wr=wrap.getBoundingClientRect(),ir=current.getBoundingClientRect();if(ir.right<wr.left||ir.left>wr.right){hide();return}}
+    place();
+  }
+  document.querySelectorAll('.th-tip').forEach(el=>{
+    el.addEventListener('mouseenter',()=>show(el));
+    el.addEventListener('mouseleave',hide);
+    el.addEventListener('focus',()=>show(el));
+    el.addEventListener('blur',hide);
+  });
+  window.addEventListener('scroll',relocate,true);
+  window.addEventListener('resize',relocate);
+})();
+
 render();
 </script></body></html>

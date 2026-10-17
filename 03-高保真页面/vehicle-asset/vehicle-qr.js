@@ -1,9 +1,9 @@
-/* 车辆列表和详情共用的 VIN 二维码编码与图片下载，依赖本地 qrcode-generator。 */
+/* 车辆列表和详情共用的车架号二维码编码与图片下载，依赖本地 qrcode-generator。 */
 (function (global) {
     'use strict';
 
     function encode(vin) {
-        if (!/^[A-Z0-9]{17}$/.test(vin)) throw new Error('车辆 VIN 必须为 17 位大写字母或数字');
+        if (!/^[A-Z0-9]{17}$/.test(vin)) throw new Error('车架号必须为 17 位大写字母或数字');
         const code = global.qrcode(0, 'M');
         code.addData(vin, 'Alphanumeric');
         code.make();

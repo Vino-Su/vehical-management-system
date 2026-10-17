@@ -5,7 +5,7 @@
  * 说明：原型演示数据，页面内为内存态；真实系统由后端接口提供。
  *
  * 口径（依据《设备管理PRD》《SIM卡管理PRD》）：
- *   1. 设备是绑定关系的锚点，也是终端主数据；SIM 卡的绑定字段（车辆 VIN 码、车牌号、
+ *   1. 设备是绑定关系的锚点，也是终端主数据；SIM 卡的绑定字段（车架号、车牌号、
  *      归属项目、硬件类型、硬件识别码）一律由 devices 派生，不在 SIM 卡侧单独维护。
  *   2. 一张 SIM 卡同一时间只绑定一台设备；一台设备同一时间只绑定一张 SIM 卡。
  *   3. 绑定关系变更只在设备侧留痕（设备变更日志，见下），SIM 卡侧记录绑定记录表（sims[].bindings）。
@@ -68,7 +68,7 @@ function deviceOfSim(imsi){return devices.find(d=>d.simImsi&&d.simImsi===imsi)||
 /** 取设备当前绑定的车辆 */
 function vehicleOfDevice(device){return device&&device.vehicleVin?vehicles.find(v=>v.vin===device.vehicleVin)||null:null}
 /**
- * 取 SIM 卡的绑定信息（车辆 VIN 码 / 车牌号 / 归属项目 / 硬件类型 / 硬件识别码）。
+ * 取 SIM 卡的绑定信息（车架号 / 车牌号 / 归属项目 / 硬件类型 / 硬件识别码）。
  * 未绑定设备时全部返回空字符串，由页面统一展示为「—」或「未绑定」。
  */
 function simBinding(imsi){
@@ -102,10 +102,10 @@ function recordDeviceEdits(device,before,after,time){
 }
 /**
  * 绑定关系保存后写入变更日志：车辆与 SIM 卡各自变化时分别记一条，未变化项不记；解绑一侧记为空值。
- * 修改字段沿用设备字段名（车架号 / IMSI），修改前/后只存 VIN、IMSI 本身，不拼接车牌，便于按字段名直接比对。
+ * 修改字段沿用设备字段名（车架号 / IMSI），修改前/后只存车架号、IMSI 本身，不拼接车牌，便于按字段名直接比对。
  */
 function recordBindingChanges(device,time,oldVin,oldSim){
-  // 先写 IMSI、后写 VIN，保证同一时间戳下「车架号」在日志中位于「IMSI」之上
+  // 先写 IMSI、后写车架号，保证同一时间戳下「车架号」在日志中位于「IMSI」之上
   if((device.simImsi||'')!==(oldSim||''))recordDeviceChange(device,time,'修改','IMSI',oldSim||'',device.simImsi||'');
   if((device.vehicleVin||'')!==(oldVin||''))recordDeviceChange(device,time,'修改','车架号',oldVin||'',device.vehicleVin||'');
 }
